@@ -21,8 +21,38 @@ type FetcherConfig struct {
 
 // FetchSource 是单个抓取源
 type FetchSource struct {
-	URL      string // 抓取链接
+	URL      string // 抓取链接(可用 #scheme=http 或 #scheme=socks5 标注协议)
 	SourceID string // 源标识(用于去重和显示)
+}
+
+// DefaultFetchSources 返回内置的默认抓取源列表(免费公开代理源)
+// 这些源提供 http/socks5/v2ray/clash 等多种格式的代理列表
+func DefaultFetchSources() []FetchSource {
+	return []FetchSource{
+		// proxifly 免费 HTTP/SOCKS 代理列表(全量)
+		{URL: "https://cdn.jsdelivr.net/gh/proxifly/free-proxy-list@main/proxies/all/data.txt", SourceID: "proxifly-all"},
+		{URL: "https://raw.githubusercontent.com/proxifly/free-proxy-list/main/proxies/all/data.txt", SourceID: "proxifly-all-raw"},
+		// proxifly 按协议分类
+		{URL: "https://cdn.jsdelivr.net/gh/proxifly/free-proxy-list@main/proxies/protocols/http/data.txt#scheme=http", SourceID: "proxifly-http"},
+		{URL: "https://cdn.jsdelivr.net/gh/proxifly/free-proxy-list@main/proxies/protocols/socks5/data.txt#scheme=socks5", SourceID: "proxifly-socks5"},
+		// snakem982 proxypool(v2ray 订阅 + clash 配置)
+		{URL: "https://raw.githubusercontent.com/snakem982/proxypool/main/source/v2ray-2.txt", SourceID: "snakem982-v2ray"},
+		{URL: "https://cdn.jsdelivr.net/gh/snakem982/proxypool@main/source/clash-meta.yaml", SourceID: "snakem982-clash"},
+		// NoMoreWalls 代理列表
+		{URL: "https://raw.githubusercontent.com/peasoft/NoMoreWalls/master/list.txt", SourceID: "nomorewalls"},
+		// mfuu v2ray 订阅
+		{URL: "https://raw.githubusercontent.com/mfuu/v2ray/master/v2ray", SourceID: "mfuu-v2ray"},
+		// V2RayAggregator 合并订阅
+		{URL: "https://raw.githubusercontent.com/mahdibland/V2RayAggregator/master/sub/sub_merge.txt", SourceID: "v2rayaggregator"},
+		// TheSpeedX HTTP/SOCKS5 代理列表
+		{URL: "https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/http.txt#scheme=http", SourceID: "thespeedx-http"},
+		{URL: "https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/socks5.txt#scheme=socks5", SourceID: "thespeedx-socks5"},
+		// ProxyScrape API
+		{URL: "https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=10000&country=all&ssl=all&anonymity=all#scheme=http", SourceID: "proxyscrape-http"},
+		{URL: "https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=10000&country=all&ssl=all&anonymity=all#scheme=socks5", SourceID: "proxyscrape-socks5"},
+		// GeoNode 代理列表 API
+		{URL: "https://proxylist.geonode.com/api/proxy-list?limit=500&page=1&sort_by=lastChecked&sort_type=desc", SourceID: "geonode"},
+	}
 }
 
 // Fetcher 管理代理节点抓取:

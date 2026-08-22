@@ -69,7 +69,26 @@ type Config struct {
 	Audit             AuditConfig             `yaml:"audit"`
 	QualityGuard      QualityGuardConfig      `yaml:"qualityGuard"`
 	ClientKeyDefaults ClientKeyDefaultsConfig `yaml:"clientKeyDefaults"`
+	ProxyPool         ProxyPoolConfig         `yaml:"proxyPool"`
 	Accounts          AccountsConfig          `yaml:"-"`
+}
+
+// ProxyPoolConfig 配置代理节点池(抓取 + 测活 + 负载均衡)
+type ProxyPoolConfig struct {
+	// Enabled 是否启用代理池。启用后请求会走节点 IP,不走原始 IP
+	Enabled bool `yaml:"enabled"`
+	// FetchEnabled 是否启用自动抓取
+	FetchEnabled bool `yaml:"fetchEnabled"`
+	// FetchInterval 抓取间隔。默认 30 分钟
+	FetchInterval Duration `yaml:"fetchInterval"`
+	// FetchSources 自定义抓取源 URL 列表。为空时使用内置默认源
+	FetchSources []string `yaml:"fetchSources"`
+	// CheckInterval 测活间隔。默认 1 分钟
+	CheckInterval Duration `yaml:"checkInterval"`
+	// CheckConcurrency 同时测活的并发数。默认 50
+	CheckConcurrency int `yaml:"checkConcurrency"`
+	// ScoreDisableThreshold 分数低于此值自动禁用节点。默认 0
+	ScoreDisableThreshold int `yaml:"scoreDisableThreshold"`
 }
 
 type ServerConfig struct {
@@ -1004,6 +1023,14 @@ func defaultConfig() Config {
 			},
 		},
 		ClientKeyDefaults: ClientKeyDefaultsConfig{RPMLimit: clientkeydomain.DefaultRPMLimit, MaxConcurrent: clientkeydomain.DefaultMaxConcurrent},
+		ProxyPool: ProxyPoolConfig{
+			Enabled:                false,
+			FetchEnabled:           false,
+			FetchInterval:          Duration(30 * time.Minute),
+			CheckInterval:          Duration(time.Minute),
+			CheckConcurrency:        50,
+			ScoreDisableThreshold:  0,
+		},
 		Accounts: AccountsConfig{
 			MarkBuildForbiddenReauth:             false,
 			BuildForbiddenReauthCodes:            []string{"permission-denied"},

@@ -21,7 +21,8 @@ func init() {
 
 // Subscribe is A Getter with an additional property
 type Subscribe struct {
-	Url string
+	Url    string
+	Scheme string // 可选:给纯文本 ip:port 行自动加前缀(http/socks5),从 URL 的 #scheme= 标注解析
 }
 
 // Get() of Subscribe is to implement Getter interface
@@ -32,7 +33,9 @@ type Subscribe struct {
 //   - singbox.json(sing-box 配置,outbounds 字段)
 //   - HTML 网页(模糊抓取页面里的节点链接)
 func (s *Subscribe) Get() proxy.ProxyList {
-	resp, err := tool.GetHttpClient().Get(s.Url)
+	// 从 URL 解析 #scheme= 标注(如 http.txt#scheme=http)
+	rawURL, schemeHint := parseSchemeHint(s.Url)
+	resp, err := tool.GetHttpClient().Get(rawURL)
 	if err != nil {
 		return nil
 	}
@@ -42,6 +45,9 @@ func (s *Subscribe) Get() proxy.ProxyList {
 		return nil
 	}
 	bodyStr := string(body)
+	if schemeHint == "" {
+		schemeHint = s.Scheme
+	}
 
 	// 按格式依次尝试解析
 	if proxies := parseClashYAML(bodyStr); len(proxies) > 0 {
@@ -65,14 +71,51 @@ func (s *Subscribe) Get() proxy.ProxyList {
 		}
 	}
 
-	// 原始文本当纯文本解析(每行一个链接)
+	// 原始文本当纯文本解析(每行一个链接,或 ip:port 格式)
 	bodyStr = strings.ReplaceAll(bodyStr, "\t", "")
 	nodes := strings.Split(bodyStr, "\n")
+	// 如果有 scheme 标注,给纯 ip:port 行加 scheme 前缀
+	if schemeHint != "" {
+		nodes = applySchemeHint(nodes, schemeHint)
+	}
 	proxies := StringArray2ProxyArray(nodes)
 	if len(proxies) > 0 {
-		log.Infoln("subscribe parsed as plain text: count=%d url=%s", len(proxies), s.Url)
+		log.Infoln("subscribe parsed as plain text: count=%d url=%s scheme=%s", len(proxies), s.Url, schemeHint)
 	}
 	return proxies
+}
+
+// parseSchemeHint 从 URL 解析 #scheme= 标注
+// 返回:(去掉 fragment 的 URL, scheme 值)
+// 例如 "https://example.com/http.txt#scheme=http" → ("https://example.com/http.txt", "http")
+func parseSchemeHint(rawURL string) (cleanURL, scheme string) {
+	hashIdx := strings.Index(rawURL, "#scheme=")
+	if hashIdx < 0 {
+		return rawURL, ""
+	}
+	cleanURL = rawURL[:hashIdx]
+	scheme = strings.TrimPrefix(rawURL[hashIdx:], "#scheme=")
+	return cleanURL, scheme
+}
+
+// applySchemeHint 给纯 ip:port 行加 scheme 前缀
+// 例如 "1.2.3.4:8080" + scheme=http → "http://1.2.3.4:8080"
+func applySchemeHint(lines []string, scheme string) []string {
+	result := make([]string, 0, len(lines))
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		// 已经有 scheme 前缀的不处理
+		if strings.Contains(line, "://") {
+			result = append(result, line)
+			continue
+		}
+		// ip:port 格式,加 scheme 前缀
+		result = append(result, scheme+"://"+line)
+	}
+	return result
 }
 
 // parseClashYAML 解析 Clash 配置文件(proxies 字段)
@@ -275,6 +318,7 @@ func NewSubscribe(options tool.Options) (getter Getter, err error) {
 
 // FetchSubscribeURL 从订阅 URL 抓取代理列表(便捷函数)。
 // 自动检测格式:base64 编码的 txt、纯文本、clash.yml、singbox.json、HTML 网页。
+// 支持 #scheme=http 或 #scheme=socks5 标注给纯 ip:port 行加前缀。
 func FetchSubscribeURL(url string) ([]proxy.Proxy, error) {
 	sub := &Subscribe{Url: url}
 	return sub.Get(), nil

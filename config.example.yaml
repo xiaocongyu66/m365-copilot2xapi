@@ -155,6 +155,26 @@ provider:
     # [按需修改] 每个账号同时进行的上游调用上限。
     maxConcurrent: 8
 
+# [按需启用] 代理节点池。启用后请求走节点 IP,不走原始 IP,支持负载均衡。
+# 节点抓取支持多种格式:base64 订阅、clash.yml、singbox.json、纯文本(ip:port)。
+# 测活只测能访问微软 + 持续发包 10MB 测稳定性,不筛节点质量。
+proxyPool:
+  # [通常不要修改] 是否启用代理池。启用后所有请求走节点 IP
+  enabled: false
+  # [按需修改] 是否启用自动抓取
+  fetchEnabled: false
+  # [按需修改] 抓取间隔。默认 30 分钟
+  fetchInterval: 30m
+  # [按需修改] 自定义抓取源 URL 列表。为空时使用内置默认源(14 个免费公开代理源)
+  # 支持 #scheme=http 或 #scheme=socks5 标注给纯 ip:port 行加前缀
+  fetchSources: []
+  # [按需修改] 测活间隔。默认 1 分钟(每分钟自动测试所有节点)
+  checkInterval: 1m
+  # [按需修改] 同时测活的并发数。默认 50
+  checkConcurrency: 50
+  # [按需修改] 分数低于此值自动禁用节点。默认 0
+  scoreDisableThreshold: 0
+
 # [按需启用] Grok Build 出口质量守护。仅配置后仍不会自动启动 sidecar；
 # 使用 docker compose --profile quality-guard up -d --build 启动。
 qualityGuard:
