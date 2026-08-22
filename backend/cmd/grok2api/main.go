@@ -1,6 +1,6 @@
 package main
 
-// @title Grok2API
+// @title M365Copilot2ApiX
 // @version 1.0
 // @description Grok Build 与 Grok Web 多账号 API 网关。
 // @BasePath /

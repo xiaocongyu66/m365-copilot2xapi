@@ -51,8 +51,8 @@ database:
     path: "./data/backend.db"
   postgres:
     # [必须修改：仅 driver=postgres] 填写真实 DSN，并按需启用 sslmode。
-    # 也可通过 GROK2API_DATABASE_URL 注入；非空环境变量会覆盖本字段并自动启用 postgres。
-    dsn: "postgres://user:password@127.0.0.1:5432/grok2api?sslmode=disable"
+    # 也可通过 M365COPILOT2XAPI_DATABASE_URL 注入；非空环境变量会覆盖本字段并自动启用 postgres。
+    dsn: "postgres://user:password@127.0.0.1:5432/m365copilot2xapi?sslmode=disable"
     # [按需修改] 根据数据库连接容量调整。
     maxOpenConns: 50
     maxIdleConns: 10
@@ -67,7 +67,7 @@ runtimeStore:
     password: ""
     database: 0
     # [通常不要修改] 同一 Redis 中部署多个实例组时才需要更换。
-    keyPrefix: "grok2api:"
+    keyPrefix: "m365copilot2xapi:"
     # [按需修改] Redis 使用 TLS 时设为 true。
     tls: false
 
@@ -77,7 +77,7 @@ deployment:
   # [必须修改：仅 replicas>1] 每个实例使用不同的稳定标识。
   instanceID: ""
   # [必须修改：仅 replicas>1] 同一实例组和共享媒体目录必须使用相同标识。
-  clusterID: "grok2api"
+  clusterID: "m365copilot2xapi"
   # [必须修改：仅 replicas>1] 确认 media.local.path 已挂载为所有实例共享且可读写的存储。
   sharedMedia: false
 
@@ -101,11 +101,11 @@ routing:
   segmentedSelectorWindowSize: 64
   # [按需修改] 大账号池才需要打开。0 保持历史行为：不健康节点上的 auto 账号会一次性迁走。
   # 0.05–1 表示每个健康节点最多吸收该比例的活跃账号。环境变量
-  # GROK2API_AUTO_ASSIGN_MAX_NODE_SHARE 可覆盖。
+  # M365COPILOT2XAPI_AUTO_ASSIGN_MAX_NODE_SHARE 可覆盖。
   autoAssignMaxNodeShare: 0
   # [按需修改] 大账号池才需要打开。0 保持历史行为：首轮疏散不限额，容量/再均衡仍最多 200 次。
   # 0.05–1 限制单轮已绑定账号迁移比例。环境变量
-  # GROK2API_AUTO_ASSIGN_MAX_MIGRATION_SHARE 可覆盖。
+  # M365COPILOT2XAPI_AUTO_ASSIGN_MAX_MIGRATION_SHARE 可覆盖。
   autoAssignMaxMigrationShare: 0
 
 audit:

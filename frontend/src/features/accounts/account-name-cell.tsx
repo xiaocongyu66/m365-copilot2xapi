@@ -36,11 +36,7 @@ function accountLinks(account: AccountDTO): LinkedAccountDTO[] {
 export function AccountNameCell({ account }: { account: AccountDTO }) {
   const { t, i18n } = useTranslation();
   const links = accountLinks(account);
-  const providerLabel = (provider: AccountProvider) => provider === "m365_copilot"
-    ? t("models.providerM365Build")
-    : provider === "m365_copilot"
-      ? t("models.providerM365Web")
-      : t("console.name");
+  const providerLabel = (_provider: AccountProvider) => t("models.providerM365");
   const connections = [
     { id: account.id, provider: account.provider, details: identityDetails(account.name, account.email, account.userId) },
     ...links.filter((linked) => linked.provider !== account.provider).map((linked) => ({ id: linked.id, provider: linked.provider, details: identityDetails(linked.name, linked.email, linked.userId) })),
