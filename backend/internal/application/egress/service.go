@@ -77,10 +77,9 @@ type QualityProber interface {
 }
 
 const (
-	maxProxyURLBytes         = 8192
-	maxCloudflareCookieBytes = 16 << 10
-	ProxyAccountPlaceholder  = "{account}"
-	proxyAccountSentinel     = "grok2api_account_placeholder"
+	maxProxyURLBytes        = 8192
+	ProxyAccountPlaceholder = "{account}"
+	proxyAccountSentinel    = "grok2api_account_placeholder"
 )
 
 type Input struct {
@@ -90,11 +89,10 @@ type Input struct {
 	ProxyPool         *bool
 	AccountCapacity   *int
 	ProxyURL          *string
-	ProxyProfileID    *uint64
-	ClearProxyURL     bool
-	UserAgent         string
-	CloudflareCookies *string
-	ClearCookies      bool
+	ProxyProfileID *uint64
+	ClearProxyURL  bool
+	UserAgent      string
+	ClearCookies   bool
 }
 
 type ProxyProfileInput struct {
@@ -1198,23 +1196,7 @@ func (s *Service) applyInput(value domain.Node, input Input, create bool) (domai
 	if value.ProxyPool && strings.TrimSpace(value.EncryptedProxyURL) == "" {
 		return domain.Node{}, fmt.Errorf("%w: 代理池模式需要配置代理地址", ErrInvalidInput)
 	}
-	if input.Scope == domain.ScopeBuild || input.Scope == domain.ScopeConsoleAsset {
-		value.EncryptedCloudflareCookie = ""
-	} else if input.ClearCookies {
-		value.EncryptedCloudflareCookie = ""
-	} else if input.CloudflareCookies != nil {
-		if len(*input.CloudflareCookies) > maxCloudflareCookieBytes {
-			return domain.Node{}, fmt.Errorf("%w: Cloudflare Cookie 不能超过 16 KiB", ErrInvalidInput)
-		}
-		cookies := SanitizeCloudflareCookies(*input.CloudflareCookies)
-		if cookies != "" || create {
-			var err error
-			value.EncryptedCloudflareCookie, err = s.cipher.Encrypt(cookies)
-			if err != nil {
-				return domain.Node{}, err
-			}
-		}
-	}
+
 	if configurationChanged {
 		value.Health = 1
 		value.FailureCount = 0
@@ -1251,7 +1233,7 @@ func (s *Service) publicNode(value domain.Node) domain.PublicNode {
 	return domain.PublicNode{
 		ID: value.ID, Name: value.Name, Scope: value.Scope, Enabled: value.Enabled,
 		ProxyConfigured: value.EncryptedProxyURL != "", ProxyDisplay: proxyDisplay, ProxyFingerprint: proxyFingerprint,
-		UserAgent: userAgent, CookieConfigured: value.EncryptedCloudflareCookie != "",
+		UserAgent: userAgent, CookieConfigured: false,
 		ProxyPool:         proxyPool,
 		SourceID:          value.SourceID,
 		AccountCapacity:   value.AccountCapacity,
@@ -1372,28 +1354,3 @@ func NormalizeProxyURL(value string) (string, error) {
 	return parsed.String(), nil
 }
 
-func SanitizeCloudflareCookies(value string) string {
-	allowed := make([]string, 0, 4)
-	seen := make(map[string]struct{})
-	for part := range strings.SplitSeq(value, ";") {
-		name, cookieValue, ok := strings.Cut(strings.TrimSpace(part), "=")
-		if !ok {
-			continue
-		}
-		name = strings.TrimSpace(name)
-		lower := strings.ToLower(name)
-		if lower != "cf_clearance" && lower != "__cf_bm" && lower != "_cfuvid" && !strings.HasPrefix(lower, "cf_chl_") {
-			continue
-		}
-		if _, exists := seen[lower]; exists {
-			continue
-		}
-		cookieValue = strings.TrimSpace(cookieValue)
-		if cookieValue == "" || len(cookieValue) > maxCloudflareCookieBytes || strings.IndexFunc(cookieValue, func(character rune) bool { return character < 0x20 || character == 0x7f }) >= 0 {
-			continue
-		}
-		seen[lower] = struct{}{}
-		allowed = append(allowed, lower+"="+cookieValue)
-	}
-	return strings.Join(allowed, "; ")
-}

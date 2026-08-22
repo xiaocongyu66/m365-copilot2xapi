@@ -307,12 +307,12 @@ type Selector struct {
 	candidateLoads         singleflight.Group
 	concurrencySnapshots   *resultcache.Cache[[32]byte, map[string]int]
 	tierOrders             interface {
-		TierOrder(account.Provider, string) []account.WebTier
+		TierOrder(account.Provider, string) []string
 	}
 }
 
 func NewSelector(accounts repository.AccountRepository, concurrency repository.ConcurrencyLimiter, sticky repository.StickySessionRepository, tierOrders interface {
-	TierOrder(account.Provider, string) []account.WebTier
+	TierOrder(account.Provider, string) []string
 }, stickyTTL, cooldownBase, cooldownMax time.Duration, capacityWait ...time.Duration) *Selector {
 	wait := time.Duration(0)
 	if len(capacityWait) > 0 && capacityWait[0] > 0 {
@@ -874,9 +874,9 @@ func accountScopeAllowsCandidate(provider account.Provider, scope clientkeydomai
 		}
 	case account.ProviderM365:
 		switch candidate.Credential.WebTier {
-		case account.WebTierBasic:
+		case stringBasic:
 			tier = clientkeydomain.AccountTierFree
-		case account.WebTierSuper, account.WebTierHeavy:
+		case stringSuper, stringHeavy:
 			tier = clientkeydomain.AccountTierSuper
 		}
 	}
@@ -906,7 +906,7 @@ func effectiveQuotaMode(candidate account.RoutingCandidate, fallback string) str
 	}
 	if candidate.Credential.Provider == account.ProviderM365 && fallback == account.QuotaModeWebImageEdit {
 		switch candidate.Credential.WebTier {
-		case account.WebTierSuper, account.WebTierHeavy:
+		case stringSuper, stringHeavy:
 			return account.QuotaModeWebImageEdit
 		default:
 			return account.QuotaModeWebImagePro
@@ -2079,19 +2079,19 @@ func retryDelay(now, retryAt time.Time) time.Duration {
 	return retryAt.Sub(now)
 }
 
-func (s *Selector) resolveTierOrder(provider account.Provider, upstreamModel, quotaMode string) []account.WebTier {
+func (s *Selector) resolveTierOrder(provider account.Provider, upstreamModel, quotaMode string) []string {
 	if s.tierOrders == nil {
 		return nil
 	}
 	if resolver, ok := s.tierOrders.(interface {
-		TierOrderForQuotaMode(account.Provider, string, string) []account.WebTier
+		TierOrderForQuotaMode(account.Provider, string, string) []string
 	}); ok {
 		return resolver.TierOrderForQuotaMode(provider, upstreamModel, quotaMode)
 	}
 	return s.tierOrders.TierOrder(provider, upstreamModel)
 }
 
-func tierOrderRank(order []account.WebTier, tier account.WebTier) int {
+func tierOrderRank(order []string, tier string) int {
 	tier = normalizedRoutingWebTier(tier)
 	for index, value := range order {
 		if value == tier {
@@ -2101,14 +2101,14 @@ func tierOrderRank(order []account.WebTier, tier account.WebTier) int {
 	return len(order)
 }
 
-func normalizedRoutingWebTier(tier account.WebTier) account.WebTier {
-	if tier == "" || tier == account.WebTierAuto {
-		return account.WebTierBasic
+func normalizedRoutingWebTier(tier string) string {
+	if tier == "" || tier == stringAuto {
+		return stringBasic
 	}
 	return tier
 }
 
-func webTierInOrder(order []account.WebTier, tier account.WebTier) bool {
+func webTierInOrder(order []string, tier string) bool {
 	tier = normalizedRoutingWebTier(tier)
 	for _, allowed := range order {
 		if allowed == tier {
