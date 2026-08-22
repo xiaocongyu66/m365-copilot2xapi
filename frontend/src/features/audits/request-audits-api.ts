@@ -40,7 +40,7 @@ export type AuditDTO = {
   accountName?: string;
   egressNodeId?: string;
   egressNodeName?: string;
-  egressScope?: "m365_copilot" | "m365_copilot" | "m365_copilot" | "m365_copilot_asset" | "m365_copilot_asset";
+  egressScope?: "m365_copilot" | "m365_copilot_asset";
   egressMode?: "direct" | "proxy";
   // 0 表示已返回 2xx 响应头但流随后失败（如首字节超时/流式中断），不属于任何 HTTP 状态段。
   statusCode: number;
@@ -150,7 +150,7 @@ const auditValidator = hasShape({
   reasoningEffort: isOptional(isOneOf("auto", "none", "low", "medium", "high", "xhigh", "fixed")),
   accountId: isOptional(isString), accountName: isOptional(isString),
   egressNodeId: isOptional(isString), egressNodeName: isOptional(isString),
-  egressScope: isOptional(isOneOf("m365_copilot", "m365_copilot", "m365_copilot", "m365_copilot_asset", "m365_copilot_asset")), egressMode: isOptional(isOneOf("direct", "proxy")),
+  egressScope: isOptional(isOneOf("m365_copilot", "m365_copilot_asset")), egressMode: isOptional(isOneOf("direct", "proxy")),
   statusCode: isNumber, streaming: isBoolean,
   mediaInputImages: isNumber, mediaOutputImages: isNumber, mediaOutputSeconds: isNumber, inputTokens: isNumber,
   cachedInputTokens: isNumber, outputTokens: isNumber, reasoningTokens: isNumber, totalTokens: isNumber,

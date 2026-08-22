@@ -1,4 +1,4 @@
-import { Bot, SquareTerminal, type LucideIcon } from "lucide-react";
+import { Bot, Handshake, SquareTerminal, VenusAndMars, type LucideIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
