@@ -33,6 +33,7 @@ import (
 	"M365Copilot2ApiX/backend/internal/infra/persistence/relational"
 	"M365Copilot2ApiX/backend/internal/infra/provider"
 	m365provider "M365Copilot2ApiX/backend/internal/infra/provider/m365"
+	"M365Copilot2ApiX/backend/internal/infra/proxypool"
 	infraqualityguard "M365Copilot2ApiX/backend/internal/infra/qualityguard"
 	"M365Copilot2ApiX/backend/internal/infra/runtime/memory"
 	redisruntime "M365Copilot2ApiX/backend/internal/infra/runtime/redis"
@@ -185,6 +186,28 @@ func New(ctx context.Context, cfg config.Config, logger *slog.Logger) (*Applicat
 
 	egressManager := infraegress.NewManager(egressRepo, cipher)
 	egressManager.SetLogger(logger)
+	// 创建 proxypool Service(代理节点池:抓取 + 测活 + 负载均衡)
+	proxyPoolService := proxypool.NewService()
+	// 注入到 M365 Provider,让 M365 的 HTTP/WebSocket 请求走节点 IP
+	m365provider.SetNodeResolver(proxyPoolService)
+	// 根据配置启动 proxypool 后台任务(测活 + 抓取)
+	if cfg.ProxyPool.Enabled {
+		proxyPoolService.Start()
+		if cfg.ProxyPool.FetchEnabled {
+			sources := make([]proxypool.FetchSource, 0, len(cfg.ProxyPool.FetchSources))
+			for _, src := range cfg.ProxyPool.FetchSources {
+				sources = append(sources, proxypool.FetchSource{URL: src, SourceID: src})
+			}
+			if len(sources) == 0 {
+				sources = proxypool.DefaultFetchSources()
+			}
+			proxyPoolService.Fetcher().UpdateConfig(proxypool.FetcherConfig{
+				Enabled:  true,
+				Interval: cfg.ProxyPool.FetchInterval.Value(),
+				Sources:  sources,
+			})
+		}
+	}
 	m365Adapter := m365provider.NewAdapter(cfg.Provider.M365, cipher)
 	providers := provider.NewRegistry(m365Adapter)
 	if err := providers.Validate(); err != nil {

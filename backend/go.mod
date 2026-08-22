@@ -55,12 +55,16 @@ require (
 	github.com/bytedance/sonic v1.15.0 // indirect
 	github.com/bytedance/sonic/loader v0.5.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
+	github.com/chromedp/cdproto v0.0.0-20260804232424-e85f50dbfd32 // indirect
+	github.com/chromedp/chromedp v0.16.0 // indirect
+	github.com/chromedp/sysutil v1.1.0 // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
 	github.com/cloudwego/base64x v0.1.6 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.12 // indirect
 	github.com/gin-contrib/sse v1.1.0 // indirect
 	github.com/glebarez/go-sqlite v1.21.2 // indirect
+	github.com/go-json-experiment/json v0.0.0-20260623181947-01eb4420fa68 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.19.6 // indirect
 	github.com/go-openapi/spec v0.20.4 // indirect
@@ -69,6 +73,9 @@ require (
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.30.1 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
+	github.com/gobwas/httphead v0.1.0 // indirect
+	github.com/gobwas/pool v0.2.1 // indirect
+	github.com/gobwas/ws v1.4.0 // indirect
 	github.com/goccy/go-json v0.10.5 // indirect
 	github.com/goccy/go-yaml v1.19.2 // indirect
 	github.com/gofrs/uuid/v5 v5.3.2 // indirect
@@ -109,6 +116,7 @@ require (
 	github.com/temoto/robotstxt v1.1.2 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.3.1 // indirect
+	github.com/xiaocongyu66/go-curlcffi v0.0.0-20260818100312-d1cec555f893 // indirect
 	go.mongodb.org/mongo-driver/v2 v2.5.0 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	golang.org/x/arch v0.22.0 // indirect
