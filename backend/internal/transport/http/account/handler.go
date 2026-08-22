@@ -1230,9 +1230,6 @@ func newAccountResponse(value accountapp.View) accountResponse {
 		EgressAssignmentMode:       string(c.EgressAssignmentMode),
 		Quota:                      newQuotaResponse(value.Quota), QuotaWindows: make([]quotaWindowResponse, 0, len(value.QuotaWindows)),
 	}
-	for _, linked := range c.LinkedAccounts {
-		result.LinkedAccounts = append(result.LinkedAccounts, linkedAccountResponse{ID: linked.ID, Provider: string(linked.Provider), Name: linked.Name, Email: linked.Email, UserID: linked.UserID})
-	}
 	for _, window := range value.QuotaWindows {
 		breakdown := make([]quotaBreakdownResponse, 0, len(window.Breakdown))
 		for _, item := range window.Breakdown {
