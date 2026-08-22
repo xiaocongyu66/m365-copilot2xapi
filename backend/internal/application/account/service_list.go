@@ -8,8 +8,6 @@ import (
 	"time"
 
 	accountdomain "m365-copilot2xapi/backend/internal/domain/account"
-	"m365-copilot2xapi/backend/internal/infra/provider"
-	"m365-copilot2xapi/backend/internal/pkg/batch"
 	"m365-copilot2xapi/backend/internal/repository"
 )
 

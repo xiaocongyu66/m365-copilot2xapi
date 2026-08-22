@@ -12,13 +12,11 @@ import (
 	"sync"
 	"time"
 
-	egressapp "m365-copilot2xapi/backend/internal/application/egress"
 	accountdomain "m365-copilot2xapi/backend/internal/domain/account"
 	"m365-copilot2xapi/backend/internal/infra/provider"
 	"m365-copilot2xapi/backend/internal/infra/security"
 	"m365-copilot2xapi/backend/internal/pkg/batch"
 	"m365-copilot2xapi/backend/internal/pkg/perfmetrics"
-	"m365-copilot2xapi/backend/internal/pkg/resultcache"
 	"m365-copilot2xapi/backend/internal/repository"
 	"golang.org/x/sync/singleflight"
 )
