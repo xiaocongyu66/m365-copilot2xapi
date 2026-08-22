@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"sync"
 	"time"
@@ -11,6 +12,11 @@ import (
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/log"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/proxy"
 )
+
+// netDialTimeout 封装 net.DialTimeout(方便测试 mock)
+func netDialTimeout(network, addr string, timeout time.Duration) (net.Conn, error) {
+	return net.DialTimeout(network, addr, timeout)
+}
 
 // M365 健康检查配置:
 //   - 只测能访问微软(login.microsoftonline.com 和 substrate.office.com)
@@ -41,8 +47,11 @@ type M365CheckResult struct {
 	Error      string // 失败原因
 }
 
-// M365CheckAll 对所有代理执行 M365 测活:先测微软可达性,再测持续 10MB 下载稳定性。
-// 返回通过两项测试的代理列表。多个代理同时测试。
+// M365CheckAll 对所有代理执行三层测活:
+//   - 第 1 层:快速 TCP 连通性测试(排除死节点)
+//   - 第 2 层:微软可达性测试(能访问 login.microsoftonline.com)
+//   - 第 3 层:持续 10MB 下载稳定性测试(持续发包,不断流)
+// 只有通过三层测试的代理才算可用。多个代理同时测试。
 func M365CheckAll(proxies []proxy.Proxy) []M365CheckResult {
 	if len(proxies) == 0 {
 		return nil
@@ -84,27 +93,49 @@ func M365CheckUsable(proxies []proxy.Proxy) proxy.ProxyList {
 	return usable
 }
 
-// m365CheckOne 对单个代理执行完整测活
+// m365CheckOne 对单个代理执行三层测活:
+//   - 第 1 层:快速 TCP 连通性(失败直接返回,不浪费后续测试)
+//   - 第 2 层:微软可达性
+//   - 第 3 层:持续 10MB 下载稳定性
 func m365CheckOne(p proxy.Proxy) M365CheckResult {
 	result := M365CheckResult{Proxy: p}
 
-	// 阶段 1:微软可达性测试(轻量 HEAD 请求)
+	// 第 1 层:快速 TCP 连通性测试
+	base := p.BaseInfo()
+	if base.Server == "" || base.Port == 0 {
+		result.Error = "missing server/port"
+		return result
+	}
+	tcpAddr := fmt.Sprintf("%s:%d", base.Server, base.Port)
+	// hysteria2 用 UDP,其他用 TCP
+	network := "tcp"
+	if p.TypeName() == "hysteria2" {
+		network = "udp"
+	}
+	conn, err := netDialTimeout(network, tcpAddr, 3*time.Second)
+	if err != nil {
+		result.Error = fmt.Sprintf("layer1 tcp: %v", err)
+		return result
+	}
+	conn.Close()
+
+	// 第 2 层:微软可达性测试(轻量 HEAD 请求)
 	accessible, accessErr := m365AccessibleTest(p)
 	result.Accessible = accessible
 	if !accessible {
-		result.Error = fmt.Sprintf("accessible: %v", accessErr)
+		result.Error = fmt.Sprintf("layer2 accessible: %v", accessErr)
 		return result
 	}
 
-	// 阶段 2:持续 10MB 下载稳定性测试
+	// 第 3 层:持续 10MB 下载稳定性测试
 	bytes, duration, stable, stableErr := m365ContinuousDownload(p)
 	result.Bytes = bytes
 	result.Duration = duration
 	result.Stable = stable
 	if !stable {
-		errMsg := "continuous download unstable"
+		errMsg := "layer3 continuous download unstable"
 		if stableErr != nil {
-			errMsg = fmt.Sprintf("continuous: %v", stableErr)
+			errMsg = fmt.Sprintf("layer3 continuous: %v", stableErr)
 		}
 		result.Error = errMsg
 	}

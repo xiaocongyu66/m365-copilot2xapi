@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strconv"
 	"time"
 )
 
@@ -32,10 +33,14 @@ func urlToMetadata(rawURL string) (addr C.Metadata, err error) {
 		}
 	}
 
+	portNum, err := strconv.ParseUint(port, 10, 16)
+	if err != nil {
+		return
+	}
 	addr = C.Metadata{
-		Host:     u.Hostname(),
-		DstIP:    nil,
-		DstPort:  port,
+		Host:    u.Hostname(),
+		DstIP:   nil,
+		DstPort: C.Port(portNum),
 	}
 	return
 }
