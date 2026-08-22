@@ -182,17 +182,20 @@ type VoiceIDInput struct {
 
 // STTInput mirrors the historical speech-to-text request shape.
 type STTInput struct {
-	RequestID   string
-	ClientKey   clientkeydomain.Key
-	PublicModel string
-	URL         string
-	AudioFormat string
-	SampleRate  int
-	Language    string
-	Format      string
-	Method      string
-	Path        string
-	Headers     http.Header
+	RequestID       string
+	ClientKey       clientkeydomain.Key
+	PublicModel     string
+	URL             string
+	AudioFormat     string
+	SampleRate      string
+	Channels         int
+	Multichannel    bool
+	Language        string
+	Format          bool
+	ResponseFormat  string
+	Method          string
+	Path            string
+	Headers         http.Header
 }
 
 // VoiceWebSocketInput mirrors the historical realtime voice WebSocket request shape.
