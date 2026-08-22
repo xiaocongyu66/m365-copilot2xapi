@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"sync"
 	"time"
@@ -120,7 +121,7 @@ func m365AccessibleTest(p proxy.Proxy) (bool, error) {
 		return false, fmt.Errorf("parse proxy: %w", err)
 	}
 	transport := &http.Transport{
-		DialContext: func(ctx context.Context, network, addr string) (conn interface{ Close() error }, error) {
+		DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
 			return clashAdapter.DialContext(ctx, network, C.Metadata{})
 		},
 	}
@@ -147,7 +148,7 @@ func m365ContinuousDownload(p proxy.Proxy) (bytes int64, duration time.Duration,
 		return 0, 0, false, fmt.Errorf("parse proxy: %w", parseErr)
 	}
 	transport := &http.Transport{
-		DialContext: func(ctx context.Context, network, addr string) (conn interface{ Close() error }, error) {
+		DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
 			return clashAdapter.DialContext(ctx, network, C.Metadata{})
 		},
 	}
