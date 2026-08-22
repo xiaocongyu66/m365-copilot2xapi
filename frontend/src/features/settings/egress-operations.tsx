@@ -58,6 +58,8 @@ const fallbackDescriptionKeys: Record<EgressScope, string> = {
 
 function defaultFallbacks(): Record<EgressScope, EgressFallbackConfigDTO> {
   return {
+    m365_copilot: { mode: "none" },
+    m365_copilot_asset: { mode: "none" },
   };
 }
 
@@ -383,8 +385,8 @@ function nodeCooling(node: EgressNodeDTO): boolean {
 
 function supportsFallbackScope(nodeScope: EgressScope, requestScope: EgressScope): boolean {
   if (nodeScope === requestScope) return true;
-  if (requestScope === "m365_copilot" || requestScope === "m365_copilot_asset") return nodeScope === "m365_copilot";
-  return requestScope === "m365_copilot_asset" && (nodeScope === "m365_copilot" || nodeScope === "m365_copilot");
+  if (requestScope === "m365_copilot_asset") return nodeScope === "m365_copilot";
+  return false;
 }
 
 function ScopeSelect({ value, onChange, scopeLabel }: { value: EgressScope; onChange: (value: EgressScope) => void; scopeLabel: (scope: EgressScope) => string }) {
