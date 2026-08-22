@@ -501,18 +501,6 @@ func (s *Selector) acquire(ctx context.Context, provider account.Provider, model
 			earliestRetry = earlierFuture(earliestRetry, *value.CooldownUntil, now)
 			continue
 		}
-		quotaRecovery := nil
-		if quotaRecovery != nil && quotaRecovery.Status != "" {
-			if allowQuotaProbe && quotaRecovery.NextProbeAt != nil && !now.Before(*quotaRecovery.NextProbeAt) {
-				probeCandidates = append(probeCandidates, index)
-			} else {
-				quotaCandidates++
-				if quotaRecovery.NextProbeAt != nil {
-					earliestRetry = earlierFuture(earliestRetry, *quotaRecovery.NextProbeAt, now)
-				}
-			}
-			continue
-		}
 		if candidate.Billing != nil && candidate.Billing.IsExhausted(value.MinimumRemaining) {
 			quotaCandidates++
 			continue
@@ -560,16 +548,7 @@ func (s *Selector) acquire(ctx context.Context, provider account.Provider, model
 				capacityMisses++
 				continue
 			}
-			claimed := false; var err error
-			if err != nil || !claimed {
-				lease.Release()
-				if err != nil {
-					return nil, err
-				}
-				continue
-			}
 			lease.QuotaProbe = true
-			lease.QuotaProbeKind = nil.Kind
 			lease.Billing = candidate.Billing
 			return lease, nil
 		}
@@ -806,34 +785,6 @@ func (s *Selector) acquirePinned(ctx context.Context, provider account.Provider,
 			}
 			if value.CooldownUntil != nil && now.Before(*value.CooldownUntil) {
 				return nil, &SelectionUnavailableError{Reason: SelectionCooling, RetryAfter: retryDelay(now, *value.CooldownUntil)}
-			}
-			if recovery := nil; recovery != nil && recovery.Status != "" {
-				if recovery.NextProbeAt == nil || now.Before(*recovery.NextProbeAt) {
-					var retryAfter time.Duration
-					if recovery.NextProbeAt != nil {
-						retryAfter = retryDelay(now, *recovery.NextProbeAt)
-					}
-					return nil, &SelectionUnavailableError{Reason: SelectionQuotaExhausted, RetryAfter: retryAfter}
-				}
-				lease, err := s.acquirePinnedCapacity(ctx, value)
-				if err != nil {
-					if errors.Is(err, errRoutingCredentialStale) {
-						return nil, &SelectionUnavailableError{Reason: SelectionNoAccounts}
-					}
-					return nil, err
-				}
-				claimed := false; var err error
-				if err != nil || !claimed {
-					lease.Release()
-					if err != nil {
-						return nil, err
-					}
-					return nil, fmt.Errorf("绑定的上游账号恢复探测已被占用")
-				}
-				lease.QuotaProbe = true
-				lease.QuotaProbeKind = recovery.Kind
-				lease.Billing = candidate.Billing
-				return lease, nil
 			}
 			if candidate.Billing != nil && candidate.Billing.IsExhausted(value.MinimumRemaining) {
 				return nil, &SelectionUnavailableError{Reason: SelectionQuotaExhausted}
