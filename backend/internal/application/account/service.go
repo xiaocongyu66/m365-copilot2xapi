@@ -85,26 +85,10 @@ const (
 	maxBuildConversionAccounts                    = 1000
 	maxWebConsoleSyncAccounts                     = 1000
 	accountTaskBatchSize                          = 1000
-	buildBotFlagCacheTTL            time.Duration = 30 * time.Second
 	linkedDeleteRuntimeCleanupLimit               = 3 * time.Second
-	// buildDetectModel 管理端「检测账号」固定使用的 Grok Build 模型。
-	buildDetectModel               = "grok-4.5"
-	buildDetectQuotaRecoveryPause  = 24 * time.Hour
-	buildDetectModelDeniedCooldown = 5 * time.Minute
-	// buildDetectPrompt 探测请求正文，仅用于验证凭据与上游可用性。
-	buildDetectPrompt = "hello,test"
 )
 
 const permanentRefreshExpiredReason = "OAuth refresh token 已永久失效且 access token 已过期"
-const buildBotFlagCacheKey = "build-bot-flagged-account-ids"
-
-type buildBotFlagIndexRepository interface {
-	ListBuildBotFlaggedAccountIDs(ctx context.Context) ([]uint64, error)
-	ListBuildBotFlagCredentialBatch(ctx context.Context, afterID uint64, limit int) ([]repository.BuildBotFlagCredential, error)
-	UpdateBuildBotFlagSources(ctx context.Context, values []repository.BuildBotFlagSourceUpdate) error
-	CountBuildBotFlagged(ctx context.Context) (int64, error)
-	CountAvailableBuildBotFlagged(ctx context.Context, now time.Time) (int64, error)
-}
 
 type quotaRefreshState struct {
 	generation          uint64
@@ -183,9 +167,7 @@ type View struct {
 	Credential         accountdomain.Credential
 	Billing            *accountdomain.Billing
 	Quota              QuotaView
-	QuotaWindows       []accountdomain.QuotaWindow
-	BuildBotFlagged    bool
-	BuildBotFlagSource int
+	QuotaWindows []accountdomain.QuotaWindow
 	// EnabledChanged is request-scoped update metadata. It is not persisted or
 	// serialized directly; the HTTP layer uses it to avoid warning when a PATCH
 	// merely repeats the account's existing enabled value.
@@ -353,17 +335,6 @@ func (s *Service) Summary(ctx context.Context) (Summary, error) {
 	}
 	result.Recovering = result.Recovery.Cooldown + result.Recovery.WaitingReset + result.Recovery.Probing
 	result.Attention = result.Issues.Disabled + result.Issues.ReauthRequired
-	indexed, hasIndex := s.accounts.(buildBotFlagIndexRepository)
-	var flaggedIDs []uint64
-	if hasIndex {
-		result.Risk, err = indexed.CountBuildBotFlagged(ctx)
-	} else {
-		flaggedIDs, err = s.buildBotFlaggedAccountIDs(ctx)
-		result.Risk = int64(len(flaggedIDs))
-	}
-	if err != nil {
-		return Summary{}, err
-	}
 	return result, nil
 }
 
@@ -402,8 +373,6 @@ type Service struct {
 	autoClean              AutoCleanConfig
 	autoCleanRevision      uint64
 	autoCleanWake          chan struct{}
-	excludeBuildBotFlagged bool
-	buildBotFlagCache      *resultcache.Cache[string, []uint64]
 	logger                 *slog.Logger
 	now                    func() time.Time
 }
@@ -459,7 +428,6 @@ func NewService(accounts repository.AccountRepository, audits repository.AuditRe
 			Enabled: false, Interval: 10 * time.Minute, MinAge: time.Hour, IncludeDisabled: false,
 		},
 		autoCleanWake:     make(chan struct{}, 1),
-		buildBotFlagCache: resultcache.New[string, []uint64](1, buildBotFlagCacheTTL),
 		conversionPool:    batch.NewPool(25), syncPool: batch.NewPool(25), refreshPool: batch.NewPool(25), detectPool: batch.NewPool(32),
 		logger: slog.Default(),
 		now:    func() time.Time { return time.Now().UTC() },
@@ -530,22 +498,6 @@ func (s *Service) List(ctx context.Context, page, pageSize int, search string, f
 		EgressNodeID: egressNodeID, EgressSourceID: egressSourceID,
 		Refreshable: refreshable, Agreement: filter.Agreement, Association: filter.Association, Now: s.now(),
 	}
-	if filter.Risk != "" {
-		if _, ok := s.accounts.(buildBotFlagIndexRepository); ok {
-			repositoryFilter.Risk = filter.Risk
-		} else {
-			flaggedIDs, err := s.buildBotFlaggedAccountIDs(ctx)
-			if err != nil {
-				return nil, 0, err
-			}
-			if filter.Risk == "flagged" {
-				repositoryFilter.AccountIDs = flaggedIDs
-				repositoryFilter.RestrictIDs = true
-			} else {
-				repositoryFilter.ExcludeIDs = flaggedIDs
-			}
-		}
-	}
 	values, total, err := s.accounts.List(ctx, repository.AccountListQuery{
 		Page:   repository.PageQuery{Offset: (page - 1) * pageSize, Limit: pageSize, Search: search, Sort: filter.Sort},
 		Filter: repositoryFilter,
@@ -575,8 +527,7 @@ func (s *Service) List(ctx context.Context, page, pageSize int, search string, f
 	}
 	views := make([]View, 0, len(values))
 	for _, value := range values {
-		metadata := s.buildBotFlagMetadata(value)
-		view := View{Credential: value, BuildBotFlagged: metadata.BuildBotFlagged, BuildBotFlagSource: metadata.BuildBotFlagSource}
+		view := View{Credential: value}
 		if billing, ok := billings[value.ID]; ok {
 			view.Billing = &billing
 		}
@@ -590,36 +541,6 @@ func (s *Service) List(ctx context.Context, page, pageSize int, search string, f
 	}
 	return views, total, nil
 }
-
-func (s *Service) buildBotFlaggedAccountIDs(ctx context.Context) ([]uint64, error) {
-	if s.buildBotFlagCache == nil {
-		return s.loadBuildBotFlaggedAccountIDs(ctx)
-	}
-	return s.buildBotFlagCache.Load(ctx, buildBotFlagCacheKey, s.now(), func() ([]uint64, error) {
-		return s.loadBuildBotFlaggedAccountIDs(ctx)
-	})
-}
-
-// ListBuildBotFlaggedAccountIDs returns Build account IDs whose access-token claims
-// mark bot_flag_source/bfs as 1 or 2. Used by routing to optionally exclude them.
-func (s *Service) ListBuildBotFlaggedAccountIDs(ctx context.Context) ([]uint64, error) {
-	return s.buildBotFlaggedAccountIDs(ctx)
-}
-
-// UpdateExcludeBuildBotFlaggedFromScheduling hot-updates whether bot-risk Build
-// accounts are treated as non-schedulable in account summary available counts.
-func (s *Service) UpdateExcludeBuildBotFlaggedFromScheduling(value bool) {
-	s.autoCleanMu.Lock()
-	s.excludeBuildBotFlagged = value
-	s.autoCleanMu.Unlock()
-}
-
-func (s *Service) excludeBuildBotFlaggedFromSchedulingEnabled() bool {
-	s.autoCleanMu.RLock()
-	defer s.autoCleanMu.RUnlock()
-	return s.excludeBuildBotFlagged
-}
-
 
 // parseEgressFilter splits the account egress filter into its bound/unbound mode
 // and an optional narrowing target. Accepted values are "", "bound", "unbound",
@@ -798,7 +719,6 @@ func (s *Service) batchDeleteWithLinkedMode(ctx context.Context, providerValue a
 	}
 	s.finishLinkedDelete(ctx, outcome.DeletedIDs)
 	if outcome.Deleted > 0 {
-		s.invalidateBuildBotFlagCache()
 	}
 	return accountDeleteResultFromOutcome(providerValue, outcome), nil
 }
@@ -897,7 +817,6 @@ func (s *Service) CleanupAccounts(ctx context.Context, providerValue accountdoma
 		}
 	}
 	if out.Deleted > 0 {
-		s.invalidateBuildBotFlagCache()
 	}
 	return out, nil
 }
@@ -927,8 +846,7 @@ func (s *Service) Get(ctx context.Context, id uint64) (View, error) {
 	if err != nil {
 		return View{}, mapRepositoryError(err)
 	}
-	metadata := s.buildBotFlagMetadata(value)
-	view := View{Credential: value, BuildBotFlagged: metadata.BuildBotFlagged, BuildBotFlagSource: metadata.BuildBotFlagSource}
+	view := View{Credential: value}
 	if billing, err := s.accounts.GetBilling(ctx, id); err == nil {
 		view.Billing = &billing
 	} else if !errors.Is(err, repository.ErrNotFound) {
@@ -958,20 +876,6 @@ func (s *Service) credentialMetadata(value accountdomain.Credential) provider.Cr
 		return provider.CredentialMetadata{}
 	}
 	return s.providers.CredentialMetadata(value)
-}
-
-func (s *Service) buildBotFlagMetadata(value accountdomain.Credential) provider.CredentialMetadata {
-	metadata := s.credentialMetadata(value)
-	if metadata.BuildBotFlagInspected {
-		return metadata
-	}
-	source := value.BuildBotFlagSource
-	if source != 1 && source != 2 {
-		source = 0
-	}
-	metadata.BuildBotFlagSource = source
-	metadata.BuildBotFlagged = source != 0
-	return metadata
 }
 
 func (s *Service) ObserveResponseModel(ctx context.Context, id uint64, model string) error {
@@ -1547,188 +1451,7 @@ func (s *Service) SyncAllWebAccountsToConsoleWithStrategy(ctx context.Context, s
 	}
 }
 
-func (s *Service) syncWebCredentialsToConsole(ctx context.Context, values []accountdomain.Credential, observer ImportedAccountObserver, progress BatchProgressObserver) (ImportResult, error) {
-	adapter, ok := s.providers.CredentialCodec(accountdomain.ProviderConsole)
-	if !ok {
-		return ImportResult{}, fmt.Errorf("Grok Console Provider 未注册")
-	}
-	seeds := make([]provider.CredentialSeed, 0, len(values))
-	for _, value := range values {
-		if value.Provider != accountdomain.ProviderWeb || value.AuthType != accountdomain.AuthTypeSSO {
-			return ImportResult{}, fmt.Errorf("%w: 仅 Grok Web SSO 账号支持同步到 Console", ErrUnsupported)
-		}
-		token, err := s.cipher.Decrypt(value.EncryptedAccessToken)
-		if err != nil {
-			return ImportResult{}, fmt.Errorf("解密 Grok Web SSO: %w", err)
-		}
-		// 非法 UTF-8 会被 json.Marshal 静默改写为 U+FFFD，显式拒绝优于静默改动（不应回显 token 内容）。
-		if !utf8.ValidString(token) {
-			return ImportResult{}, fmt.Errorf("解密 Grok Web SSO: 凭据不是合法 UTF-8")
-		}
-		// 内部调用固定走 JSON 对象路径，避免 plain token 被格式嗅探（如「[」JSON 保留前缀）误判。
-		payload, err := json.Marshal(map[string]string{"sso_token": token})
-		if err != nil {
-			return ImportResult{}, fmt.Errorf("生成 Grok Console SSO 凭据: %w", err)
-		}
-		parsed, err := adapter.ParseImportedCredentials(payload)
-		if err != nil {
-			return ImportResult{}, fmt.Errorf("生成 Grok Console SSO 凭据: %w", err)
-		}
-		if len(parsed) != 1 {
-			return ImportResult{}, fmt.Errorf("生成 Grok Console SSO 凭据: 预期 1 个账号，实际 %d 个", len(parsed))
-		}
-		seed := parsed[0]
-		seed.Provider = accountdomain.ProviderConsole
-		seed.AuthType = accountdomain.AuthTypeSSO
-		seed.Name = webConsoleAccountName(value.Name, seed.Name)
-		if strings.TrimSpace(value.EncryptedCloudflareCookie) != "" {
-			cookies, decryptErr := s.cipher.Decrypt(value.EncryptedCloudflareCookie)
-			if decryptErr != nil {
-				return ImportResult{}, fmt.Errorf("解密 Grok Web Cloudflare Cookie: %w", decryptErr)
-			}
-			seed.CloudflareCookies = cookies
-		}
-		seeds = append(seeds, seed)
-	}
-	return s.persistImportedSeeds(ctx, seeds, observer, progress)
-}
-
-func webConsoleAccountName(webName, fallback string) string {
-	name := strings.TrimSpace(webName)
-	if name == "" {
-		return fallback
-	}
-	if suffix, ok := strings.CutPrefix(name, "Grok Web "); ok {
-		return "Grok Console " + suffix
-	}
-	return name
-}
-
 // ConvertWebAccountsToBuild 使用 Web SSO 自动完成 xAI Device Flow，并建立唯一的 Web/Build 账号关联。
-func (s *Service) ConvertWebAccountsToBuild(ctx context.Context, ids []uint64) (BuildConversionResult, error) {
-	return s.ConvertWebAccountsToBuildWithStrategy(ctx, ids, BuildConversionMissing, nil, nil)
-}
-
-func (s *Service) ConvertWebAccountsToBuildWithObserver(ctx context.Context, ids []uint64, observer ImportedAccountObserver) (BuildConversionResult, error) {
-	return s.ConvertWebAccountsToBuildWithStrategy(ctx, ids, BuildConversionMissing, observer, nil)
-}
-
-// ConvertWebAccountsToBuildWithProgress 转换指定账号，并向调用方报告真实完成数。
-func (s *Service) ConvertWebAccountsToBuildWithProgress(ctx context.Context, ids []uint64, observer ImportedAccountObserver, progress BatchProgressObserver) (BuildConversionResult, error) {
-	return s.ConvertWebAccountsToBuildWithStrategy(ctx, ids, BuildConversionMissing, observer, progress)
-}
-
-func (s *Service) ConvertWebAccountsToBuildWithStrategy(ctx context.Context, ids []uint64, strategy BuildConversionStrategy, observer ImportedAccountObserver, progress BatchProgressObserver) (BuildConversionResult, error) {
-	if strategy != BuildConversionAll && strategy != BuildConversionMissing {
-		return BuildConversionResult{}, invalidInput("Grok Web 到 Build 转换策略无效")
-	}
-	ids, err := normalizeIDs(ids, maxBuildConversionAccounts)
-	if err != nil {
-		return BuildConversionResult{}, err
-	}
-	prefilteredSkipped := 0
-	if strategy == BuildConversionMissing {
-		candidates, err := s.accounts.FilterMissingBuildConversionIDs(ctx, ids)
-		if err != nil {
-			return BuildConversionResult{}, mapRepositoryError(err)
-		}
-		prefilteredSkipped = len(ids) - len(candidates)
-		ids = candidates
-	}
-	result, err := s.convertWebAccountsToBuild(ctx, ids, strategy, observer, progress)
-	result.Skipped += prefilteredSkipped
-	return result, err
-}
-
-// ConvertAllWebAccountsToBuild 转换全部尚未建立 Build 关联的 Grok Web 账号。
-func (s *Service) ConvertAllWebAccountsToBuild(ctx context.Context) (BuildConversionResult, error) {
-	return s.ConvertAllWebAccountsToBuildWithStrategy(ctx, BuildConversionMissing, nil, nil)
-}
-
-func (s *Service) ConvertAllWebAccountsToBuildWithObserver(ctx context.Context, observer ImportedAccountObserver) (BuildConversionResult, error) {
-	return s.ConvertAllWebAccountsToBuildWithStrategy(ctx, BuildConversionMissing, observer, nil)
-}
-
-// ConvertAllWebAccountsToBuildWithProgress 转换完整未关联号池，并向调用方报告真实完成数。
-func (s *Service) ConvertAllWebAccountsToBuildWithProgress(ctx context.Context, observer ImportedAccountObserver, progress BatchProgressObserver) (BuildConversionResult, error) {
-	return s.ConvertAllWebAccountsToBuildWithStrategy(ctx, BuildConversionMissing, observer, progress)
-}
-
-func (s *Service) ConvertAllWebAccountsToBuildWithStrategy(ctx context.Context, strategy BuildConversionStrategy, observer ImportedAccountObserver, progress BatchProgressObserver) (BuildConversionResult, error) {
-	if strategy != BuildConversionAll && strategy != BuildConversionMissing {
-		return BuildConversionResult{}, invalidInput("Grok Web 到 Build 转换策略无效")
-	}
-	batchSize := accountTaskBatchSize
-	result := BuildConversionResult{BuildAccountIDs: make([]uint64, 0)}
-	seenBuildIDs := make(map[uint64]struct{})
-	var observed sync.Map
-	batchObserver := observer
-	if observer != nil {
-		batchObserver = func(accountID uint64) error {
-			if _, loaded := observed.LoadOrStore(accountID, struct{}{}); loaded {
-				return nil
-			}
-			return observer(accountID)
-		}
-	}
-	var afterID uint64
-	completed := 0
-	total := 0
-	initialized := false
-	for {
-		var (
-			ids   []uint64
-			count int64
-			err   error
-		)
-		if strategy == BuildConversionMissing {
-			ids, count, err = s.accounts.ListUnlinkedWebAccountIDs(ctx, afterID, batchSize)
-		} else {
-			var values []accountdomain.Credential
-			values, count, err = s.accounts.ListProviderAccountBatch(ctx, accountdomain.ProviderWeb, afterID, batchSize)
-			ids = make([]uint64, 0, len(values))
-			for _, value := range values {
-				ids = append(ids, value.ID)
-			}
-		}
-		if err != nil {
-			return result, err
-		}
-		if !initialized {
-			total = int(count)
-			initialized = true
-			if progress != nil {
-				if err := progress(0, total); err != nil {
-					return result, err
-				}
-			}
-		}
-		if len(ids) == 0 {
-			return result, nil
-		}
-		current, err := s.convertWebAccountsToBuild(ctx, ids, strategy, batchObserver, offsetBatchProgress(progress, completed, total))
-		result.Created += current.Created
-		result.Linked += current.Linked
-		result.Skipped += current.Skipped
-		result.Failed += current.Failed
-		for _, buildID := range current.BuildAccountIDs {
-			if _, exists := seenBuildIDs[buildID]; exists {
-				continue
-			}
-			seenBuildIDs[buildID] = struct{}{}
-			result.BuildAccountIDs = append(result.BuildAccountIDs, buildID)
-		}
-		if err != nil {
-			return result, err
-		}
-		completed += len(ids)
-		afterID = ids[len(ids)-1]
-		if len(ids) < batchSize {
-			return result, nil
-		}
-	}
-}
-
 func offsetBatchProgress(progress BatchProgressObserver, offset, total int) BatchProgressObserver {
 	if progress == nil {
 		return nil
@@ -2359,7 +2082,6 @@ func (s *Service) ensureCredential(ctx context.Context, value accountdomain.Cred
 			)
 			return nil, err
 		}
-		s.invalidateBuildBotFlagCache()
 		s.markRefreshSuccess(latest.ID, currentTime)
 		s.WakeCredentialRefresh()
 		return updated, nil
@@ -4296,7 +4018,6 @@ func (s *Service) persistSeed(ctx context.Context, seed provider.CredentialSeed)
 	}
 	stored, created, err := s.accounts.UpsertByIdentity(ctx, value)
 	if err == nil {
-		s.invalidateBuildBotFlagCache()
 		s.WakeCredentialRefresh()
 	}
 	return stored, created, err
