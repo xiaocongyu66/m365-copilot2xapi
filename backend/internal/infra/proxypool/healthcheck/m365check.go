@@ -4,13 +4,10 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
 	"sync"
 	"time"
 
-	"github.com/Dreamacro/clash/adapter"
-	C "github.com/Dreamacro/clash/constant"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/log"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/proxy"
 )
@@ -116,15 +113,19 @@ func m365CheckOne(p proxy.Proxy) M365CheckResult {
 
 // m365AccessibleTest 测试代理能否访问微软登录端点
 func m365AccessibleTest(p proxy.Proxy) (bool, error) {
-	clashAdapter, err := adapter.ParseProxy(p.ToClash())
+	pmap, err := parseProxyMap(p)
 	if err != nil {
-		return false, fmt.Errorf("parse proxy: %w", err)
+		return false, fmt.Errorf("parse proxy map: %w", err)
 	}
-	transport := &http.Transport{
-		DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
-			return clashAdapter.DialContext(ctx, network, C.Metadata{})
-		},
+	clashProxy, err := parseClashProxy(pmap, p)
+	if err != nil {
+		return false, fmt.Errorf("parse clash proxy: %w", err)
 	}
+	addr, err := urlToMetadata(m365AccessibleURL)
+	if err != nil {
+		return false, fmt.Errorf("url metadata: %w", err)
+	}
+	transport := newProxyTransport(clashProxy, addr, m365AccessibleTimeout)
 	client := &http.Client{Transport: transport, Timeout: m365AccessibleTimeout}
 	req, err := http.NewRequest(http.MethodHead, m365AccessibleURL, nil)
 	if err != nil {
@@ -143,18 +144,22 @@ func m365AccessibleTest(p proxy.Proxy) (bool, error) {
 // 要求在 m365ContinuousTestDuration 期间连接不断流,
 // 且下载字节数达到 m365ContinuousTestBytes(或持续时间内没断流)。
 func m365ContinuousDownload(p proxy.Proxy) (bytes int64, duration time.Duration, stable bool, err error) {
-	clashAdapter, parseErr := adapter.ParseProxy(p.ToClash())
+	pmap, parseErr := parseProxyMap(p)
 	if parseErr != nil {
-		return 0, 0, false, fmt.Errorf("parse proxy: %w", parseErr)
+		return 0, 0, false, fmt.Errorf("parse proxy map: %w", parseErr)
 	}
-	transport := &http.Transport{
-		DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
-			return clashAdapter.DialContext(ctx, network, C.Metadata{})
-		},
+	clashProxy, parseErr := parseClashProxy(pmap, p)
+	if parseErr != nil {
+		return 0, 0, false, fmt.Errorf("parse clash proxy: %w", parseErr)
 	}
+	addr, parseErr := urlToMetadata(m365ContinuousDownloadURL)
+	if parseErr != nil {
+		return 0, 0, false, fmt.Errorf("url metadata: %w", parseErr)
+	}
+	transport := newProxyTransport(clashProxy, addr, m365ContinuousTestDuration+10*time.Second)
 	client := &http.Client{
 		Transport: transport,
-		Timeout:  m365ContinuousTestDuration + 10*time.Second,
+		Timeout:   m365ContinuousTestDuration + 10*time.Second,
 	}
 
 	// 用 Range 请求只下载 10MB(避免下载整个 100MB+ 文件)
