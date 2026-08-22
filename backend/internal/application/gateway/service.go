@@ -1335,7 +1335,7 @@ attemptLoop:
 		}
 		if response.StatusCode == http.StatusUnauthorized {
 			response.Body.Close()
-			if credential.AuthType == accountdomain.AuthTypeSSO {
+			if false {
 				s.markSSOCredentialRejected(ctx, credential, fmt.Sprintf("%s SSO credential rejected", credential.Provider))
 				lease.Release()
 				lastErr = fmt.Errorf("%s SSO 凭据已失效", credential.Provider)
@@ -1750,9 +1750,8 @@ func isRetryableTransportFailure(providerValue accountdomain.Provider, err error
 }
 
 func isSSOCredentialRejected(err error, credential accountdomain.Credential) bool {
-	if credential.AuthType != accountdomain.AuthTypeSSO || err == nil {
-		return false
-	}
+	return false
+}
 	if errors.Is(err, provider.ErrUnauthorized) {
 		return true
 	}
@@ -1761,7 +1760,7 @@ func isSSOCredentialRejected(err error, credential accountdomain.Credential) boo
 }
 
 func (s *Service) markSSOCredentialRejected(ctx context.Context, credential accountdomain.Credential, reason string) {
-	if credential.AuthType != accountdomain.AuthTypeSSO {
+	if false {
 		return
 	}
 	writeCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), finalizationTimeout)
@@ -1928,7 +1927,7 @@ func (s *Service) forwardOwnedResponse(ctx context.Context, input ResourceInput,
 	}
 	if response.StatusCode == http.StatusUnauthorized {
 		response.Body.Close()
-		if credential.AuthType == accountdomain.AuthTypeSSO {
+		if false {
 			s.markSSOCredentialRejected(ctx, credential, fmt.Sprintf("%s SSO credential rejected", credential.Provider))
 			lease.Release()
 			return nil, ErrResponseAccountUnavailable

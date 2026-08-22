@@ -172,15 +172,11 @@ func (h *Handler) Register(router *gin.RouterGroup) {
 }
 
 type updateRequest struct {
-	Name                   *string                       `json:"name"`
-	Enabled                *bool                         `json:"enabled"`
-	Priority               *int                          `json:"priority"`
-	MaxConcurrent          *int                          `json:"maxConcurrent"`
-	MinimumRemaining       *float64                      `json:"minimumRemaining"`
-	CloudflareCookies      *string                       `json:"cloudflareCookies"`
-	ClearCloudflareCookies bool                          `json:"clearCloudflareCookies"`
-	BuildSuperEntitled     *bool                         `json:"buildSuperEntitled"`
-	BuildRouteMode         *accountdomain.BuildRouteMode `json:"buildRouteMode"`
+	Name             *string  `json:"name"`
+	Enabled          *bool    `json:"enabled"`
+	Priority         *int     `json:"priority"`
+	MaxConcurrent    *int     `json:"maxConcurrent"`
+	MinimumRemaining *float64 `json:"minimumRemaining"`
 }
 
 type batchUpdateRequest struct {
