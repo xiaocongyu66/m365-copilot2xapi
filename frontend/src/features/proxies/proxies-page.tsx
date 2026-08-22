@@ -183,7 +183,7 @@ export function ProxiesPage() {
       else next.add(id);
       return next;
     });
-  });
+  };
 
   const selectedIds = Array.from(selected);
 
