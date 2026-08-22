@@ -8,12 +8,12 @@ import (
 	"strings"
 	"time"
 
-	accountdomain "github.com/chenyme/grok2api/backend/internal/domain/account"
-	"github.com/chenyme/grok2api/backend/internal/domain/audit"
-	inferencedomain "github.com/chenyme/grok2api/backend/internal/domain/inference"
-	modeldomain "github.com/chenyme/grok2api/backend/internal/domain/model"
-	infraegress "github.com/chenyme/grok2api/backend/internal/infra/egress"
-	neterrorpkg "github.com/chenyme/grok2api/backend/internal/pkg/neterror"
+	accountdomain "m365-copilot2xapi/backend/internal/domain/account"
+	"m365-copilot2xapi/backend/internal/domain/audit"
+	inferencedomain "m365-copilot2xapi/backend/internal/domain/inference"
+	modeldomain "m365-copilot2xapi/backend/internal/domain/model"
+	infraegress "m365-copilot2xapi/backend/internal/infra/egress"
+	neterrorpkg "m365-copilot2xapi/backend/internal/pkg/neterror"
 )
 
 const (
