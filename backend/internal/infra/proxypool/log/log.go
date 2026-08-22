@@ -24,68 +24,68 @@ func SetLevel(l int) { level = l }
 // Infoln 模拟 logrus.Infoln
 func Infoln(args ...any) {
 	if level >= INFO {
-		slog.Info("", "msg", fmt Sprint(args...))
+		slog.Info("", "msg", fmt.Sprint(args...))
 	}
 }
 
 // Warnln 模拟 logrus.Warnln
 func Warnln(args ...any) {
 	if level >= WARN {
-		slog.Warn("", "msg", fmt Sprint(args...))
+		slog.Warn("", "msg", fmt.Sprint(args...))
 	}
 }
 
 // Errorln 模拟 logrus.Errorln
 func Errorln(args ...any) {
 	if level >= ERROR {
-		slog.Error("", "msg", fmt Sprint(args...))
+		slog.Error("", "msg", fmt.Sprint(args...))
 	}
 }
 
 // Debugln 模拟 logrus.Debugln
 func Debugln(args ...any) {
 	if level >= DEBUG {
-		slog.Debug("", "msg", fmt Sprint(args...))
+		slog.Debug("", "msg", fmt.Sprint(args...))
 	}
 }
 
 // Fatalln 模拟 logrus.Fatalln
 func Fatalln(args ...any) {
-	slog.Error("", "msg", fmt Sprint(args...))
+	slog.Error("", "msg", fmt.Sprint(args...))
 	os.Exit(1)
 }
 
 // Infof 模拟 logrus.Infof
 func Infof(format string, args ...any) {
 	if level >= INFO {
-		slog.Info("", "msg", fmt Sprintf(format, args...))
+		slog.Info("", "msg", fmt.Sprintf(format, args...))
 	}
 }
 
 // Warnf 模拟 logrus.Warnf
 func Warnf(format string, args ...any) {
 	if level >= WARN {
-		slog.Warn("", "msg", fmt Sprintf(format, args...))
+		slog.Warn("", "msg", fmt.Sprintf(format, args...))
 	}
 }
 
 // Errorf 模拟 logrus.Errorf
 func Errorf(format string, args ...any) {
 	if level >= ERROR {
-		slog.Error("", "msg", fmt Sprintf(format, args...))
+		slog.Error("", "msg", fmt.Sprintf(format, args...))
 	}
 }
 
 // Debugf 模拟 logrus.Debugf
 func Debugf(format string, args ...any) {
 	if level >= DEBUG {
-		slog.Debug("", "msg", fmt Sprintf(format, args...))
+		slog.Debug("", "msg", fmt.Sprintf(format, args...))
 	}
 }
 
 // Fatalf 模拟 logrus.Fatalf
 func Fatalf(format string, args ...any) {
-	slog.Error("", "msg", fmt Sprintf(format, args...))
+	slog.Error("", "msg", fmt.Sprintf(format, args...))
 	os.Exit(1)
 }
 
