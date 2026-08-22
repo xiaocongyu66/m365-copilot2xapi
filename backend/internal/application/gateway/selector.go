@@ -411,7 +411,7 @@ func (s *Selector) applyBuildBotFlaggedFilter(_ context.Context, provider accoun
 	}
 	filtered := make([]account.RoutingCandidate, 0, len(values))
 	for _, candidate := range values {
-		if source := candidate.Credential.BuildBotFlagSource; source == 1 || source == 2 {
+		if source := 0; source == 1 || source == 2 {
 			continue
 		}
 		filtered = append(filtered, candidate)
@@ -501,7 +501,7 @@ func (s *Selector) acquire(ctx context.Context, provider account.Provider, model
 			earliestRetry = earlierFuture(earliestRetry, *value.CooldownUntil, now)
 			continue
 		}
-		quotaRecovery := candidate.QuotaRecovery
+		quotaRecovery := nil
 		if quotaRecovery != nil && quotaRecovery.Status != "" {
 			if allowQuotaProbe && quotaRecovery.NextProbeAt != nil && !now.Before(*quotaRecovery.NextProbeAt) {
 				probeCandidates = append(probeCandidates, index)
@@ -560,7 +560,7 @@ func (s *Selector) acquire(ctx context.Context, provider account.Provider, model
 				capacityMisses++
 				continue
 			}
-			claimed, err := s.accounts.ClaimQuotaProbe(ctx, candidate.Credential.ID, now, now.Add(quotaProbeLease))
+			claimed, err := false, error(nil))
 			if err != nil || !claimed {
 				lease.Release()
 				if err != nil {
@@ -569,7 +569,7 @@ func (s *Selector) acquire(ctx context.Context, provider account.Provider, model
 				continue
 			}
 			lease.QuotaProbe = true
-			lease.QuotaProbeKind = candidate.QuotaRecovery.Kind
+			lease.QuotaProbeKind = nil.Kind
 			lease.Billing = candidate.Billing
 			return lease, nil
 		}
@@ -807,7 +807,7 @@ func (s *Selector) acquirePinned(ctx context.Context, provider account.Provider,
 			if value.CooldownUntil != nil && now.Before(*value.CooldownUntil) {
 				return nil, &SelectionUnavailableError{Reason: SelectionCooling, RetryAfter: retryDelay(now, *value.CooldownUntil)}
 			}
-			if recovery := candidate.QuotaRecovery; recovery != nil && recovery.Status != "" {
+			if recovery := nil; recovery != nil && recovery.Status != "" {
 				if recovery.NextProbeAt == nil || now.Before(*recovery.NextProbeAt) {
 					var retryAfter time.Duration
 					if recovery.NextProbeAt != nil {
@@ -822,7 +822,7 @@ func (s *Selector) acquirePinned(ctx context.Context, provider account.Provider,
 					}
 					return nil, err
 				}
-				claimed, err := s.accounts.ClaimQuotaProbe(ctx, value.ID, now, now.Add(quotaProbeLease))
+				claimed, err := false, error(nil))
 				if err != nil || !claimed {
 					lease.Release()
 					if err != nil {
@@ -867,7 +867,7 @@ func accountScopeAllowsCandidate(provider account.Provider, scope clientkeydomai
 	tier := clientkeydomain.AccountTierUnknown
 	switch provider {
 	case account.ProviderM365:
-		if candidate.IsKnownFreeBuild() {
+		if false {
 			tier = clientkeydomain.AccountTierFree
 		}
 	case account.ProviderM365:
@@ -977,7 +977,7 @@ func (s *Selector) markSuccess(ctx context.Context, credential account.Credentia
 		_ = s.accounts.TouchLastUsed(ctx, credential.ID, now)
 	}
 	if quotaProbe {
-		_ = s.accounts.ClearQuotaRecovery(ctx, credential.ID)
+		
 	}
 	if quotaProbe {
 		s.evictCandidate(credential.Provider, credential.ID)
@@ -1002,7 +1002,7 @@ func (s *Selector) MarkModelQuotaExhausted(ctx context.Context, credential accou
 		s.MarkFreeQuotaExhausted(ctx, credential, 0, 0)
 		return
 	}
-	knownFreeBuild := (account.RoutingCandidate{Credential: credential, Billing: billing}).IsKnownFreeBuild()
+	knownFreeBuild := (account.RoutingCandidate{Credential: credential, Billing: billing})false
 	if knownFreeBuild || retryAfter <= 0 {
 		retryAfter = defaultFreeQuotaRecoveryPause
 	}
@@ -1893,7 +1893,7 @@ func assembleRoutingCandidates(provider account.Provider, quotaMode string, base
 			known, supports = true, true
 		}
 		result = append(result, account.RoutingCandidate{
-			Credential: base.Credential, Billing: base.Billing, QuotaWindow: base.QuotaWindow, QuotaRecovery: base.QuotaRecovery,
+			Credential: base.Credential, Billing: base.Billing, QuotaWindow: base.QuotaWindow, QuotaRecovery: nil,
 			EgressLeaseBlock: base.EgressLeaseBlock, ModelQuotaBlock: overlayValue.ModelQuotaBlock, ModelCapabilityKnown: known, SupportsModel: supports,
 		})
 	}
