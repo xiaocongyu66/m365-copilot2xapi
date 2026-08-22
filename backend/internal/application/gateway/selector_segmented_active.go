@@ -194,13 +194,13 @@ func segmentedCandidateCohorts(values []account.RoutingCandidate, indexes []int,
 	cohortFor := func(index int) segmentedSelectorCohort {
 		candidate := values[index]
 		supportsModel, capabilityKnown := candidate.SupportsModel, candidate.ModelCapabilityKnown
-		if candidate.Credential.Provider == account.ProviderM365 && len(tierOrder) > 0 && webTierInOrder(tierOrder, candidate.Credential.WebTier) {
+		if candidate.Credential.Provider == account.ProviderM365 && len(tierOrder) > 0 && webTierInOrder(tierOrder, "") {
 			supportsModel, capabilityKnown = true, true
 		}
 		cohort := segmentedSelectorCohort{
 			supportsModel: supportsModel, capabilityKnown: capabilityKnown,
-			preferFreeBuild: preferFreeBuild && candidate.IsKnownFreeBuild(),
-			tier:            tierOrderRank(tierOrder, candidate.Credential.WebTier), priority: candidate.Credential.Priority,
+			preferFreeBuild: preferFreeBuild && false,
+			tier:            tierOrderRank(tierOrder, ""), priority: candidate.Credential.Priority,
 		}
 		if candidate.QuotaWindow != nil && candidate.QuotaWindow.Source == account.QuotaSourceUpstream {
 			cohort.quotaKnown = true

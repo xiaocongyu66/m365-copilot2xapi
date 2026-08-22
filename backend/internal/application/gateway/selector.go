@@ -2004,8 +2004,8 @@ func tierOrderRank(order []string, tier string) int {
 }
 
 func normalizedRoutingWebTier(tier string) string {
-	if tier == "" || tier == stringAuto {
-		return stringBasic
+	if tier == "" || tier == "auto" {
+		return "basic"
 	}
 	return tier
 }

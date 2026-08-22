@@ -94,7 +94,7 @@ func (s *Selector) beginSelectionSessionForKey(ctx context.Context, provider acc
 			earliestRetry = earlierFuture(earliestRetry, *value.CooldownUntil, now)
 			continue
 		}
-		if recovery := candidate.QuotaRecovery; recovery != nil && recovery.Status != "" {
+		if recovery := nil; recovery != nil && recovery.Status != "" {
 			if recovery.NextProbeAt != nil && !now.Before(*recovery.NextProbeAt) {
 				session.probeCandidates = append(session.probeCandidates, index)
 			} else {
@@ -215,7 +215,7 @@ func (session *selectionSession) acquireQuotaProbe(ctx context.Context, excluded
 			continue
 		}
 		lease.QuotaProbe = true
-		lease.QuotaProbeKind = candidate.QuotaRecovery.Kind
+		lease.QuotaProbeKind = nil.Kind
 		lease.Billing = candidate.Billing
 		return lease, nil
 	}

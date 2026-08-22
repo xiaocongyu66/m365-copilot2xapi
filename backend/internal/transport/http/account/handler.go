@@ -148,7 +148,6 @@ func (h *Handler) Register(router *gin.RouterGroup) {
 	router.POST("/accounts/batch/reset-quota", h.batchResetQuota)
 	router.POST("/accounts/batch/refresh-quotas", h.batchRefreshQuotas)
 	router.POST("/accounts/batch/refresh-tokens", h.batchRefreshTokens)
-	router.POST("/accounts/detect", h.detectBuildAccounts)
 	router.PATCH("/accounts/batch", h.batchUpdate)
 	router.POST("/accounts/deletion-preview", h.previewDeletion)
 	router.DELETE("/accounts", h.batchDelete)
@@ -869,13 +868,7 @@ func (h *Handler) importFile(c *gin.Context, providerValue accountdomain.Provide
 	pipeline := h.startSyncPipeline(c.Request.Context(), stream.SyncProgressObserver())
 	var result accountapp.ImportResult
 	var err error
-	if providerValue == accountdomain.ProviderM365 {
-		result, err = h.service.ImportWebCredentialDocumentsWithProgress(pipeline.ctx, documents, pipeline.Observe, stream.PhaseProgressObserver("importing", &total))
-	} else if providerValue == accountdomain.ProviderM365 {
-		result, err = h.service.ImportConsoleCredentialDocumentsWithProgress(pipeline.ctx, documents, pipeline.Observe, stream.PhaseProgressObserver("importing", &total))
-	} else {
-		result, err = h.service.ImportCredentialDocumentsWithProgress(pipeline.ctx, documents, pipeline.Observe, stream.PhaseProgressObserver("importing", &total))
-	}
+	result, err = h.service.ImportCredentialDocumentsWithProgress(pipeline.ctx, documents, pipeline.Observe, stream.PhaseProgressObserver("importing", &total))
 	syncResult := pipeline.Finish(err != nil)
 	if err != nil {
 		stream.WriteError("authImportFailed", "导入账号失败")
@@ -1042,8 +1035,6 @@ func (h *Handler) update(c *gin.Context) {
 	value, err := h.service.Update(c.Request.Context(), id, accountapp.UpdateInput{
 		Name: request.Name, Enabled: request.Enabled, Priority: request.Priority,
 		MaxConcurrent: request.MaxConcurrent, MinimumRemaining: request.MinimumRemaining,
-		CloudflareCookies: request.CloudflareCookies, ClearCloudflareCookies: request.ClearCloudflareCookies,
-		BuildSuperEntitled: request.BuildSuperEntitled, BuildRouteMode: request.BuildRouteMode,
 	})
 	if err != nil {
 		h.writeServiceError(c, "accountUpdateFailed", err, http.StatusInternalServerError, "更新账号失败")
@@ -1052,11 +1043,6 @@ func (h *Handler) update(c *gin.Context) {
 	result := newAccountResponse(value)
 	if value.EnabledChanged && result.CooldownUntil != nil && time.Now().UTC().Before(*result.CooldownUntil) {
 		result.EnabledDoesNotClearCooldown = true
-	}
-	if request.BuildSuperEntitled != nil {
-		if synchronizer, ok := h.sync.(accountModelSynchronizer); ok {
-			result.ModelSyncFailed = synchronizer.SyncModels(c.Request.Context(), id) != nil
-		}
 	}
 	response.Success(c, http.StatusOK, result)
 }

@@ -192,9 +192,9 @@ func (s *Selector) planCandidateIndexesWithHints(ctx context.Context, values []a
 			continue
 		}
 		score := candidateScore{
-			index: index, tier: tierOrderRank(tierOrder, candidate.Credential.WebTier),
-			webCatalogSupport: candidate.Credential.Provider == account.ProviderM365 && len(tierOrder) > 0 && webTierInOrder(tierOrder, candidate.Credential.WebTier),
-			preferFreeBuild:   preferFreeBuild && candidate.IsKnownFreeBuild(),
+			index: index, tier: tierOrderRank(tierOrder, ""),
+			webCatalogSupport: candidate.Credential.Provider == account.ProviderM365 && len(tierOrder) > 0 && webTierInOrder(tierOrder, ""),
+			preferFreeBuild:   preferFreeBuild && false,
 			inFlight:          inFlight[position], lastSelected: s.lastSelectedAt[candidate.Credential.ID],
 		}
 		// 只有真实上游快照能够证明账号具备该模式额度。历史默认值和
