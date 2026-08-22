@@ -161,21 +161,23 @@ type VoiceInfo struct{}
 
 // VoiceListInput mirrors the historical voice list request shape.
 type VoiceListInput struct {
-	RequestID string
-	ClientKey clientkeydomain.Key
-	Method    string
-	Path      string
-	Headers   http.Header
+	RequestID   string
+	ClientKey   clientkeydomain.Key
+	PublicModel string
+	Method      string
+	Path        string
+	Headers     http.Header
 }
 
 // VoiceIDInput mirrors the historical single-voice request shape.
 type VoiceIDInput struct {
-	RequestID string
-	ClientKey clientkeydomain.Key
-	VoiceID   string
-	Method    string
-	Path      string
-	Headers   http.Header
+	RequestID   string
+	ClientKey   clientkeydomain.Key
+	PublicModel string
+	VoiceID     string
+	Method      string
+	Path        string
+	Headers     http.Header
 }
 
 // STTInput mirrors the historical speech-to-text request shape.
@@ -183,6 +185,9 @@ type STTInput struct {
 	RequestID   string
 	ClientKey   clientkeydomain.Key
 	PublicModel string
+	URL         string
+	AudioFormat string
+	SampleRate  int
 	Language    string
 	Format      string
 	Method      string
