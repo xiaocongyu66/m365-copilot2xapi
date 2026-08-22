@@ -84,23 +84,23 @@ type VideoResult = media.Job
 
 // TTSInput mirrors the historical text-to-speech request shape.
 type TTSInput struct {
-	RequestID              string
-	ClientKey              clientkeydomain.Key
-	PublicModel            string
-	Text                   string
-	Input                  string
-	Voice                  string
-	VoiceID                string
-	Language               string
-	OutputFormat           string
-	Format                 string
-	Speed                  float64
+	RequestID                string
+	ClientKey                clientkeydomain.Key
+	PublicModel              string
+	Text                     string
+	Input                    string
+	Voice                    string
+	VoiceID                  string
+	Language                 string
+	OutputFormat             string
+	Format                   provider.TTSOutputFormat
+	Speed                    float64
 	OptimizeStreamingLatency int
-	TextNormalization      string
-	WithTimestamps         bool
-	Method                 string
-	Path                   string
-	Headers                http.Header
+	TextNormalization        bool
+	WithTimestamps           bool
+	Method                   string
+	Path                     string
+	Headers                  http.Header
 }
 
 // TTSResult is the no-op result returned for TTS requests.
@@ -129,4 +129,9 @@ func (s *Service) GetVideo(ctx context.Context, requestID string, clientKey clie
 // OpenVideoContent always returns ErrMediaNotSupported for M365.
 func (s *Service) OpenVideoContent(ctx context.Context, requestID string, clientKey clientkeydomain.Key) (io.ReadCloser, string, int64, error) {
 	return nil, "", 0, ErrMediaNotSupported
+}
+
+// SynthesizeSpeech always returns ErrMediaNotSupported for M365.
+func (s *Service) SynthesizeSpeech(ctx context.Context, input TTSInput) (TTSResult, error) {
+	return TTSResult{}, ErrMediaNotSupported
 }
