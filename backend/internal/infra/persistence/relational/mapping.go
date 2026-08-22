@@ -90,11 +90,6 @@ func toCredentialMaterialDomain(value accountCredentialModel, provider account.P
 }
 
 func fromAccountDomain(value account.Credential) accountModel {
-	// entitlement、推理地址与 XAI 回退标记仅对 grok_build 有意义。
-	buildAPIFallback := value.BuildAPIFallback && value.Provider == account.ProviderM365
-	buildSuperEntitled := value.BuildSuperEntitled && value.Provider == account.ProviderM365
-	if value.Provider == account.ProviderM365 && value.BuildRouteMode.IsValid() {
-	}
 	return accountModel{
 		ID: value.ID, IdentityKey: accountIdentity(value), Provider: string(value.Provider), Name: value.Name, Email: value.Email,
 		UserID: value.UserID, TeamID: value.TeamID, SourceKey: value.SourceKey,
@@ -135,46 +130,19 @@ func fromAccountCredentialDomain(value account.Credential) accountCredentialMode
 	}
 	authType := value.AuthType
 	if authType == "" {
-		if value.Provider == account.ProviderM365 || value.Provider == account.ProviderM365 {
-			authType = account.AuthTypeSSO
-		} else {
-			authType = account.AuthTypeOAuth
-		}
+		authType = account.AuthTypeOAuth
 	}
 	return accountCredentialModel{
 		AccountID: value.ID, AuthType: string(authType), ClientID: value.OIDCClientID,
 		EncryptedPrimary: value.EncryptedAccessToken, EncryptedRefresh: value.EncryptedRefreshToken,
-		EncryptedCloudflareCookie: value.EncryptedCloudflareCookie,
-		ExpiresAt:                 expiresAt, RefreshDueAt: refreshDueAt, LastRefreshAt: value.LastRefreshAt,
+		ExpiresAt:        expiresAt, RefreshDueAt: refreshDueAt, LastRefreshAt: value.LastRefreshAt,
 		RefreshFailures: value.RefreshFailureCount, RefreshUnclassifiedAuthFailures: value.RefreshUnclassifiedAuthCount, LastRefreshErrorStatus: value.LastRefreshErrorStatus, LastRefreshError: value.LastRefreshErrorCode, LastRefreshErrorMessage: value.LastRefreshErrorMessage, LastRefreshErrorResponse: value.LastRefreshErrorResponse, RefreshPermanent: value.RefreshPermanent,
-		BuildBotFlagSource: normalizeBuildBotFlagSource(value.Provider, value.BuildBotFlagSource),
-		UpdatedAt:          time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
 	}
-}
-
-func normalizedBuildBotFlagSource(provider account.Provider, credential *accountCredentialModel) int {
-	if credential == nil {
-		return 0
-	}
-	return normalizeBuildBotFlagSource(provider, credential.BuildBotFlagSource)
-}
-
-func normalizeBuildBotFlagSource(provider account.Provider, source int) int {
-	if provider == account.ProviderM365 && (source == 1 || source == 2) {
-		return source
-	}
-	return 0
 }
 
 func fromWebProfileDomain(value account.Credential) *webAccountProfileModel {
-	if value.Provider != account.ProviderM365 {
-		return nil
-	}
-	tier := value.WebTier
-	if tier == "" {
-		tier = account.WebTierAuto
-	}
-	return &webAccountProfileModel{AccountID: value.ID, Tier: string(tier), SyncedAt: value.WebTierSyncedAt, NSFWEnabledAt: value.WebNSFWEnabledAt, TermsAcceptedAt: value.WebTermsAcceptedAt, TermsAcceptedVersion: value.WebTermsAcceptedVersion, BirthDateSetAt: value.WebBirthDateSetAt, EgressIdentity: value.EgressIdentity}
+	return nil
 }
 
 func accountIdentity(value account.Credential) string {
