@@ -193,17 +193,11 @@ type View struct {
 }
 
 type UpdateInput struct {
-	Name                   *string
-	Enabled                *bool
-	Priority               *int
-	MaxConcurrent          *int
-	MinimumRemaining       *float64
-	CloudflareCookies      *string
-	ClearCloudflareCookies bool
-	// BuildSuperEntitled 仅 grok_build 可设置；非 Build 返回业务错误。
-	BuildSuperEntitled *bool
-	// BuildRouteMode 仅 grok_build 可设置；nil 表示不修改。
-	BuildRouteMode *accountdomain.BuildRouteMode
+	Name             *string
+	Enabled          *bool
+	Priority         *int
+	MaxConcurrent    *int
+	MinimumRemaining *float64
 }
 
 type CleanupStatus string
@@ -370,30 +364,6 @@ func (s *Service) Summary(ctx context.Context) (Summary, error) {
 	if err != nil {
 		return Summary{}, err
 	}
-	if s.excludeBuildBotFlaggedFromSchedulingEnabled() && result.Risk > 0 {
-		var excluded int64
-		if hasIndex {
-			excluded, err = indexed.CountAvailableBuildBotFlagged(ctx, now)
-		} else {
-			excluded, err = s.accounts.CountAvailableAmong(ctx, accountdomain.ProviderBuild, flaggedIDs, now)
-		}
-		if err != nil {
-			return Summary{}, err
-		}
-		if excluded > 0 {
-			buildKey := string(accountdomain.ProviderBuild)
-			build := result.Providers[buildKey]
-			if excluded > build.Available {
-				excluded = build.Available
-			}
-			build.Available -= excluded
-			result.Providers[buildKey] = build
-			if excluded > result.Available {
-				excluded = result.Available
-			}
-			result.Available -= excluded
-		}
-	}
 	return result, nil
 }
 
@@ -545,9 +515,7 @@ func (s *Service) List(ctx context.Context, page, pageSize int, search string, f
 		!egressValid ||
 		!oneOf(filter.Renewal, "", "refreshable", "unrefreshable") ||
 		!oneOf(filter.Risk, "", "flagged", "normal") ||
-		(filter.Risk != "" && filter.Provider != string(accountdomain.ProviderBuild)) ||
 		!oneOf(filter.Agreement, "", "nsfwEnabled", "nsfwDisabled", "termsAccepted", "termsNotAccepted", "allAccepted", "allNotAccepted") ||
-		(filter.Agreement != "" && filter.Provider != string(accountdomain.ProviderWeb)) ||
 		!validAssociationFilter(filter.Provider, filter.Association) ||
 		!repository.IsValidSort(filter.Sort, "name", "type", "status", "createdAt") {
 		return nil, 0, ErrInvalidFilter
@@ -616,7 +584,7 @@ func (s *Service) List(ctx context.Context, page, pageSize int, search string, f
 		if recoveryValue, ok := recoveries[value.ID]; ok {
 			recovery = &recoveryValue
 		}
-		view.Quota = newQuotaView(view.Billing, observedTokens[value.ID], recovery, value.ObservedModel, value.BuildSuperEntitled && value.Provider == accountdomain.ProviderBuild)
+		view.Quota = newQuotaView(view.Billing, observedTokens[value.ID], recovery, value.ObservedModel, false)
 		view.QuotaWindows = quotaWindows[value.ID]
 		views = append(views, view)
 	}
@@ -652,80 +620,6 @@ func (s *Service) excludeBuildBotFlaggedFromSchedulingEnabled() bool {
 	return s.excludeBuildBotFlagged
 }
 
-func (s *Service) loadBuildBotFlaggedAccountIDs(ctx context.Context) ([]uint64, error) {
-	if indexed, ok := s.accounts.(buildBotFlagIndexRepository); ok {
-		return indexed.ListBuildBotFlaggedAccountIDs(ctx)
-	}
-	const batchSize = 500
-	result := make([]uint64, 0)
-	var afterID uint64
-	for {
-		values, _, err := s.accounts.ListProviderAccountBatch(ctx, accountdomain.ProviderBuild, afterID, batchSize)
-		if err != nil {
-			return nil, err
-		}
-		for _, value := range values {
-			if s.credentialMetadata(value).BuildBotFlagged {
-				result = append(result, value.ID)
-			}
-		}
-		if len(values) < batchSize {
-			return result, nil
-		}
-		afterID = values[len(values)-1].ID
-	}
-}
-
-// RebuildBuildBotFlagIndex backfills persisted non-sensitive routing metadata
-// before the gateway begins serving traffic. Subsequent imports and refreshes
-// update the source atomically with the encrypted access token.
-func (s *Service) RebuildBuildBotFlagIndex(ctx context.Context) error {
-	indexed, ok := s.accounts.(buildBotFlagIndexRepository)
-	if !ok {
-		return nil
-	}
-	const batchSize = 500
-	var afterID uint64
-	for {
-		values, err := indexed.ListBuildBotFlagCredentialBatch(ctx, afterID, batchSize)
-		if err != nil {
-			return err
-		}
-		updates := make([]repository.BuildBotFlagSourceUpdate, 0)
-		for _, value := range values {
-			credential := accountdomain.Credential{
-				ID: value.AccountID, Provider: accountdomain.ProviderBuild, EncryptedAccessToken: value.EncryptedAccessToken,
-			}
-			metadata := s.credentialMetadata(credential)
-			if !metadata.BuildBotFlagInspected {
-				continue
-			}
-			source := metadata.BuildBotFlagSource
-			if source != 1 && source != 2 {
-				source = 0
-			}
-			if source != value.StoredSource {
-				updates = append(updates, repository.BuildBotFlagSourceUpdate{
-					AccountID: value.AccountID, ExpectedEncryptedAccessToken: value.EncryptedAccessToken, Source: source,
-				})
-			}
-		}
-		if err := indexed.UpdateBuildBotFlagSources(ctx, updates); err != nil {
-			return err
-		}
-		if len(values) < batchSize {
-			s.invalidateBuildBotFlagCache()
-			return nil
-		}
-		afterID = values[len(values)-1].AccountID
-	}
-}
-
-func (s *Service) invalidateBuildBotFlagCache() {
-	if s.buildBotFlagCache != nil {
-		s.buildBotFlagCache.Delete(buildBotFlagCacheKey)
-	}
-}
 
 // parseEgressFilter splits the account egress filter into its bound/unbound mode
 // and an optional narrowing target. Accepted values are "", "bound", "unbound",
@@ -771,14 +665,7 @@ func validAssociationFilter(providerValue, association string) bool {
 	if association == "" {
 		return true
 	}
-	switch providerValue {
-	case string(accountdomain.ProviderWeb):
-		return oneOf(association, "buildLinked", "buildUnlinked", "consoleLinked", "consoleUnlinked", "allLinked", "allUnlinked")
-	case string(accountdomain.ProviderBuild), string(accountdomain.ProviderConsole):
-		return oneOf(association, "webLinked", "webUnlinked")
-	default:
-		return false
-	}
+	return true
 }
 
 // BatchUpdate 对同一号池的一组账号应用相同路由参数。
@@ -1057,7 +944,7 @@ func (s *Service) Get(ctx context.Context, id uint64) (View, error) {
 	} else if !errors.Is(err, repository.ErrNotFound) {
 		return View{}, err
 	}
-	view.Quota = newQuotaView(view.Billing, observedTokens[id], recovery, value.ObservedModel, value.BuildSuperEntitled && value.Provider == accountdomain.ProviderBuild)
+	view.Quota = newQuotaView(view.Billing, observedTokens[id], recovery, value.ObservedModel, false)
 	if windows, err := s.accounts.GetQuotaWindows(ctx, []uint64{id}); err == nil {
 		view.QuotaWindows = windows[id]
 	} else {
@@ -1277,9 +1164,9 @@ func isEstimatedFreeBillingProfile(billing *accountdomain.Billing) bool {
 
 // StartDeviceLogin 启动短期 Device OAuth，会话只保存在有界运行态存储中。
 func (s *Service) StartDeviceLogin(ctx context.Context) (DeviceStartResult, error) {
-	adapter, ok := s.providers.DeviceOAuth(accountdomain.ProviderBuild)
+	adapter, ok := s.providers.DeviceOAuth(accountdomain.ProviderM365)
 	if !ok {
-		return DeviceStartResult{}, fmt.Errorf("CLI Provider 未注册")
+		return DeviceStartResult{}, fmt.Errorf("M365 Provider 未注册")
 	}
 	authorization, err := adapter.StartDeviceAuthorization(ctx)
 	if err != nil {
@@ -1307,9 +1194,9 @@ func (s *Service) PollDeviceLogin(ctx context.Context, sessionID string) (View, 
 	if now.Before(session.NextPollAt) {
 		return View{}, ErrDeviceSlowDown
 	}
-	adapter, ok := s.providers.DeviceOAuth(accountdomain.ProviderBuild)
+	adapter, ok := s.providers.DeviceOAuth(accountdomain.ProviderM365)
 	if !ok {
-		return View{}, fmt.Errorf("CLI Provider 未注册")
+		return View{}, fmt.Errorf("M365 Provider 未注册")
 	}
 	seed, err := adapter.PollDeviceAuthorization(ctx, session.DeviceCode)
 	session.NextPollAt = now.Add(session.Interval)
@@ -1355,56 +1242,14 @@ func (s *Service) ImportCredentialsWithProgress(ctx context.Context, data []byte
 
 // ImportCredentialDocumentsWithProgress 合并解析多个 Build 凭据文件，并作为一个批次写入和同步。
 func (s *Service) ImportCredentialDocumentsWithProgress(ctx context.Context, documents [][]byte, observer ImportedAccountObserver, progress BatchProgressObserver) (ImportResult, error) {
-	adapter, ok := s.providers.CredentialCodec(accountdomain.ProviderBuild)
+	adapter, ok := s.providers.CredentialCodec(accountdomain.ProviderM365)
 	if !ok {
-		return ImportResult{}, fmt.Errorf("CLI Provider 未注册")
+		return ImportResult{}, fmt.Errorf("M365 Provider 未注册")
 	}
 	return s.importCredentialDocumentsWithProgress(ctx, adapter, documents, observer, progress)
 }
 
 // ImportWebCredentials 导入版本化或旧号池格式的 Grok Web SSO 凭据。
-func (s *Service) ImportWebCredentials(ctx context.Context, data []byte) (ImportResult, error) {
-	return s.ImportWebCredentialsWithObserver(ctx, data, nil)
-}
-
-func (s *Service) ImportWebCredentialsWithObserver(ctx context.Context, data []byte, observer ImportedAccountObserver) (ImportResult, error) {
-	return s.ImportWebCredentialsWithProgress(ctx, data, observer, nil)
-}
-
-// ImportWebCredentialsWithProgress 导入 Web 凭据并报告已写入流水线的账号数。
-func (s *Service) ImportWebCredentialsWithProgress(ctx context.Context, data []byte, observer ImportedAccountObserver, progress BatchProgressObserver) (ImportResult, error) {
-	return s.ImportWebCredentialDocumentsWithProgress(ctx, [][]byte{data}, observer, progress)
-}
-
-// ImportWebCredentialDocumentsWithProgress 合并解析多个 Web JSON 或 SSO 文本文件，并作为一个批次写入和同步。
-func (s *Service) ImportWebCredentialDocumentsWithProgress(ctx context.Context, documents [][]byte, observer ImportedAccountObserver, progress BatchProgressObserver) (ImportResult, error) {
-	adapter, ok := s.providers.CredentialCodec(accountdomain.ProviderWeb)
-	if !ok {
-		return ImportResult{}, fmt.Errorf("Grok Web Provider 未注册")
-	}
-	return s.importCredentialDocumentsWithProgress(ctx, adapter, documents, observer, progress)
-}
-
-func (s *Service) ImportConsoleCredentials(ctx context.Context, data []byte) (ImportResult, error) {
-	return s.ImportConsoleCredentialsWithObserver(ctx, data, nil)
-}
-
-func (s *Service) ImportConsoleCredentialsWithObserver(ctx context.Context, data []byte, observer ImportedAccountObserver) (ImportResult, error) {
-	return s.ImportConsoleCredentialsWithProgress(ctx, data, observer, nil)
-}
-
-func (s *Service) ImportConsoleCredentialsWithProgress(ctx context.Context, data []byte, observer ImportedAccountObserver, progress BatchProgressObserver) (ImportResult, error) {
-	return s.ImportConsoleCredentialDocumentsWithProgress(ctx, [][]byte{data}, observer, progress)
-}
-
-func (s *Service) ImportConsoleCredentialDocumentsWithProgress(ctx context.Context, documents [][]byte, observer ImportedAccountObserver, progress BatchProgressObserver) (ImportResult, error) {
-	adapter, ok := s.providers.CredentialCodec(accountdomain.ProviderConsole)
-	if !ok {
-		return ImportResult{}, fmt.Errorf("Grok Console Provider 未注册")
-	}
-	return s.importCredentialDocumentsWithProgress(ctx, adapter, documents, observer, progress)
-}
-
 func (s *Service) importCredentialDocumentsWithProgress(ctx context.Context, adapter provider.CredentialCodecAdapter, documents [][]byte, observer ImportedAccountObserver, progress BatchProgressObserver) (ImportResult, error) {
 	if len(documents) == 0 {
 		return ImportResult{}, fmt.Errorf("%w: 没有可导入的账号文件", ErrInvalidImport)
