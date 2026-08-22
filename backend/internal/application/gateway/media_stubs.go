@@ -10,6 +10,8 @@ import (
 	clientkeydomain "m365-copilot2xapi/backend/internal/domain/clientkey"
 	"m365-copilot2xapi/backend/internal/domain/media"
 	"m365-copilot2xapi/backend/internal/infra/provider"
+
+	"github.com/gorilla/websocket"
 )
 
 // ErrMediaNotSupported indicates that M365 Copilot does not support media
@@ -152,9 +154,17 @@ func (s *Service) TranscribeSpeech(ctx context.Context, input STTInput) (*Result
 }
 
 // OpenVoiceWebSocket always returns ErrMediaNotSupported for M365.
-func (s *Service) OpenVoiceWebSocket(ctx context.Context, input VoiceWebSocketInput) (VoiceWebSocketOutcome, error) {
-	return VoiceWebSocketOutcome{}, ErrMediaNotSupported
+func (s *Service) OpenVoiceWebSocket(ctx context.Context, input VoiceWebSocketInput) (*VoiceSession, error) {
+	return nil, ErrMediaNotSupported
 }
+
+// VoiceSession is a placeholder for realtime voice WebSocket sessions.
+type VoiceSession struct {
+	Conn *websocket.Conn
+}
+
+// Finalize is a no-op for M365 (voice WebSocket not supported).
+func (s *VoiceSession) Finalize(outcome VoiceWebSocketOutcome) {}
 
 // VoiceInfo is a placeholder for TTS voice metadata.
 type VoiceInfo struct{}
@@ -217,4 +227,6 @@ type VoiceWebSocketInput struct {
 }
 
 // VoiceWebSocketOutcome is the no-op result for voice WebSocket sessions.
-type VoiceWebSocketOutcome struct{}
+type VoiceWebSocketOutcome struct {
+	ErrorCode string
+}
