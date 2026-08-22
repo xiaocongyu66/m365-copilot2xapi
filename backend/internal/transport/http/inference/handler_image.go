@@ -13,6 +13,7 @@ import (
 
 	"M365Copilot2ApiX/backend/internal/application/gateway"
 	clientkeydomain "M365Copilot2ApiX/backend/internal/domain/clientkey"
+	"M365Copilot2ApiX/backend/internal/transport/http/middleware"
 	"github.com/gin-gonic/gin"
 )
 
