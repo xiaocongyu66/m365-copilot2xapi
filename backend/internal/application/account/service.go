@@ -496,11 +496,7 @@ func (s *Service) List(ctx context.Context, page, pageSize int, search string, f
 		if billing, ok := billings[value.ID]; ok {
 			view.Billing = &billing
 		}
-		var recovery *accountdomain.QuotaRecovery
-		if recoveryValue, ok := recoveries[value.ID]; ok {
-			recovery = &recoveryValue
-		}
-		view.Quota = newQuotaView(view.Billing, observedTokens[value.ID], recovery, value.ObservedModel, false)
+		view.Quota = newQuotaView(view.Billing, observedTokens[value.ID], nil, value.ObservedModel, false)
 		view.QuotaWindows = quotaWindows[value.ID]
 		views = append(views, view)
 	}
@@ -821,13 +817,7 @@ func (s *Service) Get(ctx context.Context, id uint64) (View, error) {
 	if err != nil {
 		return View{}, err
 	}
-	var recovery *accountdomain.QuotaRecovery
-	if recoveryValue, err := s.accounts.GetQuotaRecovery(ctx, id); err == nil {
-		recovery = &recoveryValue
-	} else if !errors.Is(err, repository.ErrNotFound) {
-		return View{}, err
-	}
-	view.Quota = newQuotaView(view.Billing, observedTokens[id], recovery, value.ObservedModel, false)
+	view.Quota = newQuotaView(view.Billing, observedTokens[id], nil, value.ObservedModel, false)
 	if windows, err := s.accounts.GetQuotaWindows(ctx, []uint64{id}); err == nil {
 		view.QuotaWindows = windows[id]
 	} else {
@@ -912,7 +902,7 @@ func observedModelStateIsFresh(now, persistedAt time.Time) bool {
 	return elapsed >= 0 && elapsed < observedModelPersistInterval
 }
 
-func newQuotaView(billing *accountdomain.Billing, observedTokens int64, recovery *accountdomain.QuotaRecovery, observedModel string, buildSuperEntitled bool) QuotaView {
+func newQuotaView(billing *accountdomain.Billing, observedTokens int64, recovery any, observedModel string, buildSuperEntitled bool) QuotaView {
 	// Upstream paid billing takes precedence and preserves reported quota values.
 	if billing != nil && billing.IsPaid() {
 		periodStart, periodEnd := billing.BillingPeriodStart, billing.BillingPeriodEnd
@@ -920,15 +910,6 @@ func newQuotaView(billing *accountdomain.Billing, observedTokens int64, recovery
 			periodStart, periodEnd = billing.UsagePeriodStart, billing.UsagePeriodEnd
 		}
 		result := QuotaView{Type: QuotaTypePaid, Source: "upstreamBilling", Confidence: "observed", Unit: "credits", UsagePercent: billing.CreditUsagePercent, Status: QuotaStatusActive, PeriodStart: periodStart, PeriodEnd: periodEnd}
-		if recovery != nil && recovery.Kind == accountdomain.QuotaRecoveryKindPaid {
-			result.Status = QuotaStatusWaitingReset
-			if recovery.Status == accountdomain.QuotaRecoveryStatusProbing {
-				result.Status = QuotaStatusProbing
-			}
-			result.ExhaustedAt = recovery.ExhaustedAt
-			result.NextProbeAt = recovery.NextProbeAt
-			result.LastConfirmedAt = recovery.LastConfirmedAt
-		}
 		switch {
 		case billing.MonthlyLimit > 0:
 			result.Used = billing.Used
@@ -964,32 +945,6 @@ func newQuotaView(billing *accountdomain.Billing, observedTokens int64, recovery
 		return QuotaView{
 			Type: QuotaTypePaid, Source: "buildSuperEntitlement", Confidence: "confirmed",
 			Confirmed: true, Status: QuotaStatusActive,
-		}
-	}
-	if recovery != nil && recovery.Status != accountdomain.QuotaRecoveryStatusActive && (recovery.Kind == "" || recovery.Kind == accountdomain.QuotaRecoveryKindFree) {
-		limit := recovery.ConfirmedLimit
-		used := recovery.ConfirmedUsed
-		if used <= 0 {
-			used = observedTokens
-		}
-		status := QuotaStatusWaitingReset
-		if recovery.Status == accountdomain.QuotaRecoveryStatusProbing {
-			status = QuotaStatusProbing
-		}
-		remaining := int64(0)
-		usagePercent := 0.0
-		if limit > 0 {
-			remaining = limit - used
-			if remaining < 0 {
-				remaining = 0
-			}
-			usagePercent = float64(used) / float64(limit) * 100
-		}
-		return QuotaView{
-			Type: QuotaTypeFree, Source: "upstreamExhaustion", Confidence: "confirmed", Unit: "tokens", Used: float64(used), Limit: float64(limit), LimitKnown: limit > 0,
-			Remaining: float64(remaining), UsagePercent: usagePercent,
-			WindowHours: int(freeUsageWindow / time.Hour), Confirmed: true, Status: status,
-			ExhaustedAt: recovery.ExhaustedAt, NextProbeAt: recovery.NextProbeAt, LastConfirmedAt: recovery.LastConfirmedAt,
 		}
 	}
 	freeSource := ""
@@ -2059,9 +2014,6 @@ func (s *Service) fetchAndSaveBilling(ctx context.Context, id uint64) (accountdo
 func (s *Service) ProbePaidQuota(ctx context.Context, value accountdomain.Credential) (bool, error) {
 	latest, billing, err := s.fetchAndSaveBilling(ctx, value.ID)
 	if err != nil {
-		now := time.Now().UTC()
-		next := now.Add(paidProbeRetryInterval)
-		_ = s.accounts.SaveQuotaRecovery(ctx, accountdomain.QuotaRecovery{AccountID: value.ID, Kind: accountdomain.QuotaRecoveryKindPaid, Status: accountdomain.QuotaRecoveryStatusExhausted, NextProbeAt: &next, UpdatedAt: now})
 		return false, err
 	}
 	if err := s.reconcilePaidQuotaRecovery(ctx, latest, billing, true); err != nil {
@@ -2071,30 +2023,7 @@ func (s *Service) ProbePaidQuota(ctx context.Context, value accountdomain.Creden
 }
 
 func (s *Service) reconcilePaidQuotaRecovery(ctx context.Context, credential accountdomain.Credential, billing accountdomain.Billing, afterProbe bool) error {
-	if !billing.IsPaid() || !billing.IsExhausted(credential.MinimumRemaining) {
-		recovery, err := s.accounts.GetQuotaRecovery(ctx, credential.ID)
-		if errors.Is(err, repository.ErrNotFound) || (err == nil && recovery.Kind != accountdomain.QuotaRecoveryKindPaid) {
-			return nil
-		}
-		if err != nil {
-			return err
-		}
-		return s.accounts.ClearQuotaRecovery(ctx, credential.ID)
-	}
-	periodEnd, ok := billing.PeriodEnd()
-	if !ok {
-		return nil
-	}
-	now := time.Now().UTC()
-	next := periodEnd
-	if !next.After(now) && afterProbe {
-		next = now.Add(paidProbeRetryInterval)
-	}
-	exhaustedAt := now
-	return s.accounts.SaveQuotaRecovery(ctx, accountdomain.QuotaRecovery{
-		AccountID: credential.ID, Kind: accountdomain.QuotaRecoveryKindPaid, Status: accountdomain.QuotaRecoveryStatusExhausted,
-		ExhaustedAt: &exhaustedAt, NextProbeAt: &next, LastConfirmedAt: &now, UpdatedAt: now,
-	})
+	return nil
 }
 
 // HasBillingSnapshot 判断账号是否已经完成过一次额度同步，不触发任何上游请求。
@@ -2152,9 +2081,6 @@ func (s *Service) ExhaustQuota(ctx context.Context, id uint64, mode string, rese
 	}
 	if err := s.accounts.ExhaustQuotaWindow(ctx, id, mode, resetAt, s.now()); err != nil {
 		return err
-	}
-	if resetAt != nil && s.quotaQueue != nil {
-		return s.quotaQueue.ScheduleQuotaRecovery(ctx, accountdomain.QuotaRecoveryEvent{AccountID: id, Mode: mode, DueAt: *resetAt})
 	}
 	return nil
 }
@@ -2410,28 +2336,11 @@ func (s *Service) reconcileQuotaGroupWindows(ctx context.Context, providerValue 
 			}
 			continue
 		}
-		if s.quotaQueue != nil {
-			if err := s.quotaQueue.CancelQuotaRecovery(ctx, accountID, mode); err != nil {
-				return fmt.Errorf("取消额度恢复事件: %w", err)
-			}
-		}
 	}
 	return nil
 }
 
 func (s *Service) reconcileQuotaRecoveryWindow(ctx context.Context, providerValue accountdomain.Provider, accountID uint64, window accountdomain.QuotaWindow) error {
-	if s.quotaQueue == nil || !quotaWindowControlsRouting(providerValue, window.Mode) {
-		return nil
-	}
-	if dueAt := quotaRecoveryDueAt(window, s.now(), window.Remaining == 0); dueAt != nil {
-		if err := s.quotaQueue.ScheduleQuotaRecovery(ctx, accountdomain.QuotaRecoveryEvent{AccountID: accountID, Mode: window.Mode, DueAt: *dueAt}); err != nil {
-			return fmt.Errorf("安排额度恢复事件: %w", err)
-		}
-		return nil
-	}
-	if err := s.quotaQueue.CancelQuotaRecovery(ctx, accountID, window.Mode); err != nil {
-		return fmt.Errorf("取消额度恢复事件: %w", err)
-	}
 	return nil
 }
 
