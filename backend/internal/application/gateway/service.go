@@ -1282,7 +1282,7 @@ attemptLoop:
 		if lease.QuotaProbe {
 			quotaProbeAttempted = true
 		}
-		if lease.QuotaProbeKind == accountdomain.QuotaRecoveryKindPaid {
+		if lease.QuotaProbeKind == "" {
 			recovered, probeErr := s.accounts.ProbePaidQuota(ctx, lease.Credential)
 			s.selector.MarkQuotaStateChanged(lease.Credential.Provider, lease.Credential.ID)
 			if probeErr != nil || !recovered {

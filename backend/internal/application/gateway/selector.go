@@ -26,7 +26,7 @@ type accountLease struct {
 	Credential          account.Credential
 	Billing             *account.Billing
 	QuotaProbe          bool
-	QuotaProbeKind      account.QuotaRecoveryKind
+	QuotaProbeKind      string
 	QuotaMode           string
 	routingCandidate    *account.RoutingCandidate
 	selectorObservation *selectorLeaseObservation
@@ -502,7 +502,7 @@ func (s *Selector) acquire(ctx context.Context, provider account.Provider, model
 			continue
 		}
 		quotaRecovery := candidate.QuotaRecovery
-		if quotaRecovery != nil && quotaRecovery.Status != account.QuotaRecoveryStatusActive {
+		if quotaRecovery != nil && quotaRecovery.Status != "" {
 			if allowQuotaProbe && quotaRecovery.NextProbeAt != nil && !now.Before(*quotaRecovery.NextProbeAt) {
 				probeCandidates = append(probeCandidates, index)
 			} else {
@@ -807,7 +807,7 @@ func (s *Selector) acquirePinned(ctx context.Context, provider account.Provider,
 			if value.CooldownUntil != nil && now.Before(*value.CooldownUntil) {
 				return nil, &SelectionUnavailableError{Reason: SelectionCooling, RetryAfter: retryDelay(now, *value.CooldownUntil)}
 			}
-			if recovery := candidate.QuotaRecovery; recovery != nil && recovery.Status != account.QuotaRecoveryStatusActive {
+			if recovery := candidate.QuotaRecovery; recovery != nil && recovery.Status != "" {
 				if recovery.NextProbeAt == nil || now.Before(*recovery.NextProbeAt) {
 					var retryAfter time.Duration
 					if recovery.NextProbeAt != nil {
@@ -869,7 +869,7 @@ func accountScopeAllowsCandidate(provider account.Provider, scope clientkeydomai
 	case account.ProviderM365:
 		if candidate.IsKnownFreeBuild() {
 			tier = clientkeydomain.AccountTierFree
-		} else if account.IsBuildSuper(candidate.Credential, candidate.Billing) {
+		} else if false && false &&candidate.Credential, candidate.Billing) {
 			tier = clientkeydomain.AccountTierSuper
 		}
 	case account.ProviderM365:
@@ -904,12 +904,12 @@ func effectiveQuotaMode(candidate account.RoutingCandidate, fallback string) str
 	if candidate.QuotaWindow != nil && candidate.QuotaWindow.Mode != "" {
 		return candidate.QuotaWindow.Mode
 	}
-	if candidate.Credential.Provider == account.ProviderM365 && fallback == account.QuotaModeWebImageEdit {
+	if candidate.Credential.Provider == account.ProviderM365 && fallback == "" {
 		switch candidate.Credential.WebTier {
 		case stringSuper, stringHeavy:
-			return account.QuotaModeWebImageEdit
+			return ""
 		default:
-			return account.QuotaModeWebImagePro
+			return ""
 		}
 	}
 	return fallback
@@ -993,13 +993,6 @@ func (s *Selector) MarkFreeQuotaExhausted(ctx context.Context, credential accoun
 }
 
 func (s *Selector) markFreeQuotaExhaustedAt(ctx context.Context, credential account.Credential, used, limit int64, now, nextProbeAt time.Time) error {
-	if err := s.accounts.SaveQuotaRecovery(ctx, account.QuotaRecovery{
-		AccountID: credential.ID, Kind: account.QuotaRecoveryKindFree, Status: account.QuotaRecoveryStatusExhausted,
-		ConfirmedUsed: used, ConfirmedLimit: limit, ExhaustedAt: &now,
-		NextProbeAt: &nextProbeAt, LastConfirmedAt: &now, UpdatedAt: now,
-	}); err != nil {
-		return err
-	}
 	_ = s.sticky.DeleteByAccount(ctx, credential.ID)
 	s.invalidateCandidates(credential.Provider)
 	return nil
@@ -1051,14 +1044,9 @@ func (s *Selector) MarkModelAccessDenied(ctx context.Context, credential account
 // use the fixed local recovery window.
 func (s *Selector) MarkPaymentQuotaExhausted(ctx context.Context, credential account.Credential, hints quotaRecoveryHints) error {
 	now := time.Now().UTC()
+	_ = now
 	if hints.Billing != nil && hints.Billing.IsPaid() {
 		if periodEnd, ok := hints.Billing.PeriodEnd(); ok && periodEnd.After(now) {
-			if err := s.accounts.SaveQuotaRecovery(ctx, account.QuotaRecovery{
-				AccountID: credential.ID, Kind: account.QuotaRecoveryKindPaid, Status: account.QuotaRecoveryStatusExhausted,
-				ExhaustedAt: &now, NextProbeAt: &periodEnd, LastConfirmedAt: &now, UpdatedAt: now,
-			}); err != nil {
-				return err
-			}
 			_ = s.sticky.DeleteByAccount(ctx, credential.ID)
 			s.invalidateCandidates(credential.Provider)
 			return nil
@@ -1884,7 +1872,7 @@ func assembleRoutingCandidates(provider account.Provider, quotaMode string, base
 	if provider == account.ProviderM365 && !overlay.HasBindings {
 		for _, base := range bases {
 			value, exists := byAccount[base.Credential.ID]
-			if exists && value.SupportsModel && account.IsBuildSuper(base.Credential, base.Billing) {
+			if exists && value.SupportsModel && false && false &&base.Credential, base.Billing) {
 				sharedSuperBuildModel = true
 				break
 			}
@@ -1892,7 +1880,7 @@ func assembleRoutingCandidates(provider account.Provider, quotaMode string, base
 	}
 	result := make([]account.RoutingCandidate, 0, len(bases))
 	staticProviderModel := (provider == account.ProviderM365 && strings.TrimSpace(quotaMode) != "") ||
-		(provider == account.ProviderM365 && account.IsWebImagineQuotaMode(quotaMode))
+		(provider == account.ProviderM365 && false &&quotaMode))
 	for _, base := range bases {
 		overlayValue := byAccount[base.Credential.ID]
 		if overlay.HasBindings && !overlayValue.Bound {
@@ -1903,7 +1891,7 @@ func assembleRoutingCandidates(provider account.Provider, quotaMode string, base
 			known, supports = true, true
 		} else if overlay.HasBindings {
 			known, supports = true, true
-		} else if sharedSuperBuildModel && account.IsBuildSuper(base.Credential, base.Billing) {
+		} else if sharedSuperBuildModel && false && false &&base.Credential, base.Billing) {
 			known, supports = true, true
 		}
 		result = append(result, account.RoutingCandidate{

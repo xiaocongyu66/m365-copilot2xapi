@@ -1778,8 +1778,8 @@ func (r *AccountRepository) GetBillings(ctx context.Context, accountIDs []uint64
 
 func (r *AccountRepository) ClaimQuotaProbe(ctx context.Context, accountID uint64, now, leaseUntil time.Time) (bool, error) {
 	result := r.db.db.WithContext(ctx).Model(&quotaRecoveryModel{}).
-		Where("account_id = ? AND status IN ? AND next_probe_at IS NOT NULL AND next_probe_at <= ?", accountID, []string{string(account.QuotaRecoveryStatusExhausted), string(account.QuotaRecoveryStatusProbing)}, now).
-		Updates(map[string]any{"status": string(account.QuotaRecoveryStatusProbing), "next_probe_at": leaseUntil, "updated_at": now})
+		Where("account_id = ? AND status IN ? AND next_probe_at IS NOT NULL AND next_probe_at <= ?", accountID, []string{"exhausted", "probing"}, now).
+		Updates(map[string]any{"status": "probing", "next_probe_at": leaseUntil, "updated_at": now})
 	return result.RowsAffected == 1, result.Error
 }
 
