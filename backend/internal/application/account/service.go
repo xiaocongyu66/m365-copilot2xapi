@@ -2200,10 +2200,6 @@ func (s *Service) RefreshQuota(ctx context.Context, id uint64) ([]accountdomain.
 	return refreshed.Windows, nil
 }
 
-func (s *Service) RefreshWebQuota(ctx context.Context, id uint64) ([]accountdomain.QuotaWindow, error) {
-	return s.RefreshQuota(ctx, id)
-}
-
 func (s *Service) refreshQuota(ctx context.Context, id uint64) (quotaRefreshResult, error) {
 	value, err := s.accounts.Get(ctx, id)
 	if err != nil {
@@ -3012,86 +3008,6 @@ func (s *Service) SyncAllBillingWithProgress(ctx context.Context, progress Batch
 }
 
 // SyncAllWebQuotas 尽力同步全部启用 Grok Web 账号的分模式额度。
-func (s *Service) SyncAllWebQuotas(ctx context.Context) (int, int, error) {
-	return s.SyncAllWebQuotasWithProgress(ctx, nil)
-}
-
-func (s *Service) SyncAllWebQuotasWithProgress(ctx context.Context, progress BatchProgressObserver) (int, int, error) {
-	return s.syncAllQuotasWithProgress(ctx, accountdomain.ProviderWeb, "web_quota_sync", progress)
-}
-
-func (s *Service) SyncAllConsoleQuotas(ctx context.Context) (int, int, error) {
-	return s.SyncAllConsoleQuotasWithProgress(ctx, nil)
-}
-
-func (s *Service) SyncAllConsoleQuotasWithProgress(ctx context.Context, progress BatchProgressObserver) (int, int, error) {
-	return s.syncAllQuotasWithProgress(ctx, accountdomain.ProviderConsole, "console_quota_sync", progress)
-}
-
-// SyncIncompleteConsoleQuotas replaces pre-/usage synthetic windows and
-// partial snapshots without refreshing accounts that already have all three
-// authoritative Console quota kinds. It is safe to run periodically and uses
-// the shared sync pool to preserve the deployment-wide upstream limit.
-func (s *Service) SyncIncompleteConsoleQuotas(ctx context.Context) (int, int, error) {
-	const batchSize = 1000
-	var succeeded, failed int
-	var afterID uint64
-	for {
-		values, _, err := s.accounts.ListProviderAccountBatch(ctx, accountdomain.ProviderConsole, afterID, batchSize)
-		if err != nil {
-			return succeeded, failed, err
-		}
-		if len(values) == 0 {
-			return succeeded, failed, nil
-		}
-		ids := make([]uint64, 0, len(values))
-		for _, value := range values {
-			if value.Enabled && value.AuthStatus == accountdomain.AuthStatusActive {
-				ids = append(ids, value.ID)
-			}
-		}
-		windows, err := s.accounts.GetQuotaWindows(ctx, ids)
-		if err != nil {
-			return succeeded, failed, err
-		}
-		pending := make([]uint64, 0, len(ids))
-		for _, id := range ids {
-			if !completeConsoleUsageSnapshot(windows[id]) {
-				pending = append(pending, id)
-			}
-		}
-		var batchSucceeded, batchFailed int
-		if len(pending) > 0 {
-			batchSucceeded, batchFailed, err = s.runAccountBatch(ctx, "console_usage_migration", pending, s.syncPool, nil, func(workCtx context.Context, id uint64) error {
-				var release func()
-				if s.refreshLock != nil {
-					var acquired bool
-					var lockErr error
-					release, acquired, lockErr = s.refreshLock.Acquire(workCtx, "quota-refresh:"+strconv.FormatUint(id, 10)+":console", 2*quotaRefreshTimeout)
-					if lockErr != nil {
-						return lockErr
-					}
-					if !acquired {
-						return errQuotaRefreshBusy
-					}
-					defer release()
-				}
-				_, refreshErr := s.RefreshQuotaMode(workCtx, id, "console")
-				return refreshErr
-			})
-		}
-		succeeded += batchSucceeded
-		failed += batchFailed
-		if err != nil {
-			return succeeded, failed, err
-		}
-		afterID = values[len(values)-1].ID
-		if len(values) < batchSize {
-			return succeeded, failed, nil
-		}
-	}
-}
-
 func completeConsoleUsageSnapshot(windows []accountdomain.QuotaWindow) bool {
 	var present uint8
 	for _, window := range windows {
