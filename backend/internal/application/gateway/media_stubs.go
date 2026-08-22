@@ -84,18 +84,23 @@ type VideoResult = media.Job
 
 // TTSInput mirrors the historical text-to-speech request shape.
 type TTSInput struct {
-	RequestID   string
-	ClientKey   clientkeydomain.Key
-	PublicModel string
-	Text        string
-	Input       string
-	Voice       string
-	VoiceID     string
-	Language    string
-	Format      string
-	Method      string
-	Path        string
-	Headers     http.Header
+	RequestID              string
+	ClientKey              clientkeydomain.Key
+	PublicModel            string
+	Text                   string
+	Input                  string
+	Voice                  string
+	VoiceID                string
+	Language               string
+	OutputFormat           string
+	Format                 string
+	Speed                  float64
+	OptimizeStreamingLatency int
+	TextNormalization      string
+	WithTimestamps         bool
+	Method                 string
+	Path                   string
+	Headers                http.Header
 }
 
 // TTSResult is the no-op result returned for TTS requests.
