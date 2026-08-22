@@ -51,11 +51,11 @@ func (s *Subscribe) Get() proxy.ProxyList {
 
 	// 按格式依次尝试解析
 	if proxies := parseClashYAML(bodyStr); len(proxies) > 0 {
-		log.Infoln("subscribe parsed as clash.yml: count=%d url=%s", len(proxies), s.Url)
+		log.Infof("subscribe parsed as clash.yml: count=%d url=%s", len(proxies), s.Url)
 		return proxies
 	}
 	if proxies := parseSingboxJSON(bodyStr); len(proxies) > 0 {
-		log.Infoln("subscribe parsed as singbox.json: count=%d url=%s", len(proxies), s.Url)
+		log.Infof("subscribe parsed as singbox.json: count=%d url=%s", len(proxies), s.Url)
 		return proxies
 	}
 
@@ -66,7 +66,7 @@ func (s *Subscribe) Get() proxy.ProxyList {
 		nodes := strings.Split(decoded, "\n")
 		proxies := StringArray2ProxyArray(nodes)
 		if len(proxies) > 0 {
-			log.Infoln("subscribe parsed as base64 txt: count=%d url=%s", len(proxies), s.Url)
+			log.Infof("subscribe parsed as base64 txt: count=%d url=%s", len(proxies), s.Url)
 			return proxies
 		}
 	}
@@ -80,7 +80,7 @@ func (s *Subscribe) Get() proxy.ProxyList {
 	}
 	proxies := StringArray2ProxyArray(nodes)
 	if len(proxies) > 0 {
-		log.Infoln("subscribe parsed as plain text: count=%d url=%s scheme=%s", len(proxies), s.Url, schemeHint)
+		log.Infof("subscribe parsed as plain text: count=%d url=%s scheme=%s", len(proxies), s.Url, schemeHint)
 	}
 	return proxies
 }
@@ -296,7 +296,7 @@ func toInt(v interface{}) int {
 func (s *Subscribe) Get2ChanWG(pc chan proxy.Proxy, wg *sync.WaitGroup) {
 	defer wg.Done()
 	nodes := s.Get()
-	log.Infoln("STATISTIC: Subscribe\tcount=%d\turl=%s", len(nodes), s.Url)
+	log.Infof("STATISTIC: Subscribe\tcount=%d\turl=%s", len(nodes), s.Url)
 	for _, node := range nodes {
 		pc <- node
 	}

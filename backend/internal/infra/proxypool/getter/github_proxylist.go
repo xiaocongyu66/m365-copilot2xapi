@@ -66,13 +66,13 @@ func (g *GitHubProxyList) Get() proxy.ProxyList {
 	result := make(proxy.ProxyList, 0)
 	if g.Repo != "" {
 		if !g.isRepoFresh() {
-			log.Warnln("[github-proxylist] repo %s not updated within %d days, skip crawling", g.Repo, g.MaxAgeDays)
+			log.Warnf("[github-proxylist] repo %s not updated within %d days, skip crawling", g.Repo, g.MaxAgeDays)
 			return result
 		}
 	}
 	resp, err := tool.GetHttpClient().Get(g.Url)
 	if err != nil {
-		log.Errorln("[github-proxylist] fetch %s error: %s", g.Url, err.Error())
+		log.Errorf("[github-proxylist] fetch %s error: %s", g.Url, err.Error())
 		return result
 	}
 	defer resp.Body.Close()
@@ -140,12 +140,12 @@ func (g *GitHubProxyList) isRepoFresh() bool {
 	client := &http.Client{Timeout: 15 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Warnln("[github-proxylist] update check failed for %s: %s, fail-open", g.Repo, err.Error())
+		log.Warnf("[github-proxylist] update check failed for %s: %s, fail-open", g.Repo, err.Error())
 		return true
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		log.Warnln("[github-proxylist] update check for %s returned status %d, fail-open", g.Repo, resp.StatusCode)
+		log.Warnf("[github-proxylist] update check for %s returned status %d, fail-open", g.Repo, resp.StatusCode)
 		return true
 	}
 	body, err := io.ReadAll(resp.Body)
@@ -163,14 +163,14 @@ func (g *GitHubProxyList) isRepoFresh() bool {
 	}
 	age := time.Since(commitTime)
 	fresh := age <= time.Duration(g.MaxAgeDays)*24*time.Hour
-	log.Infoln("[github-proxylist] repo %s last commit %s ago, fresh=%v (threshold %d days)", g.Repo, age.Round(time.Hour), fresh, g.MaxAgeDays)
+	log.Infof("[github-proxylist] repo %s last commit %s ago, fresh=%v (threshold %d days)", g.Repo, age.Round(time.Hour), fresh, g.MaxAgeDays)
 	return fresh
 }
 
 func (g *GitHubProxyList) Get2ChanWG(pc chan proxy.Proxy, wg *sync.WaitGroup) {
 	defer wg.Done()
 	nodes := g.Get()
-	log.Infoln("STATISTIC: GitHubProxyList\tcount=%d\turl=%s", len(nodes), g.Url)
+	log.Infof("STATISTIC: GitHubProxyList\tcount=%d\turl=%s", len(nodes), g.Url)
 	for _, node := range nodes {
 		pc <- node
 	}

@@ -83,7 +83,7 @@ func (w *WebFanqiangdang) Get() proxy.ProxyList {
 func (w *WebFanqiangdang) Get2ChanWG(pc chan proxy.Proxy, wg *sync.WaitGroup) {
 	defer wg.Done()
 	nodes := w.Get()
-	log.Infoln("STATISTIC: Fanqiangdang\tcount=%d\turl=%s", len(nodes), w.Url)
+	log.Infof("STATISTIC: Fanqiangdang\tcount=%d\turl=%s", len(nodes), w.Url)
 	for _, node := range nodes {
 		pc <- node
 	}
