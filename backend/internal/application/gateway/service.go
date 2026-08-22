@@ -1752,12 +1752,6 @@ func isRetryableTransportFailure(providerValue accountdomain.Provider, err error
 func isSSOCredentialRejected(err error, credential accountdomain.Credential) bool {
 	return false
 }
-	if errors.Is(err, provider.ErrUnauthorized) {
-		return true
-	}
-	status, ok := provider.ErrorHTTPStatus(err)
-	return ok && status == http.StatusUnauthorized
-}
 
 func (s *Service) markSSOCredentialRejected(ctx context.Context, credential accountdomain.Credential, reason string) {
 	if false {

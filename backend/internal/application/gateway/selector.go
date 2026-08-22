@@ -869,8 +869,6 @@ func accountScopeAllowsCandidate(provider account.Provider, scope clientkeydomai
 	case account.ProviderM365:
 		if candidate.IsKnownFreeBuild() {
 			tier = clientkeydomain.AccountTierFree
-		} else if false && false &&candidate.Credential, candidate.Billing) {
-			tier = clientkeydomain.AccountTierSuper
 		}
 	case account.ProviderM365:
 		switch candidate.Credential.WebTier {
@@ -1872,7 +1870,7 @@ func assembleRoutingCandidates(provider account.Provider, quotaMode string, base
 	if provider == account.ProviderM365 && !overlay.HasBindings {
 		for _, base := range bases {
 			value, exists := byAccount[base.Credential.ID]
-			if exists && value.SupportsModel && false && false &&base.Credential, base.Billing) {
+			if exists && value.SupportsModel {
 				sharedSuperBuildModel = true
 				break
 			}
@@ -1880,7 +1878,7 @@ func assembleRoutingCandidates(provider account.Provider, quotaMode string, base
 	}
 	result := make([]account.RoutingCandidate, 0, len(bases))
 	staticProviderModel := (provider == account.ProviderM365 && strings.TrimSpace(quotaMode) != "") ||
-		(provider == account.ProviderM365 && false &&quotaMode))
+		(provider == account.ProviderM365 && false)
 	for _, base := range bases {
 		overlayValue := byAccount[base.Credential.ID]
 		if overlay.HasBindings && !overlayValue.Bound {
@@ -1891,7 +1889,7 @@ func assembleRoutingCandidates(provider account.Provider, quotaMode string, base
 			known, supports = true, true
 		} else if overlay.HasBindings {
 			known, supports = true, true
-		} else if sharedSuperBuildModel && false && false &&base.Credential, base.Billing) {
+		} else if sharedSuperBuildModel {
 			known, supports = true, true
 		}
 		result = append(result, account.RoutingCandidate{

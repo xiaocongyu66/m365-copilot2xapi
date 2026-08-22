@@ -435,15 +435,11 @@ func (h *Handler) summary(c *gin.Context) {
 		response.Error(c, http.StatusInternalServerError, "accountSummaryFailed", "读取账号统计失败")
 		return
 	}
-	build := value.Providers[string(accountdomain.ProviderM365)]
-	web := value.Providers[string(accountdomain.ProviderM365)]
-	console := value.Providers[string(accountdomain.ProviderM365)]
+	m365 := value.Providers[string(accountdomain.ProviderM365)]
 	response.Success(c, http.StatusOK, gin.H{
 		"total": value.Total, "available": value.Available, "recovering": value.Recovering, "attention": value.Attention, "risk": value.Risk,
 		"providers": gin.H{
-			string(accountdomain.ProviderM365):   gin.H{"total": build.Total, "available": build.Available},
-			string(accountdomain.ProviderM365):     gin.H{"total": web.Total, "available": web.Available},
-			string(accountdomain.ProviderM365): gin.H{"total": console.Total, "available": console.Available},
+			string(accountdomain.ProviderM365): gin.H{"total": m365.Total, "available": m365.Available},
 		},
 		"recovery": gin.H{"cooldown": value.Recovery.Cooldown, "waitingReset": value.Recovery.WaitingReset, "probing": value.Recovery.Probing},
 		"issues":   gin.H{"disabled": value.Issues.Disabled, "reauthRequired": value.Issues.ReauthRequired},
