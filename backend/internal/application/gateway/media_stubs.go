@@ -55,17 +55,21 @@ type ImageEditInput struct {
 
 // VideoInput mirrors the historical video generation request shape.
 type VideoInput struct {
-	RequestID   string
-	ClientKey   clientkeydomain.Key
-	PublicModel string
-	Prompt      string
-	Duration    int
-	AspectRatio string
-	Resolution  string
-	Method      string
-	Path        string
-	Headers     http.Header
-	Credential  account.Credential
+	RequestID       string
+	ClientKey       clientkeydomain.Key
+	PublicModel     string
+	Operation       string
+	Prompt          string
+	Duration        int
+	AspectRatio     string
+	Resolution      string
+	ImageURL        string
+	ReferenceURLs   []string
+	ReferenceAudios []string
+	Method          string
+	Path            string
+	Headers         http.Header
+	Credential      account.Credential
 }
 
 // VideoInputFileReference is a placeholder for video file references.

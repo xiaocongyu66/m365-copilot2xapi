@@ -754,7 +754,7 @@ func (h *Handler) handleVideoCreate(c *gin.Context, operation, label string) {
 				writeOpenAIError(c, http.StatusBadRequest, "invalid_request", field+".file_id 无效")
 				return "", false
 			}
-			return gateway.VideoInputFileReference(fileID), true
+			return fileID, true
 		}
 		return urlValue, true
 	}
