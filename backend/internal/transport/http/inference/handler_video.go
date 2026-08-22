@@ -10,6 +10,7 @@ import (
 
 	"M365Copilot2ApiX/backend/internal/application/gateway"
 	mediadomain "M365Copilot2ApiX/backend/internal/domain/media"
+	"github.com/gin-gonic/gin"
 )
 
 func (h *Handler) generateVideo(c *gin.Context) {

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"M365Copilot2ApiX/backend/internal/application/gateway"
+	"github.com/gin-gonic/gin"
 )
 
 func (h *Handler) generateImage(c *gin.Context) {
