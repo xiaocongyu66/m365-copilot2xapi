@@ -543,6 +543,310 @@ func (h *Handler) batchRefreshBilling(c *gin.Context) {
 }
 
 
+func (h *Handler) batchResetQuota(c *gin.Context) {
+	var request batchDeleteRequest
+	if c.ShouldBindJSON(&request) != nil {
+		response.Error(c, http.StatusBadRequest, "invalidRequest", "请求参数无效")
+		return
+	}
+	ids, err := parseIDs(request.IDs)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "invalidId", err.Error())
+		return
+	}
+	if request.Provider != string(accountdomain.ProviderM365) {
+		response.Error(c, http.StatusBadRequest, "invalidProvider", "仅 Grok Build 账号支持手动重置额度状态")
+		return
+	}
+	reset, err := h.service.BatchResetQuotaState(c.Request.Context(), ids)
+	if err != nil {
+		h.writeServiceError(c, "quotaBatchResetFailed", err, http.StatusInternalServerError, "批量重置额度状态失败")
+		return
+	}
+	response.Success(c, http.StatusOK, gin.H{"reset": reset})
+}
+
+func (h *Handler) cleanup(c *gin.Context) {
+	var request accountCleanupRequest
+	if c.ShouldBindJSON(&request) != nil {
+		response.Error(c, http.StatusBadRequest, "invalidRequest", "请求参数无效")
+		return
+	}
+	targets, err := parseLinkedDeleteTargets(request.LinkedDeleteTargets)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "invalidLinkedDeleteTargets", err.Error())
+		return
+	}
+	result, err := h.service.CleanupAccounts(c.Request.Context(), accountdomain.Provider(request.Provider), request.Statuses, targets)
+	if err != nil {
+		h.writeServiceError(c, "accountCleanupFailed", err, http.StatusInternalServerError, "清理账号失败")
+		return
+	}
+	byProvider := gin.H{}
+	for provider, count := range result.DeletedByProvider {
+		byProvider[string(provider)] = count
+	}
+	response.Success(c, http.StatusOK, gin.H{
+		"deleted":           result.Deleted,
+		"rootsDeleted":      result.RootsDeleted,
+		"linkedDeleted":     result.LinkedDeleted,
+		"skipped":           result.Skipped,
+		"deletedByProvider": byProvider,
+	})
+}
+
+// cleanupPreview returns root and linked-peer counts for the cleanup dialog.
+func (h *Handler) cleanupPreview(c *gin.Context) {
+	var request accountCleanupRequest
+	if c.ShouldBindJSON(&request) != nil {
+		response.Error(c, http.StatusBadRequest, "invalidRequest", "请求参数无效")
+		return
+	}
+	targets, err := parseLinkedDeleteTargets(request.LinkedDeleteTargets)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "invalidLinkedDeleteTargets", err.Error())
+		return
+	}
+	preview, err := h.service.PreviewCleanup(c.Request.Context(), accountdomain.Provider(request.Provider), request.Statuses, targets)
+	if err != nil {
+		h.writeServiceError(c, "accountCleanupPreviewFailed", err, http.StatusInternalServerError, "预览清理账号失败")
+		return
+	}
+	rootsByStatus := gin.H{}
+	for status, count := range preview.RootsByStatus {
+		rootsByStatus[status] = count
+	}
+	linked := gin.H{}
+	for provider, count := range preview.LinkedByProvider {
+		linked[string(provider)] = count
+	}
+	response.Success(c, http.StatusOK, gin.H{
+		"rootsByStatus":    rootsByStatus,
+		"rootCount":        preview.RootCount,
+		"linkedByProvider": linked,
+		"total":            preview.Total,
+	})
+}
+
+func (h *Handler) batchRefreshQuotas(c *gin.Context) {
+	var request batchDeleteRequest
+	if c.ShouldBindJSON(&request) != nil {
+		response.Error(c, http.StatusBadRequest, "invalidRequest", "请求参数无效")
+		return
+	}
+	ids, err := parseIDs(request.IDs)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "invalidId", err.Error())
+		return
+	}
+	providerValue := accountdomain.Provider(request.Provider)
+	if !providerValue.IsValid() {
+		response.Error(c, http.StatusBadRequest, "invalidProvider", "账号来源无效")
+		return
+	}
+	if !h.validateProviderIDs(c, ids, request.Provider) {
+		return
+	}
+	var succeeded, failed int
+	if providerValue == accountdomain.ProviderM365 {
+		succeeded, failed, err = h.service.BatchRefreshBilling(c.Request.Context(), ids)
+	} else {
+		succeeded, failed, err = h.service.BatchRefreshQuota(c.Request.Context(), ids)
+	}
+	if err != nil {
+		h.writeServiceError(c, "quotaBatchRefreshFailed", err, http.StatusBadGateway, "批量同步账号额度失败")
+		return
+	}
+	response.Success(c, http.StatusOK, gin.H{"succeeded": succeeded, "failed": failed})
+}
+
+func (h *Handler) batchRefreshTokens(c *gin.Context) {
+	var request batchDeleteRequest
+	if c.ShouldBindJSON(&request) != nil {
+		response.Error(c, http.StatusBadRequest, "invalidRequest", "请求参数无效")
+		return
+	}
+	ids, err := parseIDs(request.IDs)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "invalidId", err.Error())
+		return
+	}
+	if request.Provider != string(accountdomain.ProviderM365) {
+		response.Error(c, http.StatusBadRequest, "invalidProvider", "仅 Grok Build 账号支持凭据刷新")
+		return
+	}
+	if !h.validateProviderIDs(c, ids, request.Provider) {
+		return
+	}
+	succeeded, failed, skipped, err := h.service.BatchRefreshTokens(c.Request.Context(), ids)
+	if err != nil {
+		h.writeServiceError(c, "tokenRefreshFailed", err, http.StatusBadGateway, "批量刷新账号凭据失败")
+		return
+	}
+	response.Success(c, http.StatusOK, gin.H{"succeeded": succeeded, "failed": failed, "skipped": skipped})
+}
+
+func (h *Handler) get(c *gin.Context) {
+	id, ok := pathID(c)
+	if !ok {
+		return
+	}
+	value, err := h.service.Get(c.Request.Context(), id)
+	if err != nil {
+		h.writeServiceError(c, "accountGetFailed", err, http.StatusInternalServerError, "读取账号失败")
+		return
+	}
+	response.Success(c, http.StatusOK, newAccountResponse(value))
+}
+
+func (h *Handler) startDevice(c *gin.Context) {
+	value, err := h.service.StartDeviceLogin(c.Request.Context())
+	if err != nil {
+		response.Error(c, http.StatusBadGateway, "deviceLoginStartFailed", "启动 Device OAuth 失败")
+		return
+	}
+	response.Success(c, http.StatusCreated, gin.H{"sessionId": value.SessionID, "userCode": value.UserCode, "verificationUri": value.VerificationURI, "verificationUriComplete": value.VerificationURIComplete, "intervalSeconds": int(value.Interval.Seconds()), "expiresAt": value.ExpiresAt})
+}
+
+func (h *Handler) pollDevice(c *gin.Context) {
+	value, err := h.service.PollDeviceLogin(c.Request.Context(), c.Param("sessionId"))
+	if errors.Is(err, accountapp.ErrDevicePending) {
+		response.Success(c, http.StatusAccepted, gin.H{"status": "pending"})
+		return
+	}
+	if errors.Is(err, accountapp.ErrDeviceSlowDown) {
+		response.Error(c, http.StatusTooManyRequests, "devicePollTooFast", "轮询过快，请稍后重试")
+		return
+	}
+	if errors.Is(err, accountapp.ErrDeviceDenied) {
+		response.Error(c, http.StatusGone, "deviceLoginExpired", "Device OAuth 已拒绝或过期")
+		return
+	}
+	if err != nil {
+		response.Error(c, http.StatusBadGateway, "deviceLoginFailed", "Device OAuth 登录失败")
+		return
+	}
+	syncResult := h.syncInitial(c.Request.Context(), value.Credential.ID)
+	if refreshed, refreshErr := h.service.Get(c.Request.Context(), value.Credential.ID); refreshErr == nil {
+		value = refreshed
+	}
+	status := "succeeded"
+	if syncResult.Failed > 0 {
+		status = "syncFailed"
+	}
+	response.Success(c, http.StatusOK, gin.H{"status": status, "account": newAccountResponse(value), "synced": syncResult.Succeeded, "syncFailed": syncResult.Failed})
+}
+
+func (h *Handler) importAuth(c *gin.Context) {
+func prepareAccountEventStream(c *gin.Context) {
+	c.Header("Content-Type", "text/event-stream; charset=utf-8")
+	c.Header("Cache-Control", "no-cache, no-transform")
+	c.Header("X-Accel-Buffering", "no")
+}
+
+type accountEventStream struct {
+	context   *gin.Context
+	mu        sync.Mutex
+	stop      chan struct{}
+	done      chan struct{}
+	closeOnce sync.Once
+}
+
+func newAccountEventStream(c *gin.Context) *accountEventStream {
+	prepareAccountEventStream(c)
+	stream := &accountEventStream{context: c, stop: make(chan struct{}), done: make(chan struct{})}
+	_ = stream.writeComment("connected")
+	go stream.heartbeat()
+	return stream
+}
+
+func (s *accountEventStream) ProgressObserver() accountapp.BatchProgressObserver {
+	return s.PhaseProgressObserver("", nil)
+}
+
+func (s *accountEventStream) PhaseProgressObserver(phase string, totalValue *atomic.Int64) accountapp.BatchProgressObserver {
+	return func(completed, total int) error {
+		if totalValue != nil {
+			totalValue.Store(int64(total))
+		}
+		return s.Write("progress", accountTaskProgressResponse{Completed: completed, Total: total, Phase: phase})
+	}
+}
+
+func (s *accountEventStream) SyncProgressObserver() func(completed, total int) {
+	return func(completed, total int) {
+		_ = s.Write("progress", accountTaskProgressResponse{Completed: completed, Total: total, Phase: "syncing"})
+	}
+}
+
+func (s *accountEventStream) WriteError(code, message string) {
+	_ = s.Write("error", gin.H{"code": code, "message": message})
+}
+
+func (s *accountEventStream) Write(event string, value any) error {
+	payload, err := json.Marshal(value)
+	if err != nil {
+		return err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if err := setAccountWriteDeadline(s.context.Writer); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(s.context.Writer, "event: %s\ndata: %s\n\n", event, payload); err != nil {
+		return err
+	}
+	s.context.Writer.Flush()
+	return s.context.Request.Context().Err()
+}
+
+func (s *accountEventStream) writeComment(comment string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if err := setAccountWriteDeadline(s.context.Writer); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(s.context.Writer, ": %s\n\n", comment); err != nil {
+		return err
+	}
+	s.context.Writer.Flush()
+	return s.context.Request.Context().Err()
+}
+
+func (s *accountEventStream) heartbeat() {
+	defer close(s.done)
+	ticker := time.NewTicker(accountEventHeartbeatInterval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-s.stop:
+			return
+		case <-s.context.Request.Context().Done():
+			return
+		case <-ticker.C:
+			if err := s.writeComment("heartbeat"); err != nil {
+				return
+			}
+		}
+	}
+}
+
+func (s *accountEventStream) Close() {
+	s.closeOnce.Do(func() { close(s.stop) })
+	<-s.done
+}
+
+func setAccountWriteDeadline(writer http.ResponseWriter) error {
+	err := http.NewResponseController(writer).SetWriteDeadline(time.Now().Add(accountEventWriteTimeout))
+	if errors.Is(err, http.ErrNotSupported) {
+		return nil
+	}
+	return err
+}
+
+// writeAccountEvent keeps the event encoder independently testable without starting a heartbeat.
+func writeAccountEvent(c *gin.Context, event string, value any) error {
+	return (&accountEventStream{context: c}).Write(event, value)
 func (h *Handler) importFile(c *gin.Context, providerValue accountdomain.Provider) {
 	fileDescription := "账号凭据 JSON、逐行 JSON 或 refresh token 文本"
 	if providerValue == accountdomain.ProviderM365 {
