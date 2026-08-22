@@ -13,6 +13,7 @@ import (
 	"M365Copilot2ApiX/backend/internal/application/gateway"
 	mediadomain "M365Copilot2ApiX/backend/internal/domain/media"
 	"M365Copilot2ApiX/backend/internal/infra/provider"
+	"M365Copilot2ApiX/backend/internal/pkg/mediafile"
 	"github.com/gin-gonic/gin"
 )
 
