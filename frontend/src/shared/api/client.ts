@@ -19,7 +19,7 @@ export class ApiError extends Error {
 let accessToken: string | null = null;
 let refreshPromise: Promise<RefreshResult> | null = null;
 const sessionInvalidatedListeners = new Set<() => void>();
-const refreshLockName = "grok2api:admin-session-refresh";
+const refreshLockName = "m365copilot2xapi:admin-session-refresh";
 const maxEventStreamBufferCharacters = 1 << 20;
 const eventStreamInactivityTimeoutMs = 60_000;
 

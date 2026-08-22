@@ -272,7 +272,7 @@ export function AccountsPage() {
     enabled: egressFilterOptionsOpen,
     staleTime: 60_000,
   });
-  // Console routing supports both native Console exits and Grok Web exits. Keep
+  // Console routing supports both native Console exits and M365 exits. Keep
   // the second scope independently paginated so unrelated Build/asset nodes can
   // never consume the Console result pages.
   const egressFilterConsoleWebNodesQuery = useInfiniteQuery({
@@ -390,9 +390,9 @@ export function AccountsPage() {
     (["grok_web", "grok_build", "grok_console"] as AccountProvider[]).filter((item) => item !== current);
 
   const linkedTargetLabel = (value: AccountProvider) => {
-    if (value === "grok_build") return "Grok Build";
-    if (value === "grok_console") return "Grok Console";
-    return "Grok Web";
+    if (value === "grok_build") return "M365";
+    if (value === "grok_console") return "M365";
+    return "M365";
   };
 
   const linkedTargetIcon = (value: AccountProvider) => {
@@ -1303,15 +1303,15 @@ export function AccountsPage() {
             <TabsList>
               <TabsTrigger value="grok_build" className="gap-1.5">
                 <SquareTerminal className="size-3.5 text-quota-product-1" />
-                <span>Grok Build</span>
+                <span>M365</span>
               </TabsTrigger>
               <TabsTrigger value="grok_web" className="gap-1.5">
                 <Compass className="size-3.5 text-quota-product-2" />
-                <span>Grok Web</span>
+                <span>M365</span>
               </TabsTrigger>
               <TabsTrigger value="grok_console" className="gap-1.5">
                 <Webhook className="size-3.5 text-quota-product-4" />
-                <span>Grok Console</span>
+                <span>M365</span>
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -1687,8 +1687,8 @@ export function AccountsPage() {
             <p id="web-conversion-target" className="text-xs font-medium">{t("accountConversion.target")}</p>
             <Tabs value={webConversionTarget} onValueChange={(value) => setWebConversionTarget(value as WebConversionTarget)}>
               <TabsList aria-labelledby="web-conversion-target" className="grid h-10 w-full grid-cols-2 p-1">
-                <TabsTrigger value="build" className="h-8 gap-2 font-normal" disabled={webConversionPending}><SquareTerminal className="text-quota-product-1" />Grok Build</TabsTrigger>
-                <TabsTrigger value="console" className="h-8 gap-2 font-normal" disabled={webConversionPending}><Webhook className="text-quota-product-4" />Grok Console</TabsTrigger>
+                <TabsTrigger value="build" className="h-8 gap-2 font-normal" disabled={webConversionPending}><SquareTerminal className="text-quota-product-1" />M365</TabsTrigger>
+                <TabsTrigger value="console" className="h-8 gap-2 font-normal" disabled={webConversionPending}><Webhook className="text-quota-product-4" />M365</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
@@ -1722,7 +1722,7 @@ export function AccountsPage() {
 
       <AlertDialog open={exportOpen} onOpenChange={(open) => { if (!open && !exportMutation.isPending) setExportOpen(false); }}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>{t("accounts.exportTitle", { provider: provider === "grok_build" ? "Grok Build" : provider === "grok_web" ? "Grok Web" : "Grok Console" })}</AlertDialogTitle><AlertDialogDescription>{t("accounts.exportDescription")}</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>{t("accounts.exportTitle", { provider: provider === "grok_build" ? "M365" : provider === "grok_web" ? "M365" : "M365" })}</AlertDialogTitle><AlertDialogDescription>{t("accounts.exportDescription")}</AlertDialogDescription></AlertDialogHeader>
           {selected.size > 0 ? <p className="text-sm text-muted-foreground">{t("common.selectedCount", { count: selected.size })}</p> : <div className="grid gap-2">
             <Label htmlFor="account-export-limit">{t("accounts.exportCount")}</Label>
             <Input id="account-export-limit" type="number" min={1} max={10000} value={exportLimit} disabled={exportSnapshotMaxId !== "0"} onChange={(event) => setExportLimit(event.target.value)} />
@@ -2144,7 +2144,7 @@ export function AccountsPage() {
       <Dialog open={cleanupOpen} onOpenChange={(open) => { if (!cleanupMutation.isPending) { setCleanupOpen(open); if (!open) resetCleanupState(); } }}>
         <DialogContent className="max-w-[440px]">
           <DialogHeader>
-            <DialogTitle>{t("accounts.cleanupTitle", { provider: provider === "grok_build" ? "Grok Build" : provider === "grok_web" ? "Grok Web" : "Grok Console" })}</DialogTitle>
+            <DialogTitle>{t("accounts.cleanupTitle", { provider: provider === "grok_build" ? "M365" : provider === "grok_web" ? "M365" : "M365" })}</DialogTitle>
             <DialogDescription>{t("accounts.cleanupDescription")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-1.5">
@@ -2272,7 +2272,7 @@ function downloadAccountExport(blob: Blob, provider: AccountProvider, suffix: st
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = `grok2api-${provider.replaceAll("_", "-")}-accounts-${suffix}-${new Date().toISOString().slice(0, 10)}.json`;
+  anchor.download = `m365copilot2xapi-${provider.replaceAll("_", "-")}-accounts-${suffix}-${new Date().toISOString().slice(0, 10)}.json`;
   anchor.click();
   window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }

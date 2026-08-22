@@ -17,6 +17,7 @@ import (
 	"M365Copilot2ApiX/backend/internal/application/gateway"
 	mediaapp "M365Copilot2ApiX/backend/internal/application/media"
 	modelapp "M365Copilot2ApiX/backend/internal/application/model"
+	"M365Copilot2ApiX/backend/internal/infra/proxypool"
 	settingsapp "M365Copilot2ApiX/backend/internal/application/settings"
 	updatecheckapp "M365Copilot2ApiX/backend/internal/application/updatecheck"
 	accounthttp "M365Copilot2ApiX/backend/internal/transport/http/account"
@@ -29,6 +30,7 @@ import (
 	mediahttp "M365Copilot2ApiX/backend/internal/transport/http/media"
 	"M365Copilot2ApiX/backend/internal/transport/http/middleware"
 	modelhttp "M365Copilot2ApiX/backend/internal/transport/http/model"
+	proxieshttp "M365Copilot2ApiX/backend/internal/transport/http/proxies"
 	settingshttp "M365Copilot2ApiX/backend/internal/transport/http/settings"
 	systemhttp "M365Copilot2ApiX/backend/internal/transport/http/system"
 	"github.com/gin-gonic/gin"
@@ -61,6 +63,7 @@ type Dependencies struct {
 	Media                  *mediaapp.Service
 	Settings               *settingsapp.Service
 	Egress                 *egressapp.Service
+	ProxyPool              *proxypool.Service
 	QualityGuardStatePath  string
 	QualityGuardConfigPath string
 	QualityGuardToken      string
@@ -151,6 +154,9 @@ func New(deps Dependencies) *gin.Engine {
 	authHandler.RegisterAuthenticated(adminProtected)
 	accounthttp.NewHandler(deps.Accounts, deps.AccountSync).Register(adminProtected)
 	modelhttp.NewHandler(deps.Models).Register(adminProtected)
+	if deps.ProxyPool != nil {
+		proxieshttp.NewHandler(deps.ProxyPool).Register(adminProtected)
+	}
 	clientkeyhttp.NewHandler(deps.ClientKeys).Register(adminProtected)
 	auditHandler := audithttp.NewHandler(deps.Audits)
 	auditHandler.Register(adminProtected)

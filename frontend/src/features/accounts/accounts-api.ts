@@ -330,7 +330,7 @@ export function enableWebAccountNSFW(id: string): Promise<{ completed: boolean }
 export type AccountBatchResultDTO = { succeeded: number; failed: number };
 export type AccountTokenRefreshResultDTO = AccountBatchResultDTO & { skipped: number };
 
-/** 管理端 Grok Build 检测的单账号增量结果（SSE event: item）。 */
+/** 管理端 M365 检测的单账号增量结果（SSE event: item）。 */
 export type BuildDetectItemDTO = {
   id: string;
   name: string;

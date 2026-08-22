@@ -41,9 +41,9 @@ export function AccountNameCell({ account }: { account: AccountDTO }) {
   const { t, i18n } = useTranslation();
   const links = accountLinks(account);
   const providerLabel = (provider: AccountProvider) => provider === "grok_build"
-    ? t("models.providerGrokBuild")
+    ? t("models.providerM365Build")
     : provider === "grok_web"
-      ? t("models.providerGrokWeb")
+      ? t("models.providerM365Web")
       : t("console.name");
   const connections = [
     { id: account.id, provider: account.provider, details: identityDetails(account.name, account.email, account.userId) },

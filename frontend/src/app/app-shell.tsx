@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AudioLines, Box, ChevronDown, Eye, Image, KeyRound, Languages, LayoutDashboard, LogOut, Menu, MessageSquareText, Monitor, Moon, MoreHorizontal, Settings, ShieldCheck, Sparkles, Sun, Users, Video } from "lucide-react";
+import { AudioLines, Box, ChevronDown, Eye, Globe, Image, KeyRound, Languages, LayoutDashboard, LogOut, Menu, MessageSquareText, Monitor, Moon, MoreHorizontal, Settings, ShieldCheck, Sparkles, Sun, Users, Video } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useState, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
@@ -23,6 +23,7 @@ import { CurrentVersionLabel } from "@/features/system/version-update";
 const navigation = [
   { href: "/dashboard", label: "nav.dashboard", icon: LayoutDashboard },
   { href: "/accounts", label: "nav.accounts", icon: Users },
+  { href: "/proxies", label: "nav.proxies", icon: Globe },
   { href: "/client-keys", label: "nav.clientKeys", icon: KeyRound },
   { href: "/models", label: "nav.models", icon: Box },
   { href: "/gallery", label: "nav.gallery", icon: Image },
@@ -239,7 +240,7 @@ export function AppShell() {
               <CurrentVersionLabel />
             </Link>
             <Button variant="ghost" size="icon" className="size-7 text-muted-foreground [&_svg]:size-[15px]" asChild>
-              <a href="https://github.com/chenyme/grok2api" target="_blank" rel="noreferrer" aria-label="GitHub">
+              <a href="https://github.com/xiaocongyu66/m365-copilot2xapi" target="_blank" rel="noreferrer" aria-label="GitHub">
                 <GitHubMark />
               </a>
             </Button>
@@ -269,7 +270,7 @@ export function AppShell() {
             </Sheet>
             <span className="flex items-baseline gap-2 text-sm font-semibold"><span>{t("appName")}</span><CurrentVersionLabel /></span>
             <Button variant="ghost" size="icon" className="size-8 text-muted-foreground hover:text-foreground" asChild>
-              <a href="https://github.com/chenyme/grok2api" target="_blank" rel="noreferrer" aria-label="GitHub">
+              <a href="https://github.com/xiaocongyu66/m365-copilot2xapi" target="_blank" rel="noreferrer" aria-label="GitHub">
                 <GitHubMark />
               </a>
             </Button>

@@ -208,6 +208,25 @@ func (f *Fetcher) Status() (running bool, lastRun time.Time, lastResult FetchRes
 	return f.running, f.lastRun, f.lastResult
 }
 
+// RunOnceWithSource 立即从指定 URL 抓取一次(不入配置源列表,只抓一次)
+func (f *Fetcher) RunOnceWithSource(url string) FetchResult {
+	proxies, err := fetchFromSource(url)
+	result := FetchResult{Time: time.Now()}
+	if err != nil {
+		result.Errors = append(result.Errors, err.Error())
+		return result
+	}
+	result.Total = len(proxies)
+	imported, skipped := f.importProxies(proxies)
+	result.Imported = imported
+	result.Skipped = skipped
+	// 注册分数
+	for _, p := range proxies {
+		f.score.Register(p.Identifier(), p.BaseInfo().Name)
+	}
+	return result
+}
+
 // fetchFromSource 从单个源抓取代理,自动检测格式
 func fetchFromSource(url string) ([]proxy.Proxy, error) {
 	// proxypool 的 subscribe getter 能处理订阅 URL 和网页 URL

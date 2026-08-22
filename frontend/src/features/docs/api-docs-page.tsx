@@ -183,7 +183,7 @@ const endpoints: Record<string, EndpointDefinition> = {
       { name: "with_timestamps", descriptionKey: "docs.reference.fieldTTSTimestamps" },
     ],
     noteKeys: ["docs.reference.noteTTSModels", "docs.reference.noteTTSBinary", "docs.reference.noteVoiceBilling"],
-    request: (model) => ({ model, text: "Hello from Grok voice.", voice_id: "eve", language: "en", output_format: { codec: "mp3" } }),
+    request: (model) => ({ model, text: "Hello from M365 voice.", voice_id: "eve", language: "en", output_format: { codec: "mp3" } }),
     response: { content_type: "audio/mpeg", note: "Default responses return raw audio bytes. with_timestamps=true returns a JSON envelope." },
   },
   "voice/audio-speech": {
@@ -198,7 +198,7 @@ const endpoints: Record<string, EndpointDefinition> = {
       { name: "language", descriptionKey: "docs.reference.fieldVoiceLanguageOptional" },
     ],
     noteKeys: ["docs.reference.noteAudioSpeechCompat", "docs.reference.noteTTSModels", "docs.reference.noteTTSBinary", "docs.reference.noteVoiceBilling"],
-    request: (model) => ({ model, input: "Hello from Grok voice.", voice: "alloy", response_format: "mp3", speed: 1.0, language: "en" }),
+    request: (model) => ({ model, input: "Hello from M365 voice.", voice: "alloy", response_format: "mp3", speed: 1.0, language: "en" }),
     response: { content_type: "audio/mpeg", note: "Returns raw audio bytes compatible with OpenAI speech clients." },
   },
   "voice/audio-tasks": {
@@ -213,7 +213,7 @@ const endpoints: Record<string, EndpointDefinition> = {
       { name: "language", descriptionKey: "docs.reference.fieldVoiceLanguageOptional" },
     ],
     noteKeys: ["docs.reference.noteAudioTasksCompat", "docs.reference.noteTTSModels", "docs.reference.noteVoiceBilling"],
-    request: (model) => ({ model, input: "Hello from Grok voice.", voice: "alloy", response_format: "mp3", language: "en" }),
+    request: (model) => ({ model, input: "Hello from M365 voice.", voice: "alloy", response_format: "mp3", language: "en" }),
     response: { content_type: "audio/mpeg", note: "Compatibility path that returns raw audio bytes by default." },
   },
   "voice/audio-transcriptions": {
@@ -228,7 +228,7 @@ const endpoints: Record<string, EndpointDefinition> = {
     ],
     noteKeys: ["docs.reference.noteAudioTranscriptionsCompat", "docs.reference.noteSTTInput", "docs.reference.noteSTTModels", "docs.reference.noteVoiceBilling"],
     request: (model) => ({ model, url: "https://example.com/sample.wav", language: "en" }),
-    response: { text: "Hello from Grok voice." },
+    response: { text: "Hello from M365 voice." },
   },
   "voice/voices": {
     key: "voice/voices", category: "Voice", title: "List voices", method: "GET", path: "/tts/voices",
@@ -254,7 +254,7 @@ const endpoints: Record<string, EndpointDefinition> = {
     ],
     noteKeys: ["docs.reference.noteSTTInput", "docs.reference.noteSTTStream", "docs.reference.noteSTTModels", "docs.reference.noteVoiceBilling"],
     request: (model) => ({ model, url: "https://example.com/sample.wav", language: "en", format: true }),
-    response: { text: "Hello from Grok voice.", language: "en", duration: 1.84, words: [{ text: "Hello", start: 0.0, end: 0.42 }] },
+    response: { text: "Hello from M365 voice.", language: "en", duration: 1.84, words: [{ text: "Hello", start: 0.0, end: 0.42 }] },
   },
   "voice/realtime": {
     key: "voice/realtime", category: "Voice", title: "Realtime websocket", method: "GET", path: "/realtime",

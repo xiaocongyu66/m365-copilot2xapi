@@ -17,7 +17,7 @@ import { PERIOD_DAYS, toPeriodValue, type PeriodDays } from "@/shared/lib/period
 
 type DashboardPreferences = { periodDays: PeriodDays };
 
-const DASHBOARD_PREFERENCES_KEY = "grok2api:dashboard-preferences";
+const DASHBOARD_PREFERENCES_KEY = "m365copilot2xapi:dashboard-preferences";
 const DEFAULT_DASHBOARD_PREFERENCES: DashboardPreferences = { periodDays: 30 };
 
 export function DashboardPage() {

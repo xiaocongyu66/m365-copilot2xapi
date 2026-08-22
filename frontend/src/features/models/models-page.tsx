@@ -240,8 +240,8 @@ export function ModelsPage() {
               </div>
               <DataTableFilters filters={[
                 { id: "provider", label: t("models.provider"), value: providerFilter, onChange: (value) => { setProviderFilter(value as ModelRouteDTO["provider"] | ""); setPage(1); setSelected(new Set()); }, options: [
-                  { value: "grok_build", label: t("models.providerGrokBuild") },
-                  { value: "grok_web", label: t("models.providerGrokWeb") },
+                  { value: "grok_build", label: t("models.providerM365Build") },
+                  { value: "grok_web", label: t("models.providerM365Web") },
                   { value: "grok_console", label: t("console.name") },
                 ] },
                 { id: "status", label: t("models.status"), value: statusFilter, onChange: (value) => { setStatusFilter(value); setPage(1); setSelected(new Set()); }, options: [
@@ -353,7 +353,7 @@ export function ModelsPage() {
                     <Label>{t("models.provider")}</Label>
                     <Select value={selectedProvider} disabled>
                       <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent><SelectItem value="grok_build">{t("models.providerGrokBuild")}</SelectItem></SelectContent>
+                      <SelectContent><SelectItem value="grok_build">{t("models.providerM365Build")}</SelectItem></SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
@@ -437,7 +437,7 @@ export function ModelsPage() {
 
 function ModelProvider({ provider }: { provider: ModelRouteDTO["provider"] }) {
   const { t } = useTranslation();
-  const label = provider === "grok_web" ? t("models.providerGrokWeb") : provider === "grok_console" ? t("console.name") : t("models.providerGrokBuild");
+  const label = provider === "grok_web" ? t("models.providerM365Web") : provider === "grok_console" ? t("console.name") : t("models.providerM365Build");
   const color = provider === "grok_web" ? "bg-quota-product-2" : provider === "grok_console" ? "bg-quota-product-4" : "bg-quota-product-1";
   return (
     <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs text-muted-foreground">

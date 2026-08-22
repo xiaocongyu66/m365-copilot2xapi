@@ -735,11 +735,11 @@ function statusTone(statusCode: number, hasError = false): { dot: string; text: 
 function providerLabel(provider: AuditDTO["provider"]): string {
   switch (provider) {
     case "grok_build":
-      return "Grok Build";
+      return "M365";
     case "grok_web":
-      return "Grok Web";
+      return "M365";
     case "grok_console":
-      return "Grok Console";
+      return "M365";
   }
 }
 

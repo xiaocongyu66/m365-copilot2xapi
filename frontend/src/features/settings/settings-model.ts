@@ -384,7 +384,7 @@ function validProxyURL(value: string): boolean {
   if (scheme === "vmess") return validVMessURL(trimmed);
   if (scheme === "ss") return validShadowsocksURL(trimmed);
   try {
-    const parseValue = trimmed.replaceAll("{account}", "grok2api_account_placeholder");
+    const parseValue = trimmed.replaceAll("{account}", "m365copilot2xapi_account_placeholder");
     const parsed = new URL(parseValue);
     if (!parsed.host || !parsed.hostname) return false;
     const parsedScheme = parsed.protocol.replace(/:$/, "").toLowerCase();
@@ -411,7 +411,7 @@ function validProxyURL(value: string): boolean {
     if (!["http", "https", "socks4", "socks4a", "socks5", "socks5h"].includes(parsedScheme)) return false;
     if (parsed.search || parsed.hash || (parsed.pathname !== "" && parsed.pathname !== "/")) return false;
     if (trimmed.includes("{account}")) {
-      if (!parsed.username.includes("grok2api_account_placeholder")) return false;
+      if (!parsed.username.includes("m365copilot2xapi_account_placeholder")) return false;
     }
     return true;
   } catch {

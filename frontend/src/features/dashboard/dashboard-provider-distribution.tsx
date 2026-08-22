@@ -134,8 +134,8 @@ function buildProviderStripes<T extends { requests: number }>(providers: T[], to
 }
 
 function providerLabel(provider: ProviderKey, t: TFunction): string {
-  if (provider === "grok_build") return t("models.providerGrokBuild");
-  if (provider === "grok_web") return t("models.providerGrokWeb");
+  if (provider === "grok_build") return t("models.providerM365Build");
+  if (provider === "grok_web") return t("models.providerM365Web");
   return t("console.name");
 }
 
