@@ -30,7 +30,7 @@ func (b *Base) preFilter() {
 	proxies := make(proxy.ProxyList, 0)
 
 	if ok := checkErrorProxies(*b.Proxies); !ok {
-		log.Warnln("provider: nothing to provide")
+		log.Warnf("provider: nothing to provide")
 		b.Proxies = &proxies
 		return
 	}

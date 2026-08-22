@@ -228,5 +228,5 @@ func (s *Service) HTTPClientWithNode(identifier string) *http.Client {
 }
 
 func init() {
-	log.Infoln("proxypool service initialized")
+	log.Infof("proxypool service initialized")
 }

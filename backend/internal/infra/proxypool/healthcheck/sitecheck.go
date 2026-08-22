@@ -79,7 +79,7 @@ func CheckSitesAll(proxies []proxy.Proxy) {
 	}
 	pool.waitAll()
 	fmt.Println()
-	log.Infoln("Site accessibility check done for %d proxies", len(proxies))
+	log.Infof("Site accessibility check done for %d proxies", len(proxies))
 }
 
 func checkSitesForProxy(p proxy.Proxy) []string {
@@ -174,4 +174,4 @@ func checkSingleSite(clashProxy C.Proxy, target SiteCheckTarget) bool {
 	return resp.StatusCode == target.Expect
 }
 
-var _ = log.Infoln
+var _ = log.Infof

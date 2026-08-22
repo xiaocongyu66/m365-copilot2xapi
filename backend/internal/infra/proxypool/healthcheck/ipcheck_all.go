@@ -41,5 +41,5 @@ func CheckIpCleanlinessAll(proxies []proxy.Proxy) {
 	}
 	pool.waitAll()
 	fmt.Println()
-	log.Infoln("IP cleanliness check done for %d proxies", len(proxies))
+	log.Infof("IP cleanliness check done for %d proxies", len(proxies))
 }

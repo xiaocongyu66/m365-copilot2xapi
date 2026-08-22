@@ -35,7 +35,7 @@ func (c *Checker) Start() {
 	c.cancel = cancel
 	c.running = true
 	go c.runLoop(ctx)
-	log.Infoln("proxy checker started (interval=1m)")
+	log.Infof("proxy checker started (interval=1m)")
 }
 
 // Stop 停止测活循环

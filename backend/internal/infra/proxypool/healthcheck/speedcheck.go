@@ -35,8 +35,8 @@ func SpeedTestAll(proxies []proxy.Proxy) {
 	resultCount := 0
 	m := sync.Mutex{}
 
-	log.Infoln("Speed Test ON")
-	log.Debugln("[speedcheck.go] connection: %d, timeout: %d", SpeedConn, SpeedTimeout)
+	log.Infof("Speed Test ON")
+	log.Debugf("[speedcheck.go] connection: %d, timeout: %d", SpeedConn, SpeedTimeout)
 	doneCount := 0
 	dcm := sync.Mutex{}
 	// use grpool
@@ -72,7 +72,7 @@ func SpeedTestAll(proxies []proxy.Proxy) {
 	pool.WaitAll()
 	pool.Release()
 	fmt.Println()
-	log.Infoln("Speed Test Done. Count all speed results: %d", resultCount)
+	log.Infof("Speed Test Done. Count all speed results: %d", resultCount)
 }
 
 // SpeedTestNew tests speed of new proxies which is not in ProxyStats. Then appended to ProxyStats
@@ -92,8 +92,8 @@ func SpeedTestNew(proxies []proxy.Proxy) {
 	resultCount := 0
 	m := sync.Mutex{}
 
-	log.Infoln("Speed Test ON")
-	log.Debugln("[speedcheck.go] connection: %d, timeout: %d", SpeedConn, SpeedTimeout)
+	log.Infof("Speed Test ON")
+	log.Debugf("[speedcheck.go] connection: %d, timeout: %d", SpeedConn, SpeedTimeout)
 	doneCount := 0
 	// use grpool
 	pool := grpool.NewPool(numWorker, numJob)
@@ -129,7 +129,7 @@ func SpeedTestNew(proxies []proxy.Proxy) {
 	pool.WaitAll()
 	pool.Release()
 	fmt.Println()
-	log.Infoln("Speed Test Done. New speed results count: %d", resultCount)
+	log.Infof("Speed Test Done. New speed results count: %d", resultCount)
 }
 
 // ProxySpeedTest returns a speed result of a proxy. The speed result is like 20Mbit/s. -1 for error.

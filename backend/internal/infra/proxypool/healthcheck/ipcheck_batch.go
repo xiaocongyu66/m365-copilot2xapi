@@ -44,7 +44,7 @@ func CheckIpCleanlinessBatch(proxies []proxy.Proxy) {
 		}
 		ipToProxies[ip] = append(ipToProxies[ip], p)
 	}
-	log.Infoln("[ipcheck] %d unique IPs to check (from %d proxies)", len(ipList), len(proxies))
+	log.Infof("[ipcheck] %d unique IPs to check (from %d proxies)", len(ipList), len(proxies))
 
 	// Batch query: POST http://ip-api.com/batch (max 100 per request, 15 per minute for batch)
 	batchSize := 100
@@ -68,7 +68,7 @@ func CheckIpCleanlinessBatch(proxies []proxy.Proxy) {
 		client := &http.Client{Timeout: 15 * time.Second}
 		resp, err := client.Do(req)
 		if err != nil {
-			log.Warnln("[ipcheck] batch %d-%d failed: %s", i, end, err.Error())
+			log.Warnf("[ipcheck] batch %d-%d failed: %s", i, end, err.Error())
 			// Rate limit: wait and retry once
 			time.Sleep(5 * time.Second)
 			resp, err = client.Do(req)
@@ -119,5 +119,5 @@ func CheckIpCleanlinessBatch(proxies []proxy.Proxy) {
 		}
 	}
 	fmt.Println()
-	log.Infoln("[ipcheck] IP cleanliness check done for %d IPs", len(ipList))
+	log.Infof("[ipcheck] IP cleanliness check done for %d IPs", len(ipList))
 }

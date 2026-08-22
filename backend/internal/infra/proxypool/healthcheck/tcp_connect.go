@@ -79,6 +79,6 @@ func TCPConnectTestAll(proxies []proxy.Proxy) proxy.ProxyList {
 	}
 	pool.waitAll()
 	fmt.Println()
-	log.Infoln("TCP connect test: %d -> %d reachable", len(proxies), len(result))
+	log.Infof("TCP connect test: %d -> %d reachable", len(proxies), len(result))
 	return result
 }

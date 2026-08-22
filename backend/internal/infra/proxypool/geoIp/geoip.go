@@ -62,7 +62,7 @@ func NewGeoIP(geodb, flags string) (geoip GeoIP) {
 		var countryEmojiList = make([]CountryEmoji, 0)
 		err = json.Unmarshal(data, &countryEmojiList)
 		if err != nil {
-			log.Fatalln(err.Error())
+			log.Fatalf(err.Error())
 			return
 		}
 

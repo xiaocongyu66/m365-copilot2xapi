@@ -80,7 +80,7 @@ func speedTestContinuous(proxies []proxy.Proxy, onlyNew bool) proxy.ProxyList {
 	}
 	pool.waitAll()
 	fmt.Println()
-	log.Infoln("Continuous speed test done. Stable count: %d / %d", len(result), len(proxies))
+	log.Infof("Continuous speed test done. Stable count: %d / %d", len(result), len(proxies))
 	return result
 }
 

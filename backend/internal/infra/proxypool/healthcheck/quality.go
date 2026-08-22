@@ -51,7 +51,7 @@ func CheckIpCleanliness(p proxy.Proxy) {
 
 	ipInfo, err := fetchIpInfo(exitIP)
 	if err != nil {
-		log.Debugln("[ipcheck] failed to check IP %s: %s", exitIP, err.Error())
+		log.Debugf("[ipcheck] failed to check IP %s: %s", exitIP, err.Error())
 		return
 	}
 
@@ -177,7 +177,7 @@ func ScoreAllProxies(proxies []proxy.Proxy) {
 		}
 		ps.Quality = computeScore(ps)
 	}
-	log.Infoln("Quality scoring done for %d proxies", len(proxies))
+	log.Infof("Quality scoring done for %d proxies", len(proxies))
 }
 
 // computeScore returns a comprehensive 0-100 quality score.

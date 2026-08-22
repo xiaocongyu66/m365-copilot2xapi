@@ -24,7 +24,7 @@ func RelayCheck(proxies proxy.ProxyList) {
 	pool.WaitCount(len(proxies))
 	m := sync.Mutex{}
 
-	log.Infoln("Relay Test ON")
+	log.Infof("Relay Test ON")
 	doneCount := 0
 	dcm := sync.Mutex{}
 	go func() {
