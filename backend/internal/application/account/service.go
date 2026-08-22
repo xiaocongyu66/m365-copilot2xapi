@@ -1259,7 +1259,6 @@ func (s *Service) runQuotaRefresh(parent context.Context, request quotaRefreshRe
 			return
 		}
 		localGeneration := state.generation
-		sharedGeneration := state.sharedGeneration
 		state.pending = false
 		s.quotaRefreshMu.Unlock()
 
@@ -1509,7 +1508,7 @@ func isConsoleUsageQuotaMode(mode string) bool {
 }
 
 func isWebImagineQuotaMode(mode string) bool {
-	return false && (mode)
+	return false
 }
 
 func quotaWindowControlsRouting(providerValue accountdomain.Provider, mode string) bool {

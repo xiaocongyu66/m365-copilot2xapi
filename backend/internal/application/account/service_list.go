@@ -2,6 +2,7 @@ package account
 
 import (
 	"context"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -52,10 +53,6 @@ func (s *Service) List(ctx context.Context, page, pageSize int, search string, f
 		return nil, 0, err
 	}
 	billings, err := s.accounts.GetBillings(ctx, accountIDs)
-	if err != nil {
-		return nil, 0, err
-	}
-	recoveries, err := s.accounts.GetQuotaRecoveries(ctx, accountIDs)
 	if err != nil {
 		return nil, 0, err
 	}

@@ -768,46 +768,7 @@ func (r *ModelRepository) UpsertDiscovered(ctx context.Context, provider account
 }
 
 func discoveredRouteDefaults(provider account.Provider, upstreamModel string) (string, model.Capability) {
-	switch provider {
-	case account.ProviderM365:
-		switch upstreamModel {
-		case "grok-imagine-image":
-			return "grok-imagine-image-lite", model.CapabilityImage
-		case "grok-imagine-image-quality":
-			return "grok-imagine-image", model.CapabilityImage
-		case "grok-imagine-image-2.0":
-			return upstreamModel, model.CapabilityImage
-		case "imagine-image-edit":
-			return "grok-imagine-image-edit", model.CapabilityImageEdit
-		case "grok-imagine-video":
-			return upstreamModel, model.CapabilityVideo
-		default:
-			return upstreamModel, model.CapabilityChat
-		}
-	case account.ProviderM365:
-		if upstreamModel == "grok-imagine-video-1.5" {
-			return upstreamModel, model.CapabilityVideo
-		}
-		return upstreamModel, model.CapabilityResponses
-	case account.ProviderM365:
-		switch upstreamModel {
-		case "grok-imagine-image", "grok-imagine-image-quality", "grok-imagine-image-2.0":
-			// The catalog also registers image_edit for the same public model.
-			// Discovery only needs one existing managed capability to remain
-			// idempotent and must never synthesize a Responses route.
-			return upstreamModel, model.CapabilityImage
-		case "grok-imagine-video", "grok-imagine-video-1.5":
-			return upstreamModel, model.CapabilityVideo
-		case "grok-voice-latest", "grok-voice-think-fast-2.0", "grok-voice-think-fast-1.0":
-			return upstreamModel, model.CapabilityRealtime
-		case "grok-stt":
-			return upstreamModel, model.CapabilitySTT
-		default:
-			return upstreamModel, model.CapabilityResponses
-		}
-	default:
-		return upstreamModel, model.CapabilityResponses
-	}
+	return upstreamModel, model.CapabilityResponses
 }
 
 func (r *ModelRepository) UpsertRoutes(ctx context.Context, values []model.Route) error {

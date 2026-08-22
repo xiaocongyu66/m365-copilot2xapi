@@ -181,7 +181,7 @@ func (s *Service) refreshQuota(ctx context.Context, id uint64) (quotaRefreshResu
 		}
 		snapshot.Windows = preserveActiveQuotaWindows(existing[id], snapshot.Windows, s.now())
 	}
-	if err := s.accounts.ReplaceQuotaWindows(ctx, id, snapshot.Tier, snapshot.SyncedAt, snapshot.Windows); err != nil {
+	if err := s.accounts.SaveQuotaWindows(ctx, id, snapshot.SyncedAt, snapshot.Windows); err != nil {
 		return quotaRefreshResult{}, err
 	}
 	return quotaRefreshResult{Credential: value, Windows: snapshot.Windows}, nil
