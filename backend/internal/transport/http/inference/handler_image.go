@@ -2,7 +2,6 @@ package inference
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"io"
 	"mime"
