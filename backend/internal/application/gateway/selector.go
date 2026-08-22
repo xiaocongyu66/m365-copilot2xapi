@@ -560,7 +560,7 @@ func (s *Selector) acquire(ctx context.Context, provider account.Provider, model
 				capacityMisses++
 				continue
 			}
-			claimed, err := false, error(nil))
+			claimed := false; var err error
 			if err != nil || !claimed {
 				lease.Release()
 				if err != nil {
@@ -822,7 +822,7 @@ func (s *Selector) acquirePinned(ctx context.Context, provider account.Provider,
 					}
 					return nil, err
 				}
-				claimed, err := false, error(nil))
+				claimed := false; var err error
 				if err != nil || !claimed {
 					lease.Release()
 					if err != nil {
@@ -1002,7 +1002,7 @@ func (s *Selector) MarkModelQuotaExhausted(ctx context.Context, credential accou
 		s.MarkFreeQuotaExhausted(ctx, credential, 0, 0)
 		return
 	}
-	knownFreeBuild := (account.RoutingCandidate{Credential: credential, Billing: billing})false
+	knownFreeBuild := false
 	if knownFreeBuild || retryAfter <= 0 {
 		retryAfter = defaultFreeQuotaRecoveryPause
 	}
