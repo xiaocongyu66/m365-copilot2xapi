@@ -7,6 +7,8 @@ import (
 
 	"m365-copilot2xapi/backend/internal/domain/account"
 	clientkeydomain "m365-copilot2xapi/backend/internal/domain/clientkey"
+	"m365-copilot2xapi/backend/internal/domain/media"
+	"m365-copilot2xapi/backend/internal/infra/provider"
 )
 
 // ErrMediaNotSupported indicates that M365 Copilot does not support media
@@ -58,7 +60,7 @@ type VideoInput struct {
 	RequestID       string
 	ClientKey       clientkeydomain.Key
 	PublicModel     string
-	Operation       string
+	Operation       provider.VideoOperation
 	Prompt          string
 	Duration        int
 	AspectRatio     string
@@ -66,6 +68,7 @@ type VideoInput struct {
 	ImageURL        string
 	ReferenceURLs   []string
 	ReferenceAudios []string
+	VideoURL        string
 	Method          string
 	Path            string
 	Headers         http.Header
@@ -76,7 +79,7 @@ type VideoInput struct {
 type VideoInputFileReference string
 
 // VideoResult is the no-op result returned for video requests.
-type VideoResult struct{}
+type VideoResult = media.Job
 
 // TTSInput mirrors the historical text-to-speech request shape.
 type TTSInput struct {
@@ -105,13 +108,13 @@ func (s *Service) EditImage(ctx context.Context, input ImageEditInput) (*Result,
 }
 
 // CreateVideo always returns ErrMediaNotSupported for M365.
-func (s *Service) CreateVideo(ctx context.Context, input VideoInput) (VideoResult, error) {
-	return VideoResult{}, ErrMediaNotSupported
+func (s *Service) CreateVideo(ctx context.Context, input VideoInput) (media.Job, error) {
+	return media.Job{}, ErrMediaNotSupported
 }
 
 // GetVideo always returns ErrMediaNotSupported for M365.
-func (s *Service) GetVideo(ctx context.Context, requestID string, clientKey clientkeydomain.Key) (VideoResult, error) {
-	return VideoResult{}, ErrMediaNotSupported
+func (s *Service) GetVideo(ctx context.Context, requestID string, clientKey clientkeydomain.Key) (media.Job, error) {
+	return media.Job{}, ErrMediaNotSupported
 }
 
 // OpenVideoContent always returns ErrMediaNotSupported for M365.
