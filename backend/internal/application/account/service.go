@@ -1731,14 +1731,8 @@ func (s *Service) ensureCredential(ctx context.Context, value accountdomain.Cred
 			cancel()
 			return nil, err
 		}
-		riskCredential := latest
-		riskCredential.EncryptedAccessToken = refreshed.EncryptedAccessToken
-		botFlagSource := latest.BuildBotFlagSource
-		if metadata := s.credentialMetadata(riskCredential); metadata.BuildBotFlagInspected {
-			botFlagSource = metadata.BuildBotFlagSource
-		}
 		persistCtx, cancelPersist := context.WithTimeout(context.WithoutCancel(ctx), credentialStateWriteTimeout)
-		updated, err := s.accounts.UpdateTokens(persistCtx, latest.ID, refreshed.EncryptedAccessToken, refreshed.EncryptedRefreshToken, refreshed.ExpiresAt, botFlagSource)
+		updated, err := s.accounts.UpdateTokens(persistCtx, latest.ID, refreshed.EncryptedAccessToken, refreshed.EncryptedRefreshToken, refreshed.ExpiresAt)
 		cancelPersist()
 		if err != nil {
 			s.logger.Error("credential_refresh_token_write_failed",
