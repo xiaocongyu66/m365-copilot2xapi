@@ -14,7 +14,7 @@ import (
 var GeoIpDB GeoIP
 
 func InitGeoIpDB() error {
-	parentPath := config.ResourceRoot()
+	parentPath := config.ResourceRoot
 	geodbPath := "assets/GeoLite2-City.mmdb"
 	flagsPath := "assets/flags.json"
 	geodb := filepath.Join(parentPath, geodbPath)
