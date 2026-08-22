@@ -58,8 +58,6 @@ const fallbackDescriptionKeys: Record<EgressScope, string> = {
 
 function defaultFallbacks(): Record<EgressScope, EgressFallbackConfigDTO> {
   return {
-    m365_copilot: { mode: "none" },
-    m365_copilot_asset: { mode: "none" },
   };
 }
 
@@ -79,9 +77,6 @@ function operationsFormFrom(value?: EgressOperationsConfigDTO): Omit<EgressOpera
     assignmentIntervalSeconds: value.assignmentIntervalSeconds,
     fallbacks: {
       m365_copilot: { ...defaults.m365_copilot, ...value.fallbacks.m365_copilot },
-      m365_copilot: { ...defaults.m365_copilot, ...value.fallbacks.m365_copilot },
-      m365_copilot: { ...defaults.m365_copilot, ...value.fallbacks.m365_copilot },
-      m365_copilot_asset: { ...defaults.m365_copilot_asset, ...value.fallbacks.m365_copilot_asset },
       m365_copilot_asset: { ...defaults.m365_copilot_asset, ...value.fallbacks.m365_copilot_asset },
     },
   };

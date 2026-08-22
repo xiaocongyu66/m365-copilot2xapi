@@ -263,7 +263,7 @@ const decodeEgressNodeListRaw = createObjectDecoder<EgressNodeListWireDTO>("egre
   page: isOptional(isNumber),
   pageSize: isOptional(isNumber),
   total: isOptional(isNumber),
-  defaultUserAgents: hasShape({ m365_copilot: isString, m365_copilot: isString, m365_copilot: isString, m365_copilot_asset: isString, m365_copilot_asset: isOptional(isString) }),
+  defaultUserAgents: hasShape({ m365_copilot: isString, m365_copilot_asset: isOptional(isString) }),
 });
 const decodeEgressNodeList = (value: unknown): EgressNodeListDTO => {
   const decoded = decodeEgressNodeListRaw(value);
