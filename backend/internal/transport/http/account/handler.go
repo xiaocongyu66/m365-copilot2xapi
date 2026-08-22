@@ -439,15 +439,15 @@ func (h *Handler) summary(c *gin.Context) {
 		response.Error(c, http.StatusInternalServerError, "accountSummaryFailed", "读取账号统计失败")
 		return
 	}
-	build := value.Providers[string(accountdomain.ProviderBuild)]
-	web := value.Providers[string(accountdomain.ProviderWeb)]
-	console := value.Providers[string(accountdomain.ProviderConsole)]
+	build := value.Providers[string(accountdomain.ProviderM365)]
+	web := value.Providers[string(accountdomain.ProviderM365)]
+	console := value.Providers[string(accountdomain.ProviderM365)]
 	response.Success(c, http.StatusOK, gin.H{
 		"total": value.Total, "available": value.Available, "recovering": value.Recovering, "attention": value.Attention, "risk": value.Risk,
 		"providers": gin.H{
-			string(accountdomain.ProviderBuild):   gin.H{"total": build.Total, "available": build.Available},
-			string(accountdomain.ProviderWeb):     gin.H{"total": web.Total, "available": web.Available},
-			string(accountdomain.ProviderConsole): gin.H{"total": console.Total, "available": console.Available},
+			string(accountdomain.ProviderM365):   gin.H{"total": build.Total, "available": build.Available},
+			string(accountdomain.ProviderM365):     gin.H{"total": web.Total, "available": web.Available},
+			string(accountdomain.ProviderM365): gin.H{"total": console.Total, "available": console.Available},
 		},
 		"recovery": gin.H{"cooldown": value.Recovery.Cooldown, "waitingReset": value.Recovery.WaitingReset, "probing": value.Recovery.Probing},
 		"issues":   gin.H{"disabled": value.Issues.Disabled, "reauthRequired": value.Issues.ReauthRequired},
@@ -546,7 +546,7 @@ func (h *Handler) batchRefreshBilling(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, "invalidId", err.Error())
 		return
 	}
-	if request.Provider != string(accountdomain.ProviderBuild) {
+	if request.Provider != string(accountdomain.ProviderM365) {
 		response.Error(c, http.StatusBadRequest, "invalidProvider", "仅 Grok Build 账号支持 Billing 同步")
 		return
 	}
@@ -569,7 +569,7 @@ func (h *Handler) detectBuildAccounts(c *gin.Context) {
 			return
 		}
 	}
-	if request.Provider != "" && request.Provider != string(accountdomain.ProviderBuild) {
+	if request.Provider != "" && request.Provider != string(accountdomain.ProviderM365) {
 		response.Error(c, http.StatusBadRequest, "invalidProvider", "仅 Grok Build 账号支持可用性检测")
 		return
 	}
@@ -585,7 +585,7 @@ func (h *Handler) detectBuildAccounts(c *gin.Context) {
 			response.Error(c, http.StatusBadRequest, "invalidId", err.Error())
 			return
 		}
-		if !h.validateProviderIDs(c, parsed, string(accountdomain.ProviderBuild)) {
+		if !h.validateProviderIDs(c, parsed, string(accountdomain.ProviderM365)) {
 			return
 		}
 		ids = parsed
@@ -621,7 +621,7 @@ func (h *Handler) batchResetQuota(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, "invalidId", err.Error())
 		return
 	}
-	if request.Provider != string(accountdomain.ProviderBuild) {
+	if request.Provider != string(accountdomain.ProviderM365) {
 		response.Error(c, http.StatusBadRequest, "invalidProvider", "仅 Grok Build 账号支持手动重置额度状态")
 		return
 	}
@@ -724,7 +724,7 @@ func (h *Handler) batchRefreshQuotas(c *gin.Context) {
 		return
 	}
 	var succeeded, failed int
-	if providerValue == accountdomain.ProviderBuild {
+	if providerValue == accountdomain.ProviderM365 {
 		succeeded, failed, err = h.service.BatchRefreshBilling(c.Request.Context(), ids)
 	} else {
 		succeeded, failed, err = h.service.BatchRefreshQuota(c.Request.Context(), ids)
@@ -747,7 +747,7 @@ func (h *Handler) batchRefreshTokens(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, "invalidId", err.Error())
 		return
 	}
-	if request.Provider != string(accountdomain.ProviderBuild) {
+	if request.Provider != string(accountdomain.ProviderM365) {
 		response.Error(c, http.StatusBadRequest, "invalidProvider", "仅 Grok Build 账号支持凭据刷新")
 		return
 	}
@@ -814,15 +814,15 @@ func (h *Handler) pollDevice(c *gin.Context) {
 }
 
 func (h *Handler) importAuth(c *gin.Context) {
-	h.importFile(c, accountdomain.ProviderBuild)
+	h.importFile(c, accountdomain.ProviderM365)
 }
 
 func (h *Handler) importWebAuth(c *gin.Context) {
-	h.importFile(c, accountdomain.ProviderWeb)
+	h.importFile(c, accountdomain.ProviderM365)
 }
 
 func (h *Handler) importConsoleAuth(c *gin.Context) {
-	h.importFile(c, accountdomain.ProviderConsole)
+	h.importFile(c, accountdomain.ProviderM365)
 }
 
 func (h *Handler) convertWebToBuild(c *gin.Context) {
@@ -850,7 +850,7 @@ func (h *Handler) convertWebToBuild(c *gin.Context) {
 			response.Error(c, http.StatusBadRequest, "invalidId", err.Error())
 			return
 		}
-		if !h.validateProviderIDs(c, ids, string(accountdomain.ProviderWeb)) {
+		if !h.validateProviderIDs(c, ids, string(accountdomain.ProviderM365)) {
 			return
 		}
 	}
@@ -882,7 +882,7 @@ func (h *Handler) syncWebToConsole(c *gin.Context) {
 			response.Error(c, http.StatusBadRequest, "invalidId", err.Error())
 			return
 		}
-		if !h.validateProviderIDs(c, ids, string(accountdomain.ProviderWeb)) {
+		if !h.validateProviderIDs(c, ids, string(accountdomain.ProviderM365)) {
 			return
 		}
 	}
@@ -1063,9 +1063,9 @@ func writeAccountEvent(c *gin.Context, event string, value any) error {
 
 func (h *Handler) importFile(c *gin.Context, providerValue accountdomain.Provider) {
 	fileDescription := "账号凭据 JSON、逐行 JSON 或 refresh token 文本"
-	if providerValue == accountdomain.ProviderWeb {
+	if providerValue == accountdomain.ProviderM365 {
 		fileDescription = "Grok Web JSON、逐行 JSON 或 SSO 文本"
-	} else if providerValue == accountdomain.ProviderConsole {
+	} else if providerValue == accountdomain.ProviderM365 {
 		fileDescription = "Grok Console JSON、逐行 JSON 或 SSO 文本"
 	}
 	documents, ok := readAccountImportDocuments(c, fileDescription)
@@ -1078,9 +1078,9 @@ func (h *Handler) importFile(c *gin.Context, providerValue accountdomain.Provide
 	pipeline := h.startSyncPipeline(c.Request.Context(), stream.SyncProgressObserver())
 	var result accountapp.ImportResult
 	var err error
-	if providerValue == accountdomain.ProviderWeb {
+	if providerValue == accountdomain.ProviderM365 {
 		result, err = h.service.ImportWebCredentialDocumentsWithProgress(pipeline.ctx, documents, pipeline.Observe, stream.PhaseProgressObserver("importing", &total))
-	} else if providerValue == accountdomain.ProviderConsole {
+	} else if providerValue == accountdomain.ProviderM365 {
 		result, err = h.service.ImportConsoleCredentialDocumentsWithProgress(pipeline.ctx, documents, pipeline.Observe, stream.PhaseProgressObserver("importing", &total))
 	} else {
 		result, err = h.service.ImportCredentialDocumentsWithProgress(pipeline.ctx, documents, pipeline.Observe, stream.PhaseProgressObserver("importing", &total))
@@ -1160,7 +1160,7 @@ func (h *Handler) refreshWebQuota(c *gin.Context) {
 }
 
 func (h *Handler) exportCredentials(c *gin.Context) {
-	providerValue := accountdomain.Provider(c.DefaultQuery("provider", string(accountdomain.ProviderBuild)))
+	providerValue := accountdomain.Provider(c.DefaultQuery("provider", string(accountdomain.ProviderM365)))
 	if limitText, pagedExport := c.GetQuery("limit"); pagedExport {
 		if _, usesOffset := c.GetQuery("offset"); usesOffset {
 			response.Error(c, http.StatusBadRequest, "accountExportFailed", "分批导出不支持 offset，请使用服务端返回的 afterId")
@@ -1499,7 +1499,7 @@ func (h *Handler) refreshAllConsoleQuotas(c *gin.Context) {
 func newAccountResponse(value accountapp.View) accountResponse {
 	c := value.Credential
 	buildRouteMode := c.BuildRouteMode
-	if c.Provider != accountdomain.ProviderBuild || !buildRouteMode.IsValid() {
+	if c.Provider != accountdomain.ProviderM365 || !buildRouteMode.IsValid() {
 		buildRouteMode = accountdomain.BuildRouteAuto
 	}
 	result := accountResponse{
@@ -1513,9 +1513,9 @@ func newAccountResponse(value accountapp.View) accountResponse {
 		LastUsedAt: c.LastUsedAt, LinkedAccountID: c.LinkedAccountID, LinkedName: c.LinkedAccountName, LinkedProvider: string(c.LinkedProvider),
 		CreatedAt: c.CreatedAt, ObservedModel: c.ObservedModel, ObservedModelAt: c.ObservedModelAt,
 		CloudflareCookieConfigured: c.EncryptedCloudflareCookie != "",
-		BuildSuperEntitled:         c.BuildSuperEntitled && c.Provider == accountdomain.ProviderBuild,
+		BuildSuperEntitled:         c.BuildSuperEntitled && c.Provider == accountdomain.ProviderM365,
 		BuildRouteMode:             string(buildRouteMode),
-		BuildBotFlagged:            value.BuildBotFlagged && c.Provider == accountdomain.ProviderBuild,
+		BuildBotFlagged:            value.BuildBotFlagged && c.Provider == accountdomain.ProviderM365,
 		BuildBotFlagSource:         buildBotFlagSourceResponse(c.Provider, value.BuildBotFlagged, value.BuildBotFlagSource),
 		EgressNodeID:               c.EgressNodeID,
 		EgressAssignmentMode:       string(c.EgressAssignmentMode),
@@ -1548,7 +1548,7 @@ func newAccountResponse(value accountapp.View) accountResponse {
 }
 
 func buildBotFlagSourceResponse(provider accountdomain.Provider, flagged bool, source int) int {
-	if provider != accountdomain.ProviderBuild || !flagged {
+	if provider != accountdomain.ProviderM365 || !flagged {
 		return 0
 	}
 	if source != 1 && source != 2 {

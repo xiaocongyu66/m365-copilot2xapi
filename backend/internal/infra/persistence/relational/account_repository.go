@@ -1374,7 +1374,7 @@ func (r *AccountRepository) BackfillCredentialRefreshSchedules(ctx context.Conte
 		Table("account_credentials AS credential").
 		Select("credential.account_id, credential.expires_at, credential.encrypted_primary").
 		Joins("JOIN provider_accounts AS account ON account.id = credential.account_id").
-		Where("account.provider = ? AND account.enabled = ? AND account.auth_status = ?", account.ProviderBuild, true, account.AuthStatusActive).
+		Where("account.provider = ? AND account.enabled = ? AND account.auth_status = ?", account.ProviderM365, true, account.AuthStatusActive).
 		Where("credential.auth_type = ? AND credential.encrypted_refresh <> '' AND credential.refresh_due_at IS NULL", account.AuthTypeOAuth).
 		Where("credential.expires_at IS NOT NULL OR credential.encrypted_primary = ''").
 		Order("credential.account_id ASC").Limit(limit).Scan(&rows).Error
@@ -1406,7 +1406,7 @@ func (r *AccountRepository) ListCriticalCredentialRefreshIDs(ctx context.Context
 		Table("account_credentials AS credential").
 		Select("credential.account_id").
 		Joins("JOIN provider_accounts AS account ON account.id = credential.account_id").
-		Where("account.provider = ? AND account.enabled = ? AND account.auth_status = ?", account.ProviderBuild, true, account.AuthStatusActive).
+		Where("account.provider = ? AND account.enabled = ? AND account.auth_status = ?", account.ProviderM365, true, account.AuthStatusActive).
 		Where("credential.auth_type = ? AND credential.encrypted_refresh <> ''", account.AuthTypeOAuth).
 		Where("credential.encrypted_primary = '' OR credential.expires_at <= ? OR (credential.refresh_failures > 0 AND credential.refresh_due_at IS NOT NULL AND credential.refresh_due_at <= ?)", expiresBefore.UTC(), now.UTC()).
 		Order(gorm.Expr("CASE WHEN credential.encrypted_primary = '' THEN 0 WHEN credential.expires_at <= ? THEN 1 ELSE 2 END, credential.expires_at ASC, credential.account_id ASC", now.UTC())).
@@ -1424,7 +1424,7 @@ func (r *AccountRepository) ListDueCredentialRefreshIDs(ctx context.Context, now
 		Table("account_credentials AS credential").
 		Select("credential.account_id").
 		Joins("JOIN provider_accounts AS account ON account.id = credential.account_id").
-		Where("account.provider = ? AND account.enabled = ? AND account.auth_status = ?", account.ProviderBuild, true, account.AuthStatusActive).
+		Where("account.provider = ? AND account.enabled = ? AND account.auth_status = ?", account.ProviderM365, true, account.AuthStatusActive).
 		Where("credential.auth_type = ? AND credential.encrypted_refresh <> '' AND credential.refresh_due_at IS NOT NULL AND credential.refresh_due_at <= ?", account.AuthTypeOAuth, now).
 		Order("credential.refresh_due_at ASC, credential.account_id ASC").Limit(limit).Scan(&ids).Error
 	return ids, err
@@ -1436,7 +1436,7 @@ func (r *AccountRepository) NextCredentialRefreshDueAt(ctx context.Context) (*ti
 		Table("account_credentials AS credential").
 		Select("credential.refresh_due_at").
 		Joins("JOIN provider_accounts AS account ON account.id = credential.account_id").
-		Where("account.provider = ? AND account.enabled = ? AND account.auth_status = ?", account.ProviderBuild, true, account.AuthStatusActive).
+		Where("account.provider = ? AND account.enabled = ? AND account.auth_status = ?", account.ProviderM365, true, account.AuthStatusActive).
 		Where("credential.auth_type = ? AND credential.encrypted_refresh <> '' AND credential.refresh_due_at IS NOT NULL", account.AuthTypeOAuth).
 		Order("credential.refresh_due_at ASC, credential.account_id ASC").Limit(1).Scan(&rows).Error
 	if err != nil || len(rows) == 0 {
@@ -1559,7 +1559,7 @@ func (r *AccountRepository) ListEgressLeaseBlocks(ctx context.Context, limit int
 		Table("account_egress_lease_blocks AS block").Select("block.*").
 		Joins("JOIN provider_accounts AS account ON account.id = block.account_id").
 		Joins("JOIN egress_nodes AS node ON node.id = block.node_id").
-		Where("account.provider = ? AND account.enabled = ? AND account.auth_status = ? AND account.egress_node_id = block.node_id AND node.enabled = ? AND node.scope = ?", account.ProviderBuild, true, account.AuthStatusActive, true, "grok_build").
+		Where("account.provider = ? AND account.enabled = ? AND account.auth_status = ? AND account.egress_node_id = block.node_id AND node.enabled = ? AND node.scope = ?", account.ProviderM365, true, account.AuthStatusActive, true, "grok_build").
 		Order("block.cooldown_until ASC, block.account_id ASC, block.node_id ASC").Limit(limit)
 	if after != nil {
 		cursorTime := after.CooldownUntil.UTC()
@@ -1579,7 +1579,7 @@ func (r *AccountRepository) ListEgressLeaseBlocks(ctx context.Context, limit int
 }
 
 func deleteInvalidEgressLeaseBlocksForAccount(tx *gorm.DB, row accountModel) (int64, error) {
-	if account.Provider(row.Provider) != account.ProviderBuild {
+	if account.Provider(row.Provider) != account.ProviderM365 {
 		return 0, nil
 	}
 	query := tx.Where("account_id = ?", row.ID)
@@ -1599,7 +1599,7 @@ func (r *AccountRepository) PruneInvalidEgressLeaseBlocks(ctx context.Context, l
 		Table("account_egress_lease_blocks AS block").Select("block.*").
 		Joins("LEFT JOIN provider_accounts AS account ON account.id = block.account_id").
 		Joins("LEFT JOIN egress_nodes AS node ON node.id = block.node_id").
-		Where("account.id IS NULL OR account.provider <> ? OR account.enabled <> ? OR account.auth_status <> ? OR account.egress_node_id IS NULL OR account.egress_node_id <> block.node_id OR node.id IS NULL OR node.enabled <> ? OR node.scope <> ?", account.ProviderBuild, true, account.AuthStatusActive, true, "grok_build").
+		Where("account.id IS NULL OR account.provider <> ? OR account.enabled <> ? OR account.auth_status <> ? OR account.egress_node_id IS NULL OR account.egress_node_id <> block.node_id OR node.id IS NULL OR node.enabled <> ? OR node.scope <> ?", account.ProviderM365, true, account.AuthStatusActive, true, "grok_build").
 		Order("block.cooldown_until ASC, block.account_id ASC, block.node_id ASC").Limit(limit).Find(&rows).Error
 	if err != nil || len(rows) == 0 {
 		return 0, err
@@ -1621,7 +1621,7 @@ func (r *AccountRepository) PruneInvalidEgressLeaseBlocks(ctx context.Context, l
 		return nil
 	})
 	if err == nil && deleted > 0 {
-		r.notifyInvalidation(ctx, repository.InvalidationEvent{Kind: repository.InvalidationAccountEgressLeaseChanged, Provider: account.ProviderBuild})
+		r.notifyInvalidation(ctx, repository.InvalidationEvent{Kind: repository.InvalidationAccountEgressLeaseChanged, Provider: account.ProviderM365})
 	}
 	return deleted, err
 }
@@ -1632,7 +1632,7 @@ func (r *AccountRepository) DeleteEgressLeaseBlocksByNodes(ctx context.Context, 
 	}
 	result := r.db.db.WithContext(ctx).Where("node_id IN ?", nodeIDs).Delete(&accountEgressLeaseBlockModel{})
 	if result.Error == nil && result.RowsAffected > 0 {
-		r.notifyInvalidation(ctx, repository.InvalidationEvent{Kind: repository.InvalidationAccountEgressLeaseChanged, Provider: account.ProviderBuild})
+		r.notifyInvalidation(ctx, repository.InvalidationEvent{Kind: repository.InvalidationAccountEgressLeaseChanged, Provider: account.ProviderM365})
 	}
 	return result.RowsAffected, result.Error
 }
@@ -1655,7 +1655,7 @@ func (r *AccountRepository) UpsertEgressLeaseBlock(ctx context.Context, value ac
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Select("id", "provider", "enabled", "auth_status", "egress_node_id").First(&owner, value.AccountID).Error; err != nil {
 			return mapError(err)
 		}
-		if account.Provider(owner.Provider) != account.ProviderBuild || !owner.Enabled || account.AuthStatus(owner.AuthStatus) != account.AuthStatusActive || owner.EgressNodeID == nil || *owner.EgressNodeID != value.NodeID {
+		if account.Provider(owner.Provider) != account.ProviderM365 || !owner.Enabled || account.AuthStatus(owner.AuthStatus) != account.AuthStatusActive || owner.EgressNodeID == nil || *owner.EgressNodeID != value.NodeID {
 			return repository.ErrConflict
 		}
 		var existing accountEgressLeaseBlockModel
@@ -1692,7 +1692,7 @@ func (r *AccountRepository) UpsertEgressLeaseBlock(ctx context.Context, value ac
 		return nil
 	})
 	if err == nil {
-		r.notifyInvalidation(ctx, repository.InvalidationEvent{Kind: repository.InvalidationAccountEgressLeaseChanged, Provider: account.ProviderBuild, AccountID: value.AccountID})
+		r.notifyInvalidation(ctx, repository.InvalidationEvent{Kind: repository.InvalidationAccountEgressLeaseChanged, Provider: account.ProviderM365, AccountID: value.AccountID})
 	}
 	return stored, err
 }
@@ -1709,7 +1709,7 @@ func (r *AccountRepository) DeleteEgressLeaseBlock(ctx context.Context, accountI
 		return false, result.Error
 	}
 	if result.RowsAffected == 1 {
-		r.notifyInvalidation(ctx, repository.InvalidationEvent{Kind: repository.InvalidationAccountEgressLeaseChanged, Provider: account.ProviderBuild, AccountID: accountID})
+		r.notifyInvalidation(ctx, repository.InvalidationEvent{Kind: repository.InvalidationAccountEgressLeaseChanged, Provider: account.ProviderM365, AccountID: accountID})
 		return true, nil
 	}
 	return false, nil
@@ -1834,7 +1834,7 @@ func (r *AccountRepository) HasQuotaWindows(ctx context.Context, accountID uint6
 	}
 	var count int64
 	query := r.db.db.WithContext(ctx).Model(&quotaWindowModel{}).Where("account_id = ? AND synced_at IS NOT NULL", accountID)
-	if account.Provider(providerRow.Provider) == account.ProviderConsole {
+	if account.Provider(providerRow.Provider) == account.ProviderM365 {
 		// Pre-usage Console releases stored one synthetic local chat window.
 		// Only the complete authoritative /usage snapshot counts as initialized,
 		// so re-import and startup migration replace that legacy state.
@@ -1992,7 +1992,7 @@ func (r *AccountRepository) ListStaleWebQuotaAccountIDs(ctx context.Context, bef
 		Table("provider_accounts AS account").
 		Select("account.id").
 		Joins("LEFT JOIN account_quota_windows AS quota ON quota.account_id = account.id").
-		Where("account.provider = ? AND account.enabled = ? AND account.auth_status = ?", account.ProviderWeb, true, account.AuthStatusActive).
+		Where("account.provider = ? AND account.enabled = ? AND account.auth_status = ?", account.ProviderM365, true, account.AuthStatusActive).
 		Group("account.id").
 		Having("MAX(quota.synced_at) IS NULL OR MAX(quota.synced_at) < ?", before.UTC()).
 		Order("MIN(quota.synced_at) ASC, account.id ASC").

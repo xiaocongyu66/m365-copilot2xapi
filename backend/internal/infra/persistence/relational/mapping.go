@@ -74,7 +74,7 @@ func toAccountDomain(value accountModel) account.Credential {
 		egressIdentity = value.WebProfile.EgressIdentity
 	}
 	buildRouteMode := account.BuildRouteMode(value.BuildRouteMode)
-	if account.Provider(value.Provider) != account.ProviderBuild || !buildRouteMode.IsValid() {
+	if account.Provider(value.Provider) != account.ProviderM365 || !buildRouteMode.IsValid() {
 		buildRouteMode = account.BuildRouteAuto
 	}
 	return account.Credential{
@@ -90,7 +90,7 @@ func toAccountDomain(value accountModel) account.Credential {
 		WebNSFWEnabledAt: webNSFWEnabledAt, WebTermsAcceptedAt: webTermsAcceptedAt, WebTermsAcceptedVersion: webTermsAcceptedVersion, WebBirthDateSetAt: webBirthDateSetAt, EgressIdentity: egressIdentity,
 		EgressNodeID: valueEgressNodeID(value.EgressNodeID), EgressAssignmentMode: account.EgressAssignmentMode(value.EgressAssignmentMode), EgressAssignedAt: value.EgressAssignedAt,
 		BuildAPIFallback: value.BuildAPIFallback, BuildRouteMode: buildRouteMode,
-		BuildSuperEntitled: value.BuildSuperEntitled && account.Provider(value.Provider) == account.ProviderBuild,
+		BuildSuperEntitled: value.BuildSuperEntitled && account.Provider(value.Provider) == account.ProviderM365,
 		BuildBotFlagSource: normalizedBuildBotFlagSource(account.Provider(value.Provider), value.Credential),
 		CreatedAt:          value.CreatedAt, UpdatedAt: value.UpdatedAt,
 	}
@@ -113,10 +113,10 @@ func toCredentialMaterialDomain(value accountCredentialModel, provider account.P
 
 func fromAccountDomain(value account.Credential) accountModel {
 	// entitlement、推理地址与 XAI 回退标记仅对 grok_build 有意义。
-	buildAPIFallback := value.BuildAPIFallback && value.Provider == account.ProviderBuild
-	buildSuperEntitled := value.BuildSuperEntitled && value.Provider == account.ProviderBuild
+	buildAPIFallback := value.BuildAPIFallback && value.Provider == account.ProviderM365
+	buildSuperEntitled := value.BuildSuperEntitled && value.Provider == account.ProviderM365
 	buildRouteMode := account.BuildRouteAuto
-	if value.Provider == account.ProviderBuild && value.BuildRouteMode.IsValid() {
+	if value.Provider == account.ProviderM365 && value.BuildRouteMode.IsValid() {
 		buildRouteMode = value.BuildRouteMode
 	}
 	return accountModel{
@@ -160,7 +160,7 @@ func fromAccountCredentialDomain(value account.Credential) accountCredentialMode
 	}
 	authType := value.AuthType
 	if authType == "" {
-		if value.Provider == account.ProviderWeb || value.Provider == account.ProviderConsole {
+		if value.Provider == account.ProviderM365 || value.Provider == account.ProviderM365 {
 			authType = account.AuthTypeSSO
 		} else {
 			authType = account.AuthTypeOAuth
@@ -185,14 +185,14 @@ func normalizedBuildBotFlagSource(provider account.Provider, credential *account
 }
 
 func normalizeBuildBotFlagSource(provider account.Provider, source int) int {
-	if provider == account.ProviderBuild && (source == 1 || source == 2) {
+	if provider == account.ProviderM365 && (source == 1 || source == 2) {
 		return source
 	}
 	return 0
 }
 
 func fromWebProfileDomain(value account.Credential) *webAccountProfileModel {
-	if value.Provider != account.ProviderWeb {
+	if value.Provider != account.ProviderM365 {
 		return nil
 	}
 	tier := value.WebTier

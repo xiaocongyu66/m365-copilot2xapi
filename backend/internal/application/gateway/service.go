@@ -696,11 +696,11 @@ func routeTargetScore(seed string, routeID uint64) uint64 {
 
 func routeProviderPriority(providerValue accountdomain.Provider) int {
 	switch providerValue {
-	case accountdomain.ProviderBuild:
+	case accountdomain.ProviderM365:
 		return 0
-	case accountdomain.ProviderWeb:
+	case accountdomain.ProviderM365:
 		return 1
-	case accountdomain.ProviderConsole:
+	case accountdomain.ProviderM365:
 		return 2
 	default:
 		return 3
@@ -872,7 +872,7 @@ func (s *Service) createResponseAt(ctx context.Context, input Input, path string
 				return nil, ErrResponseNotFound
 			}
 			ownership = &value
-		} else if initialRoute.Provider == accountdomain.ProviderConsole {
+		} else if initialRoute.Provider == accountdomain.ProviderM365 {
 			// Console does not retain Response state, so replay the history statelessly here;
 			// Provider normalization removes stale Response IDs.
 			input.PreviousResponseID = ""
@@ -895,7 +895,7 @@ func (s *Service) createResponseAt(ctx context.Context, input Input, path string
 	if routeErr == nil && ownership == nil && input.ForcedEgressNodeID == 0 {
 		for _, candidate := range orderedRoutes {
 			affinityKey := ""
-			if candidate.Provider == accountdomain.ProviderBuild {
+			if candidate.Provider == accountdomain.ProviderM365 {
 				identity := resolveBuildSessionIdentity(
 					input.ClientKey.ID,
 					candidate.Provider,
@@ -973,7 +973,7 @@ func (s *Service) createResponseAt(ctx context.Context, input Input, path string
 	affinityKey := ""
 	ownershipPromptCacheKey := ""
 	reasoningReplayKey := ""
-	if route.Provider == accountdomain.ProviderBuild {
+	if route.Provider == accountdomain.ProviderM365 {
 		// Derive a stable identity from explicit session signals, message anchors,
 		// and model. Composer replaces message-only fallback identities with an
 		// isolated request identity that remains stable across retries.
@@ -1444,7 +1444,7 @@ attemptLoop:
 					}
 				}
 			}
-			buildForbiddenReauth := credential.Provider == accountdomain.ProviderBuild && s.shouldInvalidateBuildForbidden(lastFailure)
+			buildForbiddenReauth := credential.Provider == accountdomain.ProviderM365 && s.shouldInvalidateBuildForbidden(lastFailure)
 			if response.StatusCode == http.StatusTooManyRequests && response.RateLimit != nil && response.RateLimit.Model == route.UpstreamModel {
 				rateLimitMeta := *response.RateLimit
 				if strings.TrimSpace(rateLimitMeta.TeamID) == "" {
@@ -1467,7 +1467,7 @@ attemptLoop:
 			// Grok Build treats only HTTP 401 as an OAuth authentication failure.
 			// A 403 is already authenticated and must not trigger token rotation or
 			// replay the same request with freshly issued credentials.
-			if credential.Provider != accountdomain.ProviderBuild && s.providers.SupportsCredentialRefresh(credential.Provider) && !authRecoveryAttempted[credential.ID] && credential.EncryptedRefreshToken != "" && !lastFailure.AccountBlocked && !buildForbiddenReauth && (lastFailure.PermanentAccountDenial || lastFailure.CredentialRejected) {
+			if credential.Provider != accountdomain.ProviderM365 && s.providers.SupportsCredentialRefresh(credential.Provider) && !authRecoveryAttempted[credential.ID] && credential.EncryptedRefreshToken != "" && !lastFailure.AccountBlocked && !buildForbiddenReauth && (lastFailure.PermanentAccountDenial || lastFailure.CredentialRejected) {
 				authRecoveryAttempted[credential.ID] = true
 				refreshed, refreshErr := ensureCredential(credential, true)
 				if refreshErr != nil {
@@ -1524,7 +1524,7 @@ attemptLoop:
 			} else if buildForbiddenReauth {
 				failureHandled = s.markReauthRequired(ctx, input.RequestID, credential, fmt.Sprintf("%s upstream error code %s matched the invalidation policy", credential.Provider, lastFailure.UpstreamCode))
 			} else if s.providers.SupportsCredentialRefresh(credential.Provider) && lastFailure.PermanentAccountDenial {
-				if credential.Provider == accountdomain.ProviderBuild {
+				if credential.Provider == accountdomain.ProviderM365 {
 					// 默认 model-scoped，视频拒绝时配额/OAuth 仍可能可用。
 					// 开启 markBuildChatDeniedAsReauth 时再额外标 reauth，便于号池摘除。
 					// 同时写入模型 block，避免在候选缓存窗口内本请求再次选中。
@@ -1648,7 +1648,7 @@ attemptLoop:
 			}
 			if diagnostic := response.RecoveredPrimaryFailure; diagnostic != nil {
 				recoveredFailure := newHTTPUpstreamFailure(diagnostic.StatusCode, diagnostic.Body, credential.ID, credential.Name)
-				if recoveredFailure.AccountBlocked || (credential.Provider == accountdomain.ProviderBuild && s.shouldInvalidateBuildForbidden(recoveredFailure)) {
+				if recoveredFailure.AccountBlocked || (credential.Provider == accountdomain.ProviderM365 && s.shouldInvalidateBuildForbidden(recoveredFailure)) {
 					reason := fmt.Sprintf("%s primary endpoint denied account access", credential.Provider)
 					if !s.markReauthRequired(ctx, input.RequestID, credential, reason) {
 						s.selector.MarkModelAccessDenied(ctx, credential, route.UpstreamModel, 0)
@@ -1746,7 +1746,7 @@ func auditRequestSucceeded(statusCode int, errorCode string) bool {
 }
 
 func isRetryableTransportFailure(providerValue accountdomain.Provider, err error) bool {
-	return providerValue != accountdomain.ProviderBuild || !neterrorpkg.IsResponseHeaderTimeout(err)
+	return providerValue != accountdomain.ProviderM365 || !neterrorpkg.IsResponseHeaderTimeout(err)
 }
 
 func isSSOCredentialRejected(err error, credential accountdomain.Credential) bool {
@@ -2067,8 +2067,8 @@ func isTerminalRequestForbidden(upstreamProvider accountdomain.Provider, failure
 		return false
 	}
 	return failure.SafetyRejection ||
-		(upstreamProvider == accountdomain.ProviderBuild && failure.RequestScopedForbidden) ||
-		(upstreamProvider == accountdomain.ProviderConsole && failure.RequestScopedForbidden && isDPoPProofRequired(failure.UpstreamCode))
+		(upstreamProvider == accountdomain.ProviderM365 && failure.RequestScopedForbidden) ||
+		(upstreamProvider == accountdomain.ProviderM365 && failure.RequestScopedForbidden && isDPoPProofRequired(failure.UpstreamCode))
 }
 
 // forcesAccountFailover keeps Build account-scoped billing, permission, and rate-limit
@@ -2076,7 +2076,7 @@ func isTerminalRequestForbidden(upstreamProvider accountdomain.Provider, failure
 // account is selected. free-usage 429 and Team RPS 429 both need rotation even when
 // upstream sets X-Should-Retry:false.
 func forcesAccountFailover(status int, upstreamProvider accountdomain.Provider) bool {
-	return upstreamProvider == accountdomain.ProviderBuild &&
+	return upstreamProvider == accountdomain.ProviderM365 &&
 		(status == http.StatusPaymentRequired || status == http.StatusForbidden || status == http.StatusTooManyRequests)
 }
 

@@ -208,7 +208,7 @@ func (s *Service) syncAccount(ctx context.Context, accountID uint64) error {
 	if !ok {
 		return fmt.Errorf("Provider %s 未注册生命周期策略", view.Credential.Provider)
 	}
-	if view.Credential.Provider == accountdomain.ProviderWeb || view.Credential.Provider == accountdomain.ProviderConsole {
+	if view.Credential.Provider == accountdomain.ProviderM365 || view.Credential.Provider == accountdomain.ProviderM365 {
 		if identity, ok := s.accounts.(identitySynchronizer); ok {
 			operationCtx, cancel := context.WithTimeout(ctx, operationTimeout)
 			identityErr := identity.SyncAccountIdentity(operationCtx, accountID)

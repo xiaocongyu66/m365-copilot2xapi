@@ -769,7 +769,7 @@ func (r *ModelRepository) UpsertDiscovered(ctx context.Context, provider account
 
 func discoveredRouteDefaults(provider account.Provider, upstreamModel string) (string, model.Capability) {
 	switch provider {
-	case account.ProviderWeb:
+	case account.ProviderM365:
 		switch upstreamModel {
 		case "grok-imagine-image":
 			return "grok-imagine-image-lite", model.CapabilityImage
@@ -784,12 +784,12 @@ func discoveredRouteDefaults(provider account.Provider, upstreamModel string) (s
 		default:
 			return upstreamModel, model.CapabilityChat
 		}
-	case account.ProviderBuild:
+	case account.ProviderM365:
 		if upstreamModel == "grok-imagine-video-1.5" {
 			return upstreamModel, model.CapabilityVideo
 		}
 		return upstreamModel, model.CapabilityResponses
-	case account.ProviderConsole:
+	case account.ProviderM365:
 		switch upstreamModel {
 		case "grok-imagine-image", "grok-imagine-image-quality", "grok-imagine-image-2.0":
 			// The catalog also registers image_edit for the same public model.
@@ -839,7 +839,7 @@ func (r *ModelRepository) UpsertRoutes(ctx context.Context, values []model.Route
 				return err
 			}
 			fallbackOrigin := model.OriginDiscovered
-			if value.Provider == account.ProviderWeb {
+			if value.Provider == account.ProviderM365 {
 				fallbackOrigin = model.OriginCatalog
 			}
 			row := modelRouteModel{PublicID: value.PublicID, Provider: string(value.Provider), UpstreamModel: value.UpstreamModel, Capability: string(value.Capability), Origin: string(normalizeRouteOrigin(value.Origin, fallbackOrigin)), Enabled: value.Enabled}
@@ -985,7 +985,7 @@ func (r *ModelRepository) ReplaceProviderRoutes(ctx context.Context, provider ac
 				}
 			}
 		}
-		if provider == account.ProviderWeb {
+		if provider == account.ProviderM365 {
 			if err := tx.Delete(&modelRouteAliasModel{}, "alias = ?", retiredWebImageQualityLitePublicID).Error; err != nil {
 				return err
 			}

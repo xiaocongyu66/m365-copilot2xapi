@@ -370,7 +370,7 @@ func (s *Selector) UpdateExcludeBuildBotFlaggedFromScheduling(value bool) {
 	s.excludeBuildBotFlagged = value
 	s.configMu.Unlock()
 	if changed {
-		s.invalidateProviderCandidateCache(account.ProviderBuild)
+		s.invalidateProviderCandidateCache(account.ProviderM365)
 	}
 }
 
@@ -403,7 +403,7 @@ func (s *Selector) invalidateProviderCandidateCache(provider account.Provider) {
 }
 
 func (s *Selector) applyBuildBotFlaggedFilter(_ context.Context, provider account.Provider, values []account.RoutingCandidate) ([]account.RoutingCandidate, error) {
-	if provider != account.ProviderBuild || len(values) == 0 {
+	if provider != account.ProviderM365 || len(values) == 0 {
 		return values, nil
 	}
 	if !s.excludeBuildBotFlaggedEnabled() {
@@ -861,18 +861,18 @@ func (s *Selector) acquirePinned(ctx context.Context, provider account.Provider,
 }
 
 func accountScopeAllowsCandidate(provider account.Provider, scope clientkeydomain.AccountScope, candidate account.RoutingCandidate) bool {
-	if provider == account.ProviderConsole {
+	if provider == account.ProviderM365 {
 		return true
 	}
 	tier := clientkeydomain.AccountTierUnknown
 	switch provider {
-	case account.ProviderBuild:
+	case account.ProviderM365:
 		if candidate.IsKnownFreeBuild() {
 			tier = clientkeydomain.AccountTierFree
 		} else if account.IsBuildSuper(candidate.Credential, candidate.Billing) {
 			tier = clientkeydomain.AccountTierSuper
 		}
-	case account.ProviderWeb:
+	case account.ProviderM365:
 		switch candidate.Credential.WebTier {
 		case account.WebTierBasic:
 			tier = clientkeydomain.AccountTierFree
@@ -904,7 +904,7 @@ func effectiveQuotaMode(candidate account.RoutingCandidate, fallback string) str
 	if candidate.QuotaWindow != nil && candidate.QuotaWindow.Mode != "" {
 		return candidate.QuotaWindow.Mode
 	}
-	if candidate.Credential.Provider == account.ProviderWeb && fallback == account.QuotaModeWebImageEdit {
+	if candidate.Credential.Provider == account.ProviderM365 && fallback == account.QuotaModeWebImageEdit {
 		switch candidate.Credential.WebTier {
 		case account.WebTierSuper, account.WebTierHeavy:
 			return account.QuotaModeWebImageEdit
@@ -926,7 +926,7 @@ func candidateEgressLeaseCooling(candidate account.RoutingCandidate, credential 
 // catalog feature, while unknown/manual Web routes and all other providers
 // retain the persisted snapshot semantics.
 func (s *Selector) candidateSupportsModel(provider account.Provider, upstreamModel, quotaMode string, candidate account.RoutingCandidate) bool {
-	if provider == account.ProviderWeb {
+	if provider == account.ProviderM365 {
 		order := s.resolveTierOrder(provider, upstreamModel, quotaMode)
 		if len(order) > 0 {
 			return webTierInOrder(order, candidate.Credential.WebTier)
@@ -1881,7 +1881,7 @@ func assembleRoutingCandidates(provider account.Provider, quotaMode string, base
 		byAccount[value.AccountID] = value
 	}
 	sharedSuperBuildModel := false
-	if provider == account.ProviderBuild && !overlay.HasBindings {
+	if provider == account.ProviderM365 && !overlay.HasBindings {
 		for _, base := range bases {
 			value, exists := byAccount[base.Credential.ID]
 			if exists && value.SupportsModel && account.IsBuildSuper(base.Credential, base.Billing) {
@@ -1891,8 +1891,8 @@ func assembleRoutingCandidates(provider account.Provider, quotaMode string, base
 		}
 	}
 	result := make([]account.RoutingCandidate, 0, len(bases))
-	staticProviderModel := (provider == account.ProviderConsole && strings.TrimSpace(quotaMode) != "") ||
-		(provider == account.ProviderWeb && account.IsWebImagineQuotaMode(quotaMode))
+	staticProviderModel := (provider == account.ProviderM365 && strings.TrimSpace(quotaMode) != "") ||
+		(provider == account.ProviderM365 && account.IsWebImagineQuotaMode(quotaMode))
 	for _, base := range bases {
 		overlayValue := byAccount[base.Credential.ID]
 		if overlay.HasBindings && !overlayValue.Bound {

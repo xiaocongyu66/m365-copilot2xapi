@@ -78,7 +78,7 @@ func ensureBuildComposerSessionIdentity(identity buildSessionIdentity, clientKey
 	// A soft message-prefix identity is intentionally replaced: two independent
 	// Composer requests may begin with the same text and must not share a
 	// conversation merely because their first message matches.
-	if (identity.upstreamID != "" && !identity.soft) || clientKeyID == 0 || provider != accountdomain.ProviderBuild || !modeldomain.IsGrokComposerModel(upstreamModel) {
+	if (identity.upstreamID != "" && !identity.soft) || clientKeyID == 0 || provider != accountdomain.ProviderM365 || !modeldomain.IsGrokComposerModel(upstreamModel) {
 		return identity
 	}
 	requestScope = strings.TrimSpace(requestScope)

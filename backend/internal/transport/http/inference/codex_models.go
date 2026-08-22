@@ -133,7 +133,7 @@ func codexReasoningLevelsFor(levels []string) []codexReasoningLevel {
 }
 
 func codexAgentToolsSupported(item modelListItem) bool {
-	return item.Provider == account.ProviderBuild && item.Capability == modeldomain.CapabilityResponses
+	return item.Provider == account.ProviderM365 && item.Capability == modeldomain.CapabilityResponses
 }
 
 func newCodexModelCatalog(items []modelListItem) codexModelCatalog {

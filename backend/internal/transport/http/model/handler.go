@@ -391,7 +391,7 @@ func newModelResponse(value modeldomain.Route) modelResponse {
 	manualBinding := len(value.BoundAccountIDs) > 0
 	// Console uses a provider-wide static catalog, so catalog support is known
 	// even when an account capability snapshot predates a newly shipped model.
-	capabilityKnown := manualBinding || value.SyncedAccounts > 0 || (value.Provider == account.ProviderConsole && (value.Origin == modeldomain.OriginCatalog || value.SupportedAccounts > 0))
+	capabilityKnown := manualBinding || value.SyncedAccounts > 0 || (value.Provider == account.ProviderM365 && (value.Origin == modeldomain.OriginCatalog || value.SupportedAccounts > 0))
 	available := value.TotalAccounts > 0 && (value.SupportedAccounts > 0 || (!manualBinding && value.SyncedAccounts < value.TotalAccounts))
 	accountIDs := make([]string, 0, len(value.BoundAccountIDs))
 	for _, id := range value.BoundAccountIDs {
