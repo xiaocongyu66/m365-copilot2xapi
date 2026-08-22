@@ -137,9 +137,69 @@ func (s *Service) SynthesizeSpeech(ctx context.Context, input TTSInput) (*Result
 }
 
 // ListTTSVoices always returns ErrMediaNotSupported for M365.
-func (s *Service) ListTTSVoices(ctx context.Context) ([]VoiceInfo, error) {
+func (s *Service) ListTTSVoices(ctx context.Context, input VoiceListInput) (*Result, error) {
 	return nil, ErrMediaNotSupported
+}
+
+// GetTTSVoice always returns ErrMediaNotSupported for M365.
+func (s *Service) GetTTSVoice(ctx context.Context, input VoiceIDInput) (*Result, error) {
+	return nil, ErrMediaNotSupported
+}
+
+// TranscribeSpeech always returns ErrMediaNotSupported for M365.
+func (s *Service) TranscribeSpeech(ctx context.Context, input STTInput) (*Result, error) {
+	return nil, ErrMediaNotSupported
+}
+
+// OpenVoiceWebSocket always returns ErrMediaNotSupported for M365.
+func (s *Service) OpenVoiceWebSocket(ctx context.Context, input VoiceWebSocketInput) (VoiceWebSocketOutcome, error) {
+	return VoiceWebSocketOutcome{}, ErrMediaNotSupported
 }
 
 // VoiceInfo is a placeholder for TTS voice metadata.
 type VoiceInfo struct{}
+
+// VoiceListInput mirrors the historical voice list request shape.
+type VoiceListInput struct {
+	RequestID string
+	ClientKey clientkeydomain.Key
+	Method    string
+	Path      string
+	Headers   http.Header
+}
+
+// VoiceIDInput mirrors the historical single-voice request shape.
+type VoiceIDInput struct {
+	RequestID string
+	ClientKey clientkeydomain.Key
+	VoiceID   string
+	Method    string
+	Path      string
+	Headers   http.Header
+}
+
+// STTInput mirrors the historical speech-to-text request shape.
+type STTInput struct {
+	RequestID   string
+	ClientKey   clientkeydomain.Key
+	PublicModel string
+	Language    string
+	Format      string
+	Method      string
+	Path        string
+	Headers     http.Header
+}
+
+// VoiceWebSocketInput mirrors the historical realtime voice WebSocket request shape.
+type VoiceWebSocketInput struct {
+	RequestID   string
+	ClientKey   clientkeydomain.Key
+	PublicModel string
+	Voice       string
+	Method      string
+	Path        string
+	Headers     http.Header
+}
+
+// VoiceWebSocketOutcome is the no-op result for voice WebSocket sessions.
+type VoiceWebSocketOutcome struct{}
