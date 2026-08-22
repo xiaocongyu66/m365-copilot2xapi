@@ -1,7 +1,6 @@
 package proxypool
 
 import (
-	"sync"
 	"sync/atomic"
 )
 
