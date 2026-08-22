@@ -1,4 +1,4 @@
-import { Bot, Compass, Handshake, SquareTerminal, VenusAndMars, Webhook, type LucideIcon } from "lucide-react";
+import { Bot, SquareTerminal, type LucideIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -7,15 +7,11 @@ import { cn } from "@/shared/lib/cn";
 import { formatDateTime } from "@/shared/lib/format";
 
 const providerOrder: Record<AccountProvider, number> = {
-  grok_build: 0,
-  grok_web: 1,
-  grok_console: 2,
+  m365_copilot: 0,
 };
 
 const providerIcon: Record<AccountProvider, { icon: LucideIcon; className: string }> = {
-  grok_build: { icon: SquareTerminal, className: "text-quota-product-1" },
-  grok_web: { icon: Compass, className: "text-quota-product-2" },
-  grok_console: { icon: Webhook, className: "text-quota-product-4" },
+  m365_copilot: { icon: SquareTerminal, className: "text-quota-product-1" },
 };
 
 function identityDetails(name: string, email?: string, userId?: string): string[] {
@@ -40,9 +36,9 @@ function accountLinks(account: AccountDTO): LinkedAccountDTO[] {
 export function AccountNameCell({ account }: { account: AccountDTO }) {
   const { t, i18n } = useTranslation();
   const links = accountLinks(account);
-  const providerLabel = (provider: AccountProvider) => provider === "grok_build"
+  const providerLabel = (provider: AccountProvider) => provider === "m365_copilot"
     ? t("models.providerM365Build")
-    : provider === "grok_web"
+    : provider === "m365_copilot"
       ? t("models.providerM365Web")
       : t("console.name");
   const connections = [

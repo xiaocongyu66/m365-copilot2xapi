@@ -15,13 +15,11 @@ type DashboardProviderDistributionProps = {
   loading: boolean;
 };
 
-type ProviderKey = "grok_build" | "grok_web" | "grok_console";
+type ProviderKey = "m365_copilot";
 
 const STRIPE_COUNT = 40;
 const PROVIDERS: Array<{ key: ProviderKey; color: string; dot: string }> = [
-  { key: "grok_build", color: "bg-quota-product-1", dot: "bg-quota-product-1" },
-  { key: "grok_web", color: "bg-quota-product-2", dot: "bg-quota-product-2" },
-  { key: "grok_console", color: "bg-quota-product-4", dot: "bg-quota-product-4" },
+  { key: "m365_copilot", color: "bg-quota-product-1", dot: "bg-quota-product-1" },
 ];
 
 export function DashboardProviderDistribution({ dashboard, locale, loading }: DashboardProviderDistributionProps) {
@@ -134,8 +132,8 @@ function buildProviderStripes<T extends { requests: number }>(providers: T[], to
 }
 
 function providerLabel(provider: ProviderKey, t: TFunction): string {
-  if (provider === "grok_build") return t("models.providerM365Build");
-  if (provider === "grok_web") return t("models.providerM365Web");
+  if (provider === "m365_copilot") return t("models.providerM365Build");
+  if (provider === "m365_copilot") return t("models.providerM365Web");
   return t("console.name");
 }
 

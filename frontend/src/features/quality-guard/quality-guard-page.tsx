@@ -45,7 +45,7 @@ export function QualityGuardPage() {
   });
   const nodesQuery = useQuery({
     queryKey: ["quality-guard-egress-nodes"],
-    queryFn: () => listAllEgressNodes({ scope: "grok_build" }),
+    queryFn: () => listAllEgressNodes({ scope: "m365_copilot" }),
     refetchInterval: 15_000,
   });
   const testMutation = useMutation({
@@ -68,7 +68,7 @@ export function QualityGuardPage() {
       const input: EgressNodeInput = {
         ...nodeForm,
         name: nodeForm.name.trim(),
-        scope: "grok_build",
+        scope: "m365_copilot",
         proxyURL: nodeForm.proxyURL?.trim() || undefined,
         userAgent: "",
         cloudflareCookies: undefined,
@@ -117,7 +117,7 @@ export function QualityGuardPage() {
   const openEditNode = (node: EgressNodeDTO) => {
     setNodeForm({
       name: node.name,
-      scope: "grok_build",
+      scope: "m365_copilot",
       enabled: node.enabled,
       proxyPool: node.proxyPool,
       accountCapacity: node.accountCapacity,
@@ -370,7 +370,7 @@ function NodeField({ label, controlId, help, children }: { label: string; contro
 }
 
 function emptyNodeInput(): EgressNodeInput {
-  return { name: "", scope: "grok_build", enabled: true, proxyPool: false, accountCapacity: 0, proxyURL: "", userAgent: "", cloudflareCookies: "" };
+  return { name: "", scope: "m365_copilot", enabled: true, proxyPool: false, accountCapacity: 0, proxyURL: "", userAgent: "", cloudflareCookies: "" };
 }
 
 function StateBadge({ node, state, protectedNode }: { node: EgressNodeDTO; state?: QualityGuardNodeState; protectedNode: boolean }) {

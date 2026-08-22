@@ -53,7 +53,7 @@ export function ModelsPage() {
   const debouncedSearch = useDebouncedValue(search);
   const schema = z.object({
     publicId: z.string().min(1, t("errors.required")),
-    provider: z.enum(["grok_build", "grok_web", "grok_console"]),
+    provider: z.enum(["m365_copilot", "m365_copilot", "m365_copilot"]),
     upstreamModel: z.string().min(1, t("errors.required")),
     capability: z.enum(["responses", "chat", "image", "image_edit", "video", "tts", "stt", "realtime"]),
     enabled: z.boolean(),
@@ -63,7 +63,7 @@ export function ModelsPage() {
   type ModelForm = z.infer<typeof schema>;
   const form = useForm<ModelForm>({
     resolver: zodResolver(schema),
-    defaultValues: { publicId: "", provider: "grok_build", upstreamModel: "", capability: "responses", enabled: true, bindingMode: false, accountIds: [] },
+    defaultValues: { publicId: "", provider: "m365_copilot", upstreamModel: "", capability: "responses", enabled: true, bindingMode: false, accountIds: [] },
   });
   const modelEnabled = useWatch({ control: form.control, name: "enabled" });
   const selectedProvider = useWatch({ control: form.control, name: "provider" });
@@ -175,7 +175,7 @@ export function ModelsPage() {
   function beginCreate(): void {
     setEditing("new");
     setAccountSearch("");
-    form.reset({ publicId: "", provider: "grok_build", upstreamModel: "", capability: "responses", enabled: true, bindingMode: false, accountIds: [] });
+    form.reset({ publicId: "", provider: "m365_copilot", upstreamModel: "", capability: "responses", enabled: true, bindingMode: false, accountIds: [] });
   }
 
   function toggleBoundAccount(id: string, checked: boolean): void {
@@ -240,9 +240,9 @@ export function ModelsPage() {
               </div>
               <DataTableFilters filters={[
                 { id: "provider", label: t("models.provider"), value: providerFilter, onChange: (value) => { setProviderFilter(value as ModelRouteDTO["provider"] | ""); setPage(1); setSelected(new Set()); }, options: [
-                  { value: "grok_build", label: t("models.providerM365Build") },
-                  { value: "grok_web", label: t("models.providerM365Web") },
-                  { value: "grok_console", label: t("console.name") },
+                  { value: "m365_copilot", label: t("models.providerM365Build") },
+                  { value: "m365_copilot", label: t("models.providerM365Web") },
+                  { value: "m365_copilot", label: t("console.name") },
                 ] },
                 { id: "status", label: t("models.status"), value: statusFilter, onChange: (value) => { setStatusFilter(value); setPage(1); setSelected(new Set()); }, options: [
                   { value: "enabled", label: t("common.enabled") },
@@ -353,7 +353,7 @@ export function ModelsPage() {
                     <Label>{t("models.provider")}</Label>
                     <Select value={selectedProvider} disabled>
                       <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent><SelectItem value="grok_build">{t("models.providerM365Build")}</SelectItem></SelectContent>
+                      <SelectContent><SelectItem value="m365_copilot">{t("models.providerM365Build")}</SelectItem></SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
@@ -437,8 +437,8 @@ export function ModelsPage() {
 
 function ModelProvider({ provider }: { provider: ModelRouteDTO["provider"] }) {
   const { t } = useTranslation();
-  const label = provider === "grok_web" ? t("models.providerM365Web") : provider === "grok_console" ? t("console.name") : t("models.providerM365Build");
-  const color = provider === "grok_web" ? "bg-quota-product-2" : provider === "grok_console" ? "bg-quota-product-4" : "bg-quota-product-1";
+  const label = provider === "m365_copilot" ? t("models.providerM365Web") : provider === "m365_copilot" ? t("console.name") : t("models.providerM365Build");
+  const color = provider === "m365_copilot" ? "bg-quota-product-2" : provider === "m365_copilot" ? "bg-quota-product-4" : "bg-quota-product-1";
   return (
     <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs text-muted-foreground">
       <span className={cn("size-2 rounded-full", color)} />

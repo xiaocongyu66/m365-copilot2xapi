@@ -135,7 +135,7 @@ export function CreativeConsolePage() {
     image: uniqueModelsByPublicID(permittedModels.filter((model) => model.capability === "image")),
     // Keep every route target for VideoPanel. It presents one row per public ID,
     // but edit/extend eligibility depends on whether any aggregated target is
-    // Console/grok-imagine-video, not on the public name chosen by the operator.
+    // Console/m365-imagine-video, not on the public name chosen by the operator.
     video: permittedModels.filter((model) => model.capability === "video"),
     // Keep capability-specific routes for VoicePanel so TTS/STT can filter correctly.
     voice: permittedModels.filter((model) => model.capability === "tts" || model.capability === "stt" || model.capability === "realtime"),
@@ -874,7 +874,7 @@ function ImagePanel({ apiKey, model, modelOptions, onModelChange }: CreativePane
   const [resolution, setResolution] = useState("1k");
   const [quality, setQuality] = useState<"low" | "medium">("medium");
   const [images, setImages] = useState<ImageResult[]>([]);
-  const supportsQuality = model.toLowerCase().endsWith("grok-imagine-image-2.0");
+  const supportsQuality = model.toLowerCase().endsWith("m365-imagine-image-2.0");
 
   const mutation = useMutation({
     mutationFn: (request: Parameters<typeof generateImage>[0]) => generateImage(request),
@@ -956,7 +956,7 @@ function VideoPanel({ apiKey, model, modelOptions, onModelChange }: CreativePane
   const generateModels = useMemo(() => uniqueModelsByPublicID(modelOptions.filter((item) => item.capability === "video")), [modelOptions]);
   const editModels = useMemo(() => {
     const eligiblePublicIDs = new Set(modelOptions
-      .filter((item) => item.capability === "video" && item.provider === "grok_console" && item.upstreamModel === "grok-imagine-video")
+      .filter((item) => item.capability === "video" && item.provider === "m365_copilot" && item.upstreamModel === "m365-imagine-video")
       .map((item) => item.publicId));
     return generateModels.filter((item) => eligiblePublicIDs.has(item.publicId));
   }, [generateModels, modelOptions]);
@@ -971,7 +971,7 @@ function VideoPanel({ apiKey, model, modelOptions, onModelChange }: CreativePane
 
   const voicesQuery = useQuery({
     queryKey: ["creative-console", "video-voices", apiKey],
-    queryFn: ({ signal }) => listVoices({ apiKey, model: "grok-voice-latest", signal }),
+    queryFn: ({ signal }) => listVoices({ apiKey, model: "m365-voice-latest", signal }),
     enabled: Boolean(apiKey && action === "generate"),
     staleTime: 60_000,
   });
@@ -1391,7 +1391,7 @@ function VoicePanel({ apiKey, model, modelOptions, onModelChange }: CreativePane
 
   const voicesQuery = useQuery({
     queryKey: ["creative-console", "voices", apiKey, activeModel],
-    queryFn: ({ signal }) => listVoices({ apiKey, model: activeModel || "grok-voice-latest", signal }),
+    queryFn: ({ signal }) => listVoices({ apiKey, model: activeModel || "m365-voice-latest", signal }),
     enabled: Boolean(apiKey) && subMode === "tts",
     staleTime: 60_000,
   });
@@ -1401,7 +1401,7 @@ function VoicePanel({ apiKey, model, modelOptions, onModelChange }: CreativePane
     : voices[0]?.voiceId ?? voiceId;
 
   const ttsMutation = useMutation({
-    mutationFn: () => synthesizeSpeech({ apiKey, model: activeModel || "grok-voice-latest", text: prompt.trim(), voiceId: activeVoiceId, language, speed: Number(speed) }),
+    mutationFn: () => synthesizeSpeech({ apiKey, model: activeModel || "m365-voice-latest", text: prompt.trim(), voiceId: activeVoiceId, language, speed: Number(speed) }),
     onSuccess: (result) => {
       setTtsResult(result);
       setSttResult(null);
@@ -1410,7 +1410,7 @@ function VoicePanel({ apiKey, model, modelOptions, onModelChange }: CreativePane
   const sttMutation = useMutation({
     mutationFn: async () => {
       if (!audioFile) throw new Error(t("creativeConsole.errors.noAudio"));
-      return transcribeSpeech({ apiKey, model: activeModel || "grok-stt", file: audioFile, language });
+      return transcribeSpeech({ apiKey, model: activeModel || "m365-stt", file: audioFile, language });
     },
     onSuccess: (result) => {
       setSttResult(result);
@@ -1768,7 +1768,7 @@ function uniqueModelsByPublicID(models: ModelRouteDTO[]): ModelRouteDTO[] {
 }
 
 function isFixedReasoningConsoleModel(model: ModelRouteDTO | undefined): boolean {
-  return model?.provider === "grok_console" && model.upstreamModel === "grok-4.20-0309-reasoning";
+  return model?.provider === "m365_copilot" && model.upstreamModel === "m365-reasoning";
 }
 
 let fallbackMessageID = 0;

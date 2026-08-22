@@ -32,7 +32,7 @@ export type ClientKeyInput = {
   tierScope: TierScopeValue[];
 };
 
-export type ProviderScopeValue = "all" | "grok_build" | "grok_web" | "grok_console";
+export type ProviderScopeValue = "all" | "m365_copilot" | "m365_copilot" | "m365_copilot";
 export type TierScopeValue = "all" | "free" | "super";
 
 export type CreateKeyResponseDTO = { key: ClientKeyDTO; secret: string };
@@ -40,12 +40,12 @@ export type CreateKeyResponseDTO = { key: ClientKeyDTO; secret: string };
 const clientKeyValidator = hasShape({
   id: isString, name: isString, prefix: isString, enabled: isBoolean, expiresAt: isOptional(isString),
   rpmLimit: isNumber, maxConcurrent: isNumber, billingLimitUsdTicks: isNumber, billedUsageUsdTicks: isNumber,
-  allowModelAliases: isBoolean, allowedModelIds: isArrayOf(isString), providerScope: isOptional(isArrayOf(isOneOf("all", "grok_build", "grok_web", "grok_console"))), tierScope: isOptional(isArrayOf(isOneOf("all", "free", "super"))), lastUsedAt: isOptional(isString),
+  allowModelAliases: isBoolean, allowedModelIds: isArrayOf(isString), providerScope: isOptional(isArrayOf(isOneOf("all", "m365_copilot", "m365_copilot", "m365_copilot"))), tierScope: isOptional(isArrayOf(isOneOf("all", "free", "super"))), lastUsedAt: isOptional(isString),
 });
 const decodeClientKey = createObjectDecoder<ClientKeyDTO>("client key", {
   id: isString, name: isString, prefix: isString, enabled: isBoolean, expiresAt: isOptional(isString),
   rpmLimit: isNumber, maxConcurrent: isNumber, billingLimitUsdTicks: isNumber, billedUsageUsdTicks: isNumber,
-  allowModelAliases: isBoolean, allowedModelIds: isArrayOf(isString), providerScope: isOptional(isArrayOf(isOneOf("all", "grok_build", "grok_web", "grok_console"))), tierScope: isOptional(isArrayOf(isOneOf("all", "free", "super"))), lastUsedAt: isOptional(isString),
+  allowModelAliases: isBoolean, allowedModelIds: isArrayOf(isString), providerScope: isOptional(isArrayOf(isOneOf("all", "m365_copilot", "m365_copilot", "m365_copilot"))), tierScope: isOptional(isArrayOf(isOneOf("all", "free", "super"))), lastUsedAt: isOptional(isString),
 });
 const decodeClientKeyPage = createPaginatedDecoder<ClientKeyDTO>(clientKeyValidator);
 const decodeCreatedClientKey = createObjectDecoder<CreateKeyResponseDTO>("created client key", { key: clientKeyValidator, secret: isString });

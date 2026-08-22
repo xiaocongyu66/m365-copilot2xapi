@@ -32,9 +32,9 @@ import { useDebouncedValue } from "@/shared/hooks/use-debounced-value";
 import { cn } from "@/shared/lib/cn";
 import { nextTableSort, type SortOrder, type TableSort } from "@/shared/lib/table-sort";
 
-const emptyInput: EgressNodeInput = { name: "", scope: "grok_build", enabled: true, proxyPool: false, accountCapacity: 0, proxyURL: "", userAgent: "", cloudflareCookies: "" };
+const emptyInput: EgressNodeInput = { name: "", scope: "m365_copilot", enabled: true, proxyPool: false, accountCapacity: 0, proxyURL: "", userAgent: "", cloudflareCookies: "" };
 type ImportForm = { name: string; scope: EgressScope; accountCapacity: number; content: string };
-const emptyImport: ImportForm = { name: "", scope: "grok_build", accountCapacity: 0, content: "" };
+const emptyImport: ImportForm = { name: "", scope: "m365_copilot", accountCapacity: 0, content: "" };
 
 export function EgressNodes({ title, clearanceMode }: { title: string; clearanceMode: ClearanceMode }) {
   const { t } = useTranslation();
@@ -74,8 +74,8 @@ export function EgressNodes({ title, clearanceMode }: { title: string; clearance
       const input = {
         ...form,
         proxyURL: normalizedProxyURL && (!editing || normalizedProxyURL !== revealedProxyURL) ? normalizedProxyURL : undefined,
-        userAgent: form.scope === "grok_build" ? "" : form.userAgent,
-        cloudflareCookies: form.scope === "grok_build" ? undefined : form.cloudflareCookies?.trim() || undefined,
+        userAgent: form.scope === "m365_copilot" ? "" : form.userAgent,
+        cloudflareCookies: form.scope === "m365_copilot" ? undefined : form.cloudflareCookies?.trim() || undefined,
       };
       return editing ? updateEgressNode(editing.id, input) : createEgressNode(input);
     },
@@ -181,7 +181,7 @@ export function EgressNodes({ title, clearanceMode }: { title: string; clearance
   }
 
   function openEdit(node: EgressNodeDTO) {
-    setForm({ name: node.name, scope: node.scope, enabled: node.enabled, proxyPool: node.proxyPool, accountCapacity: node.accountCapacity, proxyProfileId: node.proxyProfileId, userAgent: node.scope === "grok_build" ? "" : node.userAgent, proxyURL: "", cloudflareCookies: "" });
+    setForm({ name: node.name, scope: node.scope, enabled: node.enabled, proxyPool: node.proxyPool, accountCapacity: node.accountCapacity, proxyProfileId: node.proxyProfileId, userAgent: node.scope === "m365_copilot" ? "" : node.userAgent, proxyURL: "", cloudflareCookies: "" });
     setProxyVisible(false);
     setRevealedProxyURL("");
     setEditing(node);
@@ -193,16 +193,16 @@ export function EgressNodes({ title, clearanceMode }: { title: string; clearance
     setForm({
       ...form,
       scope,
-      userAgent: scope === "grok_build" ? "" : (form.userAgent === "" || form.userAgent === previousDefault ? nextDefault : form.userAgent),
-      cloudflareCookies: scope === "grok_build" || scope === "grok_console_asset" ? "" : form.cloudflareCookies,
+      userAgent: scope === "m365_copilot" ? "" : (form.userAgent === "" || form.userAgent === previousDefault ? nextDefault : form.userAgent),
+      cloudflareCookies: scope === "m365_copilot" || scope === "m365_copilot_asset" ? "" : form.cloudflareCookies,
     });
   }
 
   function scopeLabel(scope: EgressScope) {
-    if (scope === "grok_build") return t("settings.egress.scopeBuild");
-    if (scope === "grok_console") return t("console.name");
-    if (scope === "grok_web_asset") return t("settings.egress.scopeWebAsset");
-    if (scope === "grok_console_asset") return t("settings.egress.scopeConsoleAsset");
+    if (scope === "m365_copilot") return t("settings.egress.scopeBuild");
+    if (scope === "m365_copilot") return t("console.name");
+    if (scope === "m365_copilot_asset") return t("settings.egress.scopeWebAsset");
+    if (scope === "m365_copilot_asset") return t("settings.egress.scopeConsoleAsset");
     return t("settings.egress.scopeWeb");
   }
 
@@ -258,11 +258,11 @@ export function EgressNodes({ title, clearanceMode }: { title: string; clearance
                 </div>
                 <DataTableFilters filters={[
                   { id: "scope", label: t("settings.egress.scope"), value: scopeFilter, onChange: (value) => { setScopeFilter(value); setPage(1); setSelected(new Map()); }, options: [
-                    { value: "grok_build", label: scopeLabel("grok_build") },
-                    { value: "grok_web", label: scopeLabel("grok_web") },
-                    { value: "grok_console", label: scopeLabel("grok_console") },
-                    { value: "grok_web_asset", label: scopeLabel("grok_web_asset") },
-                    { value: "grok_console_asset", label: scopeLabel("grok_console_asset") },
+                    { value: "m365_copilot", label: scopeLabel("m365_copilot") },
+                    { value: "m365_copilot", label: scopeLabel("m365_copilot") },
+                    { value: "m365_copilot", label: scopeLabel("m365_copilot") },
+                    { value: "m365_copilot_asset", label: scopeLabel("m365_copilot_asset") },
+                    { value: "m365_copilot_asset", label: scopeLabel("m365_copilot_asset") },
                   ] },
                   { id: "enabled", label: t("settings.egress.enabled"), value: enabledFilter, onChange: (value) => { setEnabledFilter(value); setPage(1); setSelected(new Map()); }, options: [
                     { value: "enabled", label: t("common.enable") },
@@ -332,7 +332,7 @@ export function EgressNodes({ title, clearanceMode }: { title: string; clearance
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => openEdit(node)}><Pencil />{t("common.edit")}</DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      {clearanceMode !== "manual" && !node.accountBoundProxy && (node.scope === "grok_web" || node.scope === "grok_web_asset" || node.scope === "grok_console") ? <DropdownMenuItem disabled={refreshClearance.isPending} onClick={() => refreshClearance.mutate(node.id)}><RefreshCw />{t("settings.egress.refreshClearance")}</DropdownMenuItem> : null}
+                      {clearanceMode !== "manual" && !node.accountBoundProxy && (node.scope === "m365_copilot" || node.scope === "m365_copilot_asset" || node.scope === "m365_copilot") ? <DropdownMenuItem disabled={refreshClearance.isPending} onClick={() => refreshClearance.mutate(node.id)}><RefreshCw />{t("settings.egress.refreshClearance")}</DropdownMenuItem> : null}
                       <DropdownMenuItem disabled={testNode.isPending || !node.proxyConfigured} onClick={() => testNode.mutate(node.id)}><RefreshCw />{t("settings.egress.test")}</DropdownMenuItem>
                       <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => remove.mutate(node.id)}><Trash2 />{t("common.delete")}</DropdownMenuItem>
                     </DropdownMenuContent>
@@ -419,15 +419,15 @@ export function EgressNodes({ title, clearanceMode }: { title: string; clearance
               <Select value={form.scope} onValueChange={(value) => changeScope(value as EgressScope)}>
                 <SelectTrigger id="egress-scope"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="grok_build">{t("settings.egress.scopeBuild")}</SelectItem>
-                  <SelectItem value="grok_web">{t("settings.egress.scopeWeb")}</SelectItem>
-                  <SelectItem value="grok_console">{t("console.name")}</SelectItem>
-                  <SelectItem value="grok_web_asset">{t("settings.egress.scopeWebAsset")}</SelectItem>
-                  <SelectItem value="grok_console_asset">{t("settings.egress.scopeConsoleAsset")}</SelectItem>
+                  <SelectItem value="m365_copilot">{t("settings.egress.scopeBuild")}</SelectItem>
+                  <SelectItem value="m365_copilot">{t("settings.egress.scopeWeb")}</SelectItem>
+                  <SelectItem value="m365_copilot">{t("console.name")}</SelectItem>
+                  <SelectItem value="m365_copilot_asset">{t("settings.egress.scopeWebAsset")}</SelectItem>
+                  <SelectItem value="m365_copilot_asset">{t("settings.egress.scopeConsoleAsset")}</SelectItem>
                 </SelectContent>
               </Select>
             </Field>
-            {form.scope !== "grok_build" && form.scope !== "grok_console_asset" ? (
+            {form.scope !== "m365_copilot" && form.scope !== "m365_copilot_asset" ? (
               <div className="flex h-10 items-center justify-between gap-4 rounded-md bg-muted/45 px-3">
                 <span className="text-xs font-medium">{t("settings.egress.clearance")}</span>
                 <Badge variant="secondary" className="shrink-0 text-[10px]">
@@ -461,12 +461,12 @@ export function EgressNodes({ title, clearanceMode }: { title: string; clearance
               </div>
               <Switch id="egress-proxy-pool" className="mt-0.5" checked={form.proxyPool} disabled={!editing?.proxyConfigured && !form.proxyURL?.trim() && !form.proxyProfileId} onCheckedChange={(proxyPool) => setForm({ ...form, proxyPool })} />
             </div>
-            {form.scope !== "grok_build" && (clearanceMode === "manual" || form.scope === "grok_console_asset") ? (
+            {form.scope !== "m365_copilot" && (clearanceMode === "manual" || form.scope === "m365_copilot_asset") ? (
               <Field label={t("settings.egress.userAgent")} controlId="egress-user-agent">
                 <Input id="egress-user-agent" value={form.userAgent} onChange={(event) => setForm({ ...form, userAgent: event.target.value })} />
               </Field>
             ) : null}
-            {form.scope !== "grok_build" && form.scope !== "grok_console_asset" && clearanceMode === "manual" ? (
+            {form.scope !== "m365_copilot" && form.scope !== "m365_copilot_asset" && clearanceMode === "manual" ? (
               <Field label={t("settings.egress.cloudflareCookie")} controlId="egress-cookie">
                 <Input id="egress-cookie" type="password" autoComplete="new-password" placeholder={editing?.cookieConfigured ? t("settings.egress.keepConfigured") : "cf_clearance=...; __cf_bm=..."} value={form.cloudflareCookies} onChange={(event) => setForm({ ...form, cloudflareCookies: event.target.value })} />
               </Field>
@@ -489,11 +489,11 @@ export function EgressNodes({ title, clearanceMode }: { title: string; clearance
                 <Select value={importForm.scope} onValueChange={(value) => setImportForm({ ...importForm, scope: value as EgressScope })}>
                   <SelectTrigger id="egress-import-scope"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="grok_build">{t("settings.egress.scopeBuild")}</SelectItem>
-                    <SelectItem value="grok_web">{t("settings.egress.scopeWeb")}</SelectItem>
-                    <SelectItem value="grok_console">{t("console.name")}</SelectItem>
-                    <SelectItem value="grok_web_asset">{t("settings.egress.scopeWebAsset")}</SelectItem>
-                    <SelectItem value="grok_console_asset">{t("settings.egress.scopeConsoleAsset")}</SelectItem>
+                    <SelectItem value="m365_copilot">{t("settings.egress.scopeBuild")}</SelectItem>
+                    <SelectItem value="m365_copilot">{t("settings.egress.scopeWeb")}</SelectItem>
+                    <SelectItem value="m365_copilot">{t("console.name")}</SelectItem>
+                    <SelectItem value="m365_copilot_asset">{t("settings.egress.scopeWebAsset")}</SelectItem>
+                    <SelectItem value="m365_copilot_asset">{t("settings.egress.scopeConsoleAsset")}</SelectItem>
                   </SelectContent>
                 </Select>
               </Field>
@@ -613,7 +613,7 @@ function ErrorTooltip({ message }: { message: string }) {
 
 function ClearanceBadge({ node, clearanceMode }: { node: EgressNodeDTO; clearanceMode: ClearanceMode }) {
   const { t } = useTranslation();
-  if (node.scope === "grok_build") return <span className="text-xs text-muted-foreground">—</span>;
+  if (node.scope === "m365_copilot") return <span className="text-xs text-muted-foreground">—</span>;
   if (clearanceMode === "flaresolverr") {
     return <Badge variant="secondary" className="text-[10px]">{node.accountBoundProxy ? `${t("settings.web.clearanceFlareSolverr")} · Resin` : t("settings.web.clearanceFlareSolverr")}</Badge>;
   }

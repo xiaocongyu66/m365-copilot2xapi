@@ -6,7 +6,7 @@ import { createAccountTaskProgressController, type AccountTaskProgressDTO, type 
 
 export type { AccountTaskProgressDTO } from "@/features/accounts/account-task-progress";
 
-export type AccountProvider = "grok_build" | "grok_web" | "grok_console";
+export type AccountProvider = "m365_copilot" | "m365_copilot" | "m365_copilot";
 export type BuildRouteMode = "auto" | "build" | "xai";
 export type AccountCleanupStatus = "cooldown" | "disabled" | "reauthRequired";
 
@@ -106,7 +106,7 @@ export type AccountDTO = {
   lastUsedAt?: string;
   linkedAccountId?: string;
   linkedAccountName?: string;
-  linkedProvider?: "grok_build" | "grok_web";
+  linkedProvider?: "m365_copilot" | "m365_copilot";
   linkedAccounts?: LinkedAccountDTO[];
   createdAt: string;
   billing?: BillingDTO;
@@ -116,7 +116,7 @@ export type AccountDTO = {
 
 export type LinkedAccountDTO = {
   id: string;
-  provider: "grok_build" | "grok_web" | "grok_console";
+  provider: "m365_copilot" | "m365_copilot" | "m365_copilot";
   name: string;
   email?: string;
   userId?: string;
@@ -185,9 +185,9 @@ const quotaWindowValidator = hasShape({
   mode: isString, remaining: isNumber, total: isNumber, usagePercent: isNumber, breakdown: isOptional(isArrayOf(quotaBreakdownValidator)),
   windowSeconds: isNumber, resetAt: isOptional(isString), syncedAt: isOptional(isString), source: isOneOf("default", "estimated", "upstream"),
 });
-const linkedAccountValidator = hasShape({ id: isString, provider: isOneOf("grok_build", "grok_web", "grok_console"), name: isString, email: isOptional(isString), userId: isOptional(isString) });
+const linkedAccountValidator = hasShape({ id: isString, provider: isOneOf("m365_copilot", "m365_copilot", "m365_copilot"), name: isString, email: isOptional(isString), userId: isOptional(isString) });
 const accountValidator = hasShape({
-  id: isString, provider: isOneOf("grok_build", "grok_web", "grok_console"), authType: isOneOf("oauth", "sso"), webTier: isOptional(isOneOf("auto", "basic", "super", "heavy")),
+  id: isString, provider: isOneOf("m365_copilot", "m365_copilot", "m365_copilot"), authType: isOneOf("oauth", "sso"), webTier: isOptional(isOneOf("auto", "basic", "super", "heavy")),
   webTierSyncedAt: isOptional(isString), nsfwEnabledAt: isOptional(isString), termsAcceptedAt: isOptional(isString), name: isString, email: isOptional(isString), userId: isOptional(isString), teamId: isOptional(isString),
   enabled: isBoolean, authStatus: isOneOf("active", "reauthRequired"), expiresAt: isOptional(isString), refreshable: isBoolean, cloudflareCookieConfigured: isBoolean,
   buildSuperEntitled: isBoolean, buildRouteMode: isOneOf("auto", "build", "xai"), buildBotFlagged: isBoolean, buildBotFlagSource: isOptional(isNumber), modelSyncFailed: isOptional(isBoolean), refreshDueAt: isOptional(isString), lastRefreshAt: isOptional(isString), refreshFailureCount: isNumber,
@@ -195,7 +195,7 @@ const accountValidator = hasShape({
   lastRefreshErrorStatus: isOptional(isNumber), lastRefreshErrorCode: isOptional(isString), lastRefreshErrorMessage: isOptional(isString), lastRefreshErrorResponse: isOptional(isString), priority: isNumber, maxConcurrent: isNumber, minimumRemaining: isNumber,
   failureCount: isNumber, cooldownUntil: isOptional(isString), lastError: isOptional(isString), lastUsedAt: isOptional(isString),
   enabledDoesNotClearCooldown: isOptional(isBoolean),
-  linkedAccountId: isOptional(isString), linkedAccountName: isOptional(isString), linkedProvider: isOptional(isOneOf("grok_build", "grok_web")), linkedAccounts: isOptional(isArrayOf(linkedAccountValidator)),
+  linkedAccountId: isOptional(isString), linkedAccountName: isOptional(isString), linkedProvider: isOptional(isOneOf("m365_copilot", "m365_copilot")), linkedAccounts: isOptional(isArrayOf(linkedAccountValidator)),
   createdAt: isString, billing: isOptional(billingValidator), quota: quotaValidator, quotaWindows: isOptional(isArrayOf(quotaWindowValidator)),
 });
 const decodeBilling = createValidatedDecoder<BillingDTO>("billing", billingValidator);
@@ -466,7 +466,7 @@ export type DetectBuildAccountsInput =
   | { all?: false; ids: string[] };
 
 export function detectBuildAccounts(input: DetectBuildAccountsInput, handlers?: BuildDetectHandlers | ((value: AccountTaskProgressDTO) => void), signal?: AbortSignal): Promise<AccountBatchResultDTO> {
-  const body = input.all ? { provider: "grok_build" as const, all: true } : { provider: "grok_build" as const, ids: input.ids };
+  const body = input.all ? { provider: "m365_copilot" as const, all: true } : { provider: "m365_copilot" as const, ids: input.ids };
   const resolved: BuildDetectHandlers = typeof handlers === "function" ? { onProgress: handlers } : (handlers ?? {});
   return runDetectBuildAccountsTask(body, resolved, signal);
 }

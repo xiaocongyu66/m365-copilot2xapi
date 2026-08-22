@@ -35,7 +35,7 @@ export function DashboardOverview({ dashboard, locale, loading }: DashboardDataP
           icon={UsersRound}
           label={t("dashboard.accountCount")}
           value={formatNumber(resources?.totalAccounts ?? 0, locale)}
-          detail={t("dashboard.accountDistribution", { build: formatNumber(resources?.buildAccounts ?? 0, locale), web: formatNumber(resources?.webAccounts ?? 0, locale), console: formatNumber(resources?.consoleAccounts ?? 0, locale) })}
+          detail={t("dashboard.accountAvailable", { active: formatNumber(resources?.activeAccounts ?? 0, locale), total: formatNumber(resources?.totalAccounts ?? 0, locale) })}
           loading={loading}
         />
         <DashboardMetric

@@ -44,25 +44,25 @@ import { VirtualTableBody } from "@/shared/components/virtual-table-body";
 
 type SourceForm = Omit<EgressSourceInput, "url" | "proxyURL" | "clearProxyURL"> & { url: string; proxyEnabled: boolean; proxyURL: string };
 const emptySource: SourceForm = {
-  name: "", scope: "grok_build", enabled: true, url: "", proxyEnabled: false, proxyURL: "", refreshIntervalSeconds: 900, defaultAccountCapacity: 0,
+  name: "", scope: "m365_copilot", enabled: true, url: "", proxyEnabled: false, proxyURL: "", refreshIntervalSeconds: 900, defaultAccountCapacity: 0,
 };
 // Eight nodes run concurrently; each checks IPv4 and IPv6 in parallel with a
 // 15-second ceiling. Keeping a request to 32 nodes leaves enough headroom for
 // the admin HTTP timeout.
 const egressProbeBatchSize = 32;
-const fallbackScopes: EgressScope[] = ["grok_build", "grok_web", "grok_console", "grok_web_asset", "grok_console_asset"];
+const fallbackScopes: EgressScope[] = ["m365_copilot", "m365_copilot", "m365_copilot", "m365_copilot_asset", "m365_copilot_asset"];
 const fallbackDescriptionKeys: Record<EgressScope, string> = {
-  grok_build: "settings.egress.fallbackBuildHelp",
-  grok_web: "settings.egress.fallbackWebHelp",
-  grok_console: "settings.egress.fallbackConsoleHelp",
-  grok_web_asset: "settings.egress.fallbackWebAssetHelp",
-  grok_console_asset: "settings.egress.fallbackConsoleAssetHelp",
+  m365_copilot: "settings.egress.fallbackBuildHelp",
+  m365_copilot: "settings.egress.fallbackWebHelp",
+  m365_copilot: "settings.egress.fallbackConsoleHelp",
+  m365_copilot_asset: "settings.egress.fallbackWebAssetHelp",
+  m365_copilot_asset: "settings.egress.fallbackConsoleAssetHelp",
 };
 
 function defaultFallbacks(): Record<EgressScope, EgressFallbackConfigDTO> {
   return {
-    grok_build: { mode: "none" }, grok_web: { mode: "none" },
-    grok_console: { mode: "none" }, grok_web_asset: { mode: "none" }, grok_console_asset: { mode: "none" },
+    m365_copilot: { mode: "none" }, m365_copilot: { mode: "none" },
+    m365_copilot: { mode: "none" }, m365_copilot_asset: { mode: "none" }, m365_copilot_asset: { mode: "none" },
   };
 }
 
@@ -81,11 +81,11 @@ function operationsFormFrom(value?: EgressOperationsConfigDTO): Omit<EgressOpera
     autoBalanceEnabled: value.autoBalanceEnabled,
     assignmentIntervalSeconds: value.assignmentIntervalSeconds,
     fallbacks: {
-      grok_build: { ...defaults.grok_build, ...value.fallbacks.grok_build },
-      grok_web: { ...defaults.grok_web, ...value.fallbacks.grok_web },
-      grok_console: { ...defaults.grok_console, ...value.fallbacks.grok_console },
-      grok_web_asset: { ...defaults.grok_web_asset, ...value.fallbacks.grok_web_asset },
-      grok_console_asset: { ...defaults.grok_console_asset, ...value.fallbacks.grok_console_asset },
+      m365_copilot: { ...defaults.m365_copilot, ...value.fallbacks.m365_copilot },
+      m365_copilot: { ...defaults.m365_copilot, ...value.fallbacks.m365_copilot },
+      m365_copilot: { ...defaults.m365_copilot, ...value.fallbacks.m365_copilot },
+      m365_copilot_asset: { ...defaults.m365_copilot_asset, ...value.fallbacks.m365_copilot_asset },
+      m365_copilot_asset: { ...defaults.m365_copilot_asset, ...value.fallbacks.m365_copilot_asset },
     },
   };
 }
@@ -321,11 +321,11 @@ export function EgressSources({ scopeLabel }: { scopeLabel: (scope: EgressScope)
               </div>
               <DataTableFilters filters={[{
                 id: "subscription-scope", label: t("settings.egress.scope"), value: scopeFilter, onChange: (value) => { setScopeFilter(value); setPage(1); }, options: [
-                  { value: "grok_build", label: scopeLabel("grok_build") },
-                  { value: "grok_web", label: scopeLabel("grok_web") },
-                  { value: "grok_console", label: scopeLabel("grok_console") },
-                  { value: "grok_web_asset", label: scopeLabel("grok_web_asset") },
-                  { value: "grok_console_asset", label: scopeLabel("grok_console_asset") },
+                  { value: "m365_copilot", label: scopeLabel("m365_copilot") },
+                  { value: "m365_copilot", label: scopeLabel("m365_copilot") },
+                  { value: "m365_copilot", label: scopeLabel("m365_copilot") },
+                  { value: "m365_copilot_asset", label: scopeLabel("m365_copilot_asset") },
+                  { value: "m365_copilot_asset", label: scopeLabel("m365_copilot_asset") },
                 ],
               }]} />
             </div>
@@ -391,8 +391,8 @@ function nodeCooling(node: EgressNodeDTO): boolean {
 
 function supportsFallbackScope(nodeScope: EgressScope, requestScope: EgressScope): boolean {
   if (nodeScope === requestScope) return true;
-  if (requestScope === "grok_console" || requestScope === "grok_web_asset") return nodeScope === "grok_web";
-  return requestScope === "grok_console_asset" && (nodeScope === "grok_console" || nodeScope === "grok_web");
+  if (requestScope === "m365_copilot" || requestScope === "m365_copilot_asset") return nodeScope === "m365_copilot";
+  return requestScope === "m365_copilot_asset" && (nodeScope === "m365_copilot" || nodeScope === "m365_copilot");
 }
 
 function ScopeSelect({ value, onChange, scopeLabel }: { value: EgressScope; onChange: (value: EgressScope) => void; scopeLabel: (scope: EgressScope) => string }) {

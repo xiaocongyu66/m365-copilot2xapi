@@ -50,7 +50,7 @@ export function DegradeAccountsPanel({ softTPS, hardTPS, failClosed, minGenMs }:
   const allSelected = selectable.length > 0 && selectedRows.length === selectable.length;
 
   const muteMutation = useMutation({
-    mutationFn: (ids: string[]) => updateAccountsEnabled(ids, false, "grok_build"),
+    mutationFn: (ids: string[]) => updateAccountsEnabled(ids, false, "m365_copilot"),
     onMutate: () => toast.loading(t("qualityGuard.degrade.muting"), { id: MUTE_TOAST_ID }),
     onSuccess: (_, ids) => {
       setSelected(new Set());

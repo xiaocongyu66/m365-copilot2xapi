@@ -76,7 +76,7 @@ export function ClientKeysPage() {
     allowModelAliases: z.boolean(),
     modelScopeMode: z.enum(["all", "restricted"]),
     allowedModelIds: z.array(z.string()),
-    providerScope: z.array(z.enum(["all", "grok_build", "grok_web", "grok_console"])).min(1),
+    providerScope: z.array(z.enum(["all", "m365_copilot", "m365_copilot", "m365_copilot"])).min(1),
     tierScope: z.array(z.enum(["all", "free", "super"])).min(1),
   }).superRefine((value, context) => {
     if (!value.expiryUnlimited && !value.expiresAt) {
@@ -103,7 +103,7 @@ export function ClientKeysPage() {
   const billingUnlimited = useWatch({ control: form.control, name: "billingUnlimited" });
   const modelProviderScope = providerScope.filter((value): value is Exclude<ProviderScopeValue, "all"> => value !== "all");
   const modelTierScope = tierScope.filter((value): value is Exclude<TierScopeValue, "all"> => value !== "all");
-  const providerScopeSummary = providerScope.includes("all") ? t("keys.allProviders") : modelProviderScope.map((value) => ({ grok_build: "Build", grok_web: "Web", grok_console: "Console" })[value]).join(" · ");
+  const providerScopeSummary = providerScope.includes("all") ? t("keys.allProviders") : modelProviderScope.map((value) => ({ m365_copilot: "Build", m365_copilot: "Web", m365_copilot: "Console" })[value]).join(" · ");
   const tierScopeSummary = tierScope.includes("all") ? t("keys.allTiers") : modelTierScope.map((value) => value === "free" ? "Free" : "Super").join(" · ");
   const modelScopeSummary = modelScopeMode === "all" ? t("keys.allModels") : t("keys.selectedModels", { count: selectedModels.length });
 
@@ -496,9 +496,9 @@ export function ClientKeysPage() {
                         }}
                         normalizeAllWhenComplete
                         options={[
-                          { value: "grok_build", label: "Build" },
-                          { value: "grok_web", label: "Web" },
-                          { value: "grok_console", label: "Console" },
+                          { value: "m365_copilot", label: "Build" },
+                          { value: "m365_copilot", label: "Web" },
+                          { value: "m365_copilot", label: "Console" },
                         ]}
                       />
                     )} />
@@ -729,7 +729,7 @@ function ScopeDropdown({ allLabel, ariaLabel, summary, value, onChange, options,
 
 function AccountScopeSummary({ providerScope, tierScope }: { providerScope: ProviderScopeValue[]; tierScope: TierScopeValue[] }) {
   const { t } = useTranslation();
-  const providerLabels: Record<ProviderScopeValue, string> = { all: t("keys.allProviders"), grok_build: "Build", grok_web: "Web", grok_console: "Console" };
+  const providerLabels: Record<ProviderScopeValue, string> = { all: t("keys.allProviders"), m365_copilot: "Build", m365_copilot: "Web", m365_copilot: "Console" };
   const tierLabels: Record<TierScopeValue, string> = { all: t("keys.allTiers"), free: "Free", super: "Super" };
   return (
     <span className="inline-flex max-w-full flex-col items-start gap-0.5 text-left text-[10px] leading-4">

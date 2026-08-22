@@ -54,7 +54,7 @@ const endpoints: Record<string, EndpointDefinition> = {
     ],
     noteKeys: ["docs.reference.noteChatImages", "docs.reference.noteChatTools"],
     request: (model) => ({ model, messages: [{ role: "system", content: "You are a concise assistant." }, { role: "user", content: "Explain HTTP streaming." }], stream: false }),
-    response: { id: "chatcmpl_example", object: "chat.completion", model: "grok-chat-fast", choices: [{ index: 0, message: { role: "assistant", content: "HTTP streaming sends response data incrementally." }, finish_reason: "stop" }], usage: { prompt_tokens: 24, completion_tokens: 12, total_tokens: 36 } },
+    response: { id: "chatcmpl_example", object: "chat.completion", model: "m365-chat-fast", choices: [{ index: 0, message: { role: "assistant", content: "HTTP streaming sends response data incrementally." }, finish_reason: "stop" }], usage: { prompt_tokens: 24, completion_tokens: 12, total_tokens: 36 } },
   },
   "chat/responses": {
     key: "chat/responses", category: "Chat", title: "Responses", method: "POST", path: "/responses",
@@ -70,7 +70,7 @@ const endpoints: Record<string, EndpointDefinition> = {
     ],
     noteKeys: ["docs.reference.noteResponsesState", "docs.reference.noteResponsesCompact"],
     request: (model) => ({ model, input: "Explain HTTP streaming.", store: false, stream: false }),
-    response: { id: "resp_example", object: "response", status: "completed", model: "grok-chat-fast", output: [{ type: "message", role: "assistant", status: "completed", content: [{ type: "output_text", text: "HTTP streaming sends response data incrementally." }] }], usage: { input_tokens: 18, output_tokens: 12, total_tokens: 30 } },
+    response: { id: "resp_example", object: "response", status: "completed", model: "m365-chat-fast", output: [{ type: "message", role: "assistant", status: "completed", content: [{ type: "output_text", text: "HTTP streaming sends response data incrementally." }] }], usage: { input_tokens: 18, output_tokens: 12, total_tokens: 30 } },
   },
   "chat/messages": {
     key: "chat/messages", category: "Chat", title: "Messages", method: "POST", path: "/messages",
@@ -86,7 +86,7 @@ const endpoints: Record<string, EndpointDefinition> = {
     ],
     noteKeys: ["docs.reference.noteMessagesEvents", "docs.reference.noteMessagesLimits"],
     request: (model) => ({ model, max_tokens: 1024, system: "You are a concise assistant.", messages: [{ role: "user", content: "Explain HTTP streaming." }], stream: false }),
-    response: { id: "msg_example", type: "message", role: "assistant", model: "grok-chat-fast", content: [{ type: "text", text: "HTTP streaming sends response data incrementally." }], stop_reason: "end_turn", stop_sequence: null, usage: { input_tokens: 18, output_tokens: 12 } },
+    response: { id: "msg_example", type: "message", role: "assistant", model: "m365-chat-fast", content: [{ type: "text", text: "HTTP streaming sends response data incrementally." }], stop_reason: "end_turn", stop_sequence: null, usage: { input_tokens: 18, output_tokens: 12 } },
   },
   "image/generations": {
     key: "image/generations", category: "Image", title: "Image generations", method: "POST", path: "/images/generations",
@@ -146,7 +146,7 @@ const endpoints: Record<string, EndpointDefinition> = {
       { name: "video", required: true, descriptionKey: "docs.reference.fieldVideoInput" },
     ],
     noteKeys: ["docs.reference.noteVideoAsync", "docs.reference.noteVideoEditModel", "docs.reference.noteVideoBilling", "docs.reference.noteVideoStrict"],
-    request: () => ({ model: "grok-imagine-video", prompt: "Give the woman a silver necklace", video: { url: "https://example.com/source.mp4" } }),
+    request: () => ({ model: "m365-imagine-video", prompt: "Give the woman a silver necklace", video: { url: "https://example.com/source.mp4" } }),
     response: { request_id: "video_edit_example" },
   },
   "video/extensions": {
@@ -159,7 +159,7 @@ const endpoints: Record<string, EndpointDefinition> = {
       { name: "duration", descriptionKey: "docs.reference.fieldVideoExtendDuration" },
     ],
     noteKeys: ["docs.reference.noteVideoAsync", "docs.reference.noteVideoEditModel", "docs.reference.noteVideoBilling", "docs.reference.noteVideoStrict"],
-    request: () => ({ model: "grok-imagine-video", prompt: "The shot pans to an over the shoulder perspective.", duration: 6, video: { url: "https://example.com/source.mp4" } }),
+    request: () => ({ model: "m365-imagine-video", prompt: "The shot pans to an over the shoulder perspective.", duration: 6, video: { url: "https://example.com/source.mp4" } }),
     response: { request_id: "video_extend_example" },
   },
   "video/get": {
@@ -168,7 +168,7 @@ const endpoints: Record<string, EndpointDefinition> = {
     fields: [{ name: "request_id", required: true, descriptionKey: "docs.reference.fieldRequestId" }],
     noteKeys: ["docs.reference.noteVideoPolling", "docs.reference.noteVideoStatus"],
     request: () => undefined,
-    response: { status: "done", model: "grok-imagine-video", progress: 100, video: { url: "https://example.com/generated.mp4", duration: 8, respect_moderation: true } },
+    response: { status: "done", model: "m365-imagine-video", progress: 100, video: { url: "https://example.com/generated.mp4", duration: 8, respect_moderation: true } },
   },
   "voice/tts": {
     key: "voice/tts", category: "Voice", title: "Text to speech", method: "POST", path: "/tts",
@@ -265,7 +265,7 @@ const endpoints: Record<string, EndpointDefinition> = {
     ],
     noteKeys: ["docs.reference.noteRealtimeEvents", "docs.reference.noteRealtimeProxy", "docs.reference.noteRealtimeAuth", "docs.reference.noteVoiceBilling"],
     request: () => undefined,
-    response: { type: "session.created", session: { model: "grok-voice-latest" } },
+    response: { type: "session.created", session: { model: "m365-voice-latest" } },
   },
 };
 
@@ -358,11 +358,11 @@ function withExampleModel(response: Record<string, unknown>, model: string): Rec
 }
 
 function fallbackModel(key: string): string {
-  if (key.startsWith("image/")) return key === "image/edits" ? "grok-imagine-image-edit" : "grok-imagine-image-lite";
-  if (key.startsWith("video/")) return "grok-imagine-video";
+  if (key.startsWith("image/")) return key === "image/edits" ? "m365-imagine-image-edit" : "m365-imagine-image-lite";
+  if (key.startsWith("video/")) return "m365-imagine-video";
   if (key.startsWith("voice/")) {
-    if (key === "voice/stt" || key === "voice/audio-transcriptions") return "grok-stt";
-    return "grok-voice-latest";
+    if (key === "voice/stt" || key === "voice/audio-transcriptions") return "m365-stt";
+    return "m365-voice-latest";
   }
   return "your-enabled-model";
 }

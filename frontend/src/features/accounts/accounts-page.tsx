@@ -126,7 +126,7 @@ export function AccountsPage() {
   const webAccountScriptsAbortRef = useRef<AbortController | null>(null);
   const importAbortRef = useRef<AbortController | null>(null);
   const importToastRef = useRef<string | number | null>(null);
-  const [provider, setProvider] = useState<AccountProvider>("grok_build");
+  const [provider, setProvider] = useState<AccountProvider>("m365_copilot");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [search, setSearch] = useState("");
@@ -141,7 +141,7 @@ export function AccountsPage() {
   const [agreementFilter, setAgreementFilter] = useState("");
   const [associationFilter, setAssociationFilter] = useState("");
   const [sort, setSort] = useState<TableSort>({ field: "createdAt", order: "desc" });
-  const [selection, setSelection] = useState<AccountSelection>(() => ({ provider: "grok_build", ids: new Set() }));
+  const [selection, setSelection] = useState<AccountSelection>(() => ({ provider: "m365_copilot", ids: new Set() }));
   const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
   const [batchConcurrencyOpen, setBatchConcurrencyOpen] = useState(false);
   const [batchMaxConcurrent, setBatchMaxConcurrent] = useState("1");
@@ -237,9 +237,9 @@ export function AccountsPage() {
     queryKey: ["accounts", provider, page, pageSize, debouncedSearch, typeFilter, statusFilter, egressFilter, renewalFilter, riskFilter, agreementFilter, associationFilter, sort.field, sort.order],
     queryFn: () => listAccounts({
       provider, page, pageSize, search: debouncedSearch, type: typeFilter, status: statusFilter, egress: egressFilter,
-      renewal: provider === "grok_build" ? renewalFilter : undefined,
-      risk: provider === "grok_build" ? riskFilter : undefined,
-      agreement: provider === "grok_web" ? agreementFilter : undefined,
+      renewal: provider === "m365_copilot" ? renewalFilter : undefined,
+      risk: provider === "m365_copilot" ? riskFilter : undefined,
+      agreement: provider === "m365_copilot" ? agreementFilter : undefined,
       association: associationFilter || undefined,
       sortBy: sort.field, sortOrder: sort.order,
     }),
@@ -281,11 +281,11 @@ export function AccountsPage() {
       page: pageParam,
       pageSize: egressFilterNodePageSize,
       search: debouncedEgressFilterOptionsSearch,
-      scope: "grok_web",
+      scope: "m365_copilot",
     }),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => lastPage.page * lastPage.pageSize < lastPage.total ? lastPage.page + 1 : undefined,
-    enabled: egressFilterOptionsOpen && provider === "grok_console",
+    enabled: egressFilterOptionsOpen && provider === "m365_copilot",
     staleTime: 60_000,
   });
   const egressFilterSourcesQuery = useInfiniteQuery({
@@ -307,11 +307,11 @@ export function AccountsPage() {
       page: pageParam,
       pageSize: egressFilterSourcePageSize,
       search: debouncedEgressFilterOptionsSearch,
-      scope: "grok_web",
+      scope: "m365_copilot",
     }),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => lastPage.page * lastPage.pageSize < lastPage.total ? lastPage.page + 1 : undefined,
-    enabled: egressFilterOptionsOpen && provider === "grok_console",
+    enabled: egressFilterOptionsOpen && provider === "m365_copilot",
     staleTime: 60_000,
   });
 
@@ -330,7 +330,7 @@ export function AccountsPage() {
         minimumRemaining: values.minimumRemaining,
       };
       if (values.enabled !== editing.enabled) input.enabled = values.enabled;
-      if (editing.provider !== "grok_build") {
+      if (editing.provider !== "m365_copilot") {
         if (values.clearCloudflareCookies) input.clearCloudflareCookies = true;
         else if (values.cloudflareCookies.trim()) input.cloudflareCookies = values.cloudflareCookies;
       } else {
@@ -340,7 +340,7 @@ export function AccountsPage() {
       return updateAccount(editing.id, input);
     },
     onSuccess: (account, values) => {
-      const entitlementChanged = editing?.provider === "grok_build" && values.buildSuperEntitled !== editing.buildSuperEntitled;
+      const entitlementChanged = editing?.provider === "m365_copilot" && values.buildSuperEntitled !== editing.buildSuperEntitled;
       invalidateAccountData();
       if (entitlementChanged) void queryClient.invalidateQueries({ queryKey: ["models"] });
       setEditing(null);
@@ -387,23 +387,23 @@ export function AccountsPage() {
 
 
   const linkedTargetOptions = (current: AccountProvider): AccountProvider[] =>
-    (["grok_web", "grok_build", "grok_console"] as AccountProvider[]).filter((item) => item !== current);
+    (["m365_copilot", "m365_copilot", "m365_copilot"] as AccountProvider[]).filter((item) => item !== current);
 
   const linkedTargetLabel = (value: AccountProvider) => {
-    if (value === "grok_build") return "M365";
-    if (value === "grok_console") return "M365";
+    if (value === "m365_copilot") return "M365";
+    if (value === "m365_copilot") return "M365";
     return "M365";
   };
 
   const linkedTargetIcon = (value: AccountProvider) => {
-    if (value === "grok_build") return SquareTerminal;
-    if (value === "grok_console") return Webhook;
+    if (value === "m365_copilot") return SquareTerminal;
+    if (value === "m365_copilot") return Webhook;
     return Compass;
   };
 
   const linkedTargetIconClass = (value: AccountProvider) => {
-    if (value === "grok_build") return "text-quota-product-1";
-    if (value === "grok_console") return "text-quota-product-4";
+    if (value === "m365_copilot") return "text-quota-product-1";
+    if (value === "m365_copilot") return "text-quota-product-4";
     return "text-quota-product-2";
   };
 
@@ -566,8 +566,8 @@ export function AccountsPage() {
       const controller = new AbortController();
       quotaSyncAbortRef.current = controller;
       setQuotaSyncProgress(null);
-      if (targetProvider === "grok_web") return refreshAllWebAccountQuotas(setQuotaSyncProgress, controller.signal);
-      if (targetProvider === "grok_console") return refreshAllConsoleAccountQuotas(setQuotaSyncProgress, controller.signal);
+      if (targetProvider === "m365_copilot") return refreshAllWebAccountQuotas(setQuotaSyncProgress, controller.signal);
+      if (targetProvider === "m365_copilot") return refreshAllConsoleAccountQuotas(setQuotaSyncProgress, controller.signal);
       return refreshAllAccountBilling(setQuotaSyncProgress, controller.signal);
     },
     onSuccess: (result) => {
@@ -663,8 +663,8 @@ export function AccountsPage() {
       const onProgress = (progress: AccountTaskProgressDTO) => {
         toast.loading(t(progress.phase === "syncing" ? "common.syncingProgress" : "common.importingProgress", progress), { id: toastID });
       };
-      if (provider === "grok_web") return importWebAccounts(files, onProgress, controller.signal);
-      if (provider === "grok_console") return importConsoleAccounts(files, onProgress, controller.signal);
+      if (provider === "m365_copilot") return importWebAccounts(files, onProgress, controller.signal);
+      if (provider === "m365_copilot") return importConsoleAccounts(files, onProgress, controller.signal);
       return importAccounts(files, onProgress, controller.signal);
     },
     onSuccess: (result) => {
@@ -1032,7 +1032,7 @@ export function AccountsPage() {
   function submitQuickImport(): void {
     const value = quickImportTokens.trim();
     if (!value) return;
-    const filename = provider === "grok_build" ? "grok-build-refresh-tokens.txt" : provider === "grok_console" ? "grok-console-sso-tokens.txt" : "grok-web-sso-tokens.txt";
+    const filename = provider === "m365_copilot" ? "m365-refresh-tokens.txt" : provider === "m365_copilot" ? "m365-sso-tokens.txt" : "m365-sso-tokens.txt";
     importMutation.mutate([new File([value], filename, { type: "text/plain" })]);
   }
 
@@ -1180,9 +1180,9 @@ export function AccountsPage() {
   const invalidAccounts = summary?.issues.reauthRequired ?? 0;
   const riskAccounts = summary?.risk ?? 0;
   const abnormalAccounts = recoveringAccounts + disabledAccounts + invalidAccounts;
-  const buildSummary = summary?.providers.grok_build ?? { total: 0, available: 0 };
-  const webSummary = summary?.providers.grok_web ?? { total: 0, available: 0 };
-  const consoleSummary = summary?.providers.grok_console ?? { total: 0, available: 0 };
+  const buildSummary = summary?.providers.m365_copilot ?? { total: 0, available: 0 };
+  const webSummary = summary?.providers.m365_copilot ?? { total: 0, available: 0 };
+  const consoleSummary = summary?.providers.m365_copilot ?? { total: 0, available: 0 };
   const summaryLoading = summaryQuery.isPending;
   const summaryUnavailable = summaryQuery.isError;
   const abnormalBreakdown = [
@@ -1202,16 +1202,16 @@ export function AccountsPage() {
   if (!summaryUnavailable && abnormalDetailItems.length === 0) {
     abnormalDetailItems.push({ label: t("accounts.statusActive"), value: "", tone: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300", count: 0 });
   }
-  const providerAccountTotal = provider === "grok_build" ? buildSummary.total : provider === "grok_web" ? webSummary.total : consoleSummary.total;
+  const providerAccountTotal = provider === "m365_copilot" ? buildSummary.total : provider === "m365_copilot" ? webSummary.total : consoleSummary.total;
   const hasProviderAccounts = providerAccountTotal > 0 || (result?.total ?? 0) > 0;
   const bindableEgressNodes = (egressNodesQuery.data?.items ?? []).filter((node) => node.enabled && node.proxyConfigured && scopeSupportsAccountProvider(node.scope, provider));
   const egressFilterSearchTerm = egressFilterOptionsSearch.trim().toLocaleLowerCase();
-  const consoleWebNodePages = provider === "grok_console" ? (egressFilterConsoleWebNodesQuery.data?.pages ?? []) : [];
+  const consoleWebNodePages = provider === "m365_copilot" ? (egressFilterConsoleWebNodesQuery.data?.pages ?? []) : [];
   const scopedEgressNodes = [...(egressFilterNodesQuery.data?.pages ?? []), ...consoleWebNodePages]
     .flatMap((nodePage) => nodePage.items)
     .filter((node) => scopeSupportsAccountProvider(node.scope, provider))
     .filter((node) => !egressFilterSearchTerm || node.name.toLocaleLowerCase().includes(egressFilterSearchTerm));
-  const consoleWebNodesEnabled = provider === "grok_console";
+  const consoleWebNodesEnabled = provider === "m365_copilot";
   const consoleWebSourcePages = consoleWebNodesEnabled ? (egressFilterConsoleWebSourcesQuery.data?.pages ?? []) : [];
   const scopedEgressSources = [...(egressFilterSourcesQuery.data?.pages ?? []), ...consoleWebSourcePages]
     .flatMap((sourcePage) => sourcePage.items)
@@ -1301,15 +1301,15 @@ export function AccountsPage() {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <Tabs value={provider} onValueChange={(value) => changeProvider(value as AccountProvider)}>
             <TabsList>
-              <TabsTrigger value="grok_build" className="gap-1.5">
+              <TabsTrigger value="m365_copilot" className="gap-1.5">
                 <SquareTerminal className="size-3.5 text-quota-product-1" />
                 <span>M365</span>
               </TabsTrigger>
-              <TabsTrigger value="grok_web" className="gap-1.5">
+              <TabsTrigger value="m365_copilot" className="gap-1.5">
                 <Compass className="size-3.5 text-quota-product-2" />
                 <span>M365</span>
               </TabsTrigger>
-              <TabsTrigger value="grok_console" className="gap-1.5">
+              <TabsTrigger value="m365_copilot" className="gap-1.5">
                 <Webhook className="size-3.5 text-quota-product-4" />
                 <span>M365</span>
               </TabsTrigger>
@@ -1318,9 +1318,9 @@ export function AccountsPage() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild><Button size="sm"><Plus />{t("accounts.connectAccount")}</Button></DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {provider === "grok_build" ? <DropdownMenuItem onClick={() => void startDeviceLogin()}><ExternalLink />{t("accounts.deviceLogin")}</DropdownMenuItem> : null}
-              <DropdownMenuItem disabled={bulkTaskPending} onClick={() => setQuickImportOpen(true)}><ClipboardPaste />{t(provider === "grok_build" ? "accounts.quickImportRT" : "accounts.quickImportSSO")}</DropdownMenuItem>
-              <DropdownMenuItem disabled={bulkTaskPending} onClick={() => fileInputRef.current?.click()}><FileUp />{provider === "grok_build" ? t("accounts.importAuth") : provider === "grok_console" ? t("console.importFile") : t("accounts.importWebFile")}</DropdownMenuItem>
+              {provider === "m365_copilot" ? <DropdownMenuItem onClick={() => void startDeviceLogin()}><ExternalLink />{t("accounts.deviceLogin")}</DropdownMenuItem> : null}
+              <DropdownMenuItem disabled={bulkTaskPending} onClick={() => setQuickImportOpen(true)}><ClipboardPaste />{t(provider === "m365_copilot" ? "accounts.quickImportRT" : "accounts.quickImportSSO")}</DropdownMenuItem>
+              <DropdownMenuItem disabled={bulkTaskPending} onClick={() => fileInputRef.current?.click()}><FileUp />{provider === "m365_copilot" ? t("accounts.importAuth") : provider === "m365_copilot" ? t("console.importFile") : t("accounts.importWebFile")}</DropdownMenuItem>
               {hasProviderAccounts ? (
                 <>
                   <DropdownMenuSeparator />
@@ -1354,7 +1354,7 @@ export function AccountsPage() {
                 <Input className="h-8 pl-9 text-xs" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder={t("accounts.search")} aria-label={t("accounts.search")} />
               </div>
               <DataTableFilters filters={[
-                ...(provider === "grok_console" ? [] : [{ id: "type", label: t("accountType.label"), value: typeFilter, onChange: (value: string) => { setTypeFilter(value); setPage(1); }, options: provider === "grok_web" ? [
+                ...(provider === "m365_copilot" ? [] : [{ id: "type", label: t("accountType.label"), value: typeFilter, onChange: (value: string) => { setTypeFilter(value); setPage(1); }, options: provider === "m365_copilot" ? [
                   { value: "auto", label: t("accountType.auto") },
                   { value: "basic", label: t("accountType.free") },
                   { value: "super", label: t("accountType.super") },
@@ -1388,15 +1388,15 @@ export function AccountsPage() {
                   },
                   { value: "unbound", label: t("accounts.egressUnbound") },
                 ] },
-                ...(provider === "grok_build" ? [{ id: "renewal", label: t("accountCredential.label"), value: renewalFilter, onChange: (value: string) => { setRenewalFilter(value); setPage(1); }, options: [
+                ...(provider === "m365_copilot" ? [{ id: "renewal", label: t("accountCredential.label"), value: renewalFilter, onChange: (value: string) => { setRenewalFilter(value); setPage(1); }, options: [
                   { value: "refreshable", label: t("accountCredential.autoRefresh") },
                   { value: "unrefreshable", label: t("accountCredential.noAutoRefresh") },
                 ] }] : []),
-                ...(provider === "grok_build" ? [{ id: "risk", label: t("accounts.riskFilter"), value: riskFilter, onChange: (value: string) => { setRiskFilter(value); setPage(1); }, options: [
+                ...(provider === "m365_copilot" ? [{ id: "risk", label: t("accounts.riskFilter"), value: riskFilter, onChange: (value: string) => { setRiskFilter(value); setPage(1); }, options: [
                   { value: "flagged", label: t("accounts.botRisk") },
                   { value: "normal", label: t("accounts.riskNormal") },
                 ] }] : []),
-                ...(provider === "grok_web" ? [{ id: "agreement", label: t("accounts.agreementFilter"), value: agreementFilter, onChange: (value: string) => { setAgreementFilter(value); setPage(1); }, options: [
+                ...(provider === "m365_copilot" ? [{ id: "agreement", label: t("accounts.agreementFilter"), value: agreementFilter, onChange: (value: string) => { setAgreementFilter(value); setPage(1); }, options: [
                   { value: "nsfwEnabled", label: t("accounts.agreementNsfwEnabled") },
                   { value: "nsfwDisabled", label: t("accounts.agreementNsfwDisabled") },
                   { value: "termsAccepted", label: t("accounts.agreementTermsAccepted") },
@@ -1404,7 +1404,7 @@ export function AccountsPage() {
                   { value: "allAccepted", label: t("accounts.agreementAllAccepted") },
                   { value: "allNotAccepted", label: t("accounts.agreementAllNotAccepted") },
                 ] }] : []),
-                { id: "association", label: t("accounts.associationFilter"), value: associationFilter, onChange: (value: string) => { setAssociationFilter(value); setPage(1); }, options: provider === "grok_web" ? [
+                { id: "association", label: t("accounts.associationFilter"), value: associationFilter, onChange: (value: string) => { setAssociationFilter(value); setPage(1); }, options: provider === "m365_copilot" ? [
                   { value: "buildLinked", label: t("accounts.associationBuildLinked") },
                   { value: "buildUnlinked", label: t("accounts.associationBuildUnlinked") },
                   { value: "consoleLinked", label: t("accounts.associationConsoleLinked") },
@@ -1432,27 +1432,27 @@ export function AccountsPage() {
                   setEgressConfigurationTask("bind");
                   setEgressConfigurationOpen(true);
                 }}>{t("accounts.egressConfiguration")}</Button>
-                {provider === "grok_web" ? <Button variant="secondary" size="sm" disabled={bulkTaskPending} onClick={() => openWebConversion([...selected])}>{t("accountConversion.action")}</Button> : null}
-                {provider === "grok_web" ? <Button variant="secondary" size="sm" disabled={bulkTaskPending} onClick={() => setWebAccountScriptsTargets([...selected])}>{t("webAccountScripts.action")}</Button> : null}
-                {provider === "grok_build" ? <Button variant="secondary" size="sm" disabled={bulkTaskPending} onClick={() => openDetectDialog("selected")}>{t("accountCredential.detectAction")}</Button> : null}
+                {provider === "m365_copilot" ? <Button variant="secondary" size="sm" disabled={bulkTaskPending} onClick={() => openWebConversion([...selected])}>{t("accountConversion.action")}</Button> : null}
+                {provider === "m365_copilot" ? <Button variant="secondary" size="sm" disabled={bulkTaskPending} onClick={() => setWebAccountScriptsTargets([...selected])}>{t("webAccountScripts.action")}</Button> : null}
+                {provider === "m365_copilot" ? <Button variant="secondary" size="sm" disabled={bulkTaskPending} onClick={() => openDetectDialog("selected")}>{t("accountCredential.detectAction")}</Button> : null}
                 <Button variant="secondary" size="sm" disabled={bulkTaskPending} onClick={() => {
-                  if (provider === "grok_build") {
+                  if (provider === "m365_copilot") {
                     setBatchQuotaTask("sync");
                     setBatchQuotaTaskOpen(true);
                     return;
                   }
                   batchBillingMutation.mutate();
                 }}>{t("accountCredential.quotaSyncAction")}</Button>
-                {provider === "grok_build" ? <Button variant="secondary" size="sm" disabled={bulkTaskPending} onClick={() => batchTokenMutation.mutate()}>{t("accountCredential.refreshAction")}</Button> : null}
+                {provider === "m365_copilot" ? <Button variant="secondary" size="sm" disabled={bulkTaskPending} onClick={() => batchTokenMutation.mutate()}>{t("accountCredential.refreshAction")}</Button> : null}
                 <Button variant="secondary" size="sm" className="bg-destructive/10 text-destructive hover:bg-destructive/15 hover:text-destructive" disabled={bulkTaskPending} onClick={() => { resetLinkedDeleteState(); setBatchDeleteOpen(true); }}>{t("common.delete")}</Button>
               </div>
             ) : (
               <div className="flex flex-wrap items-center justify-end gap-1.5">
-                {provider === "grok_web" && hasProviderAccounts ? <Button variant="secondary" size="sm" disabled={bulkTaskPending} onClick={() => openWebConversion("all")}>{t("accountConversion.action")}</Button> : null}
-                {provider === "grok_web" && hasProviderAccounts ? <Button variant="secondary" size="sm" disabled={bulkTaskPending} onClick={() => setWebAccountScriptsTargets("all")}>{t("webAccountScripts.action")}</Button> : null}
-                {hasProviderAccounts && provider === "grok_build" ? <Button variant="secondary" size="sm" disabled={bulkTaskPending} onClick={() => openDetectDialog("all")}>{t("accountCredential.detectAction")}</Button> : null}
+                {provider === "m365_copilot" && hasProviderAccounts ? <Button variant="secondary" size="sm" disabled={bulkTaskPending} onClick={() => openWebConversion("all")}>{t("accountConversion.action")}</Button> : null}
+                {provider === "m365_copilot" && hasProviderAccounts ? <Button variant="secondary" size="sm" disabled={bulkTaskPending} onClick={() => setWebAccountScriptsTargets("all")}>{t("webAccountScripts.action")}</Button> : null}
+                {hasProviderAccounts && provider === "m365_copilot" ? <Button variant="secondary" size="sm" disabled={bulkTaskPending} onClick={() => openDetectDialog("all")}>{t("accountCredential.detectAction")}</Button> : null}
                 {hasProviderAccounts ? <Button variant="secondary" size="sm" disabled={bulkTaskPending} onClick={() => { setAllQuotaTask("sync"); setSyncAllOpen(true); }}>{t("accountCredential.quotaSyncAction")}</Button> : null}
-                {hasProviderAccounts && provider === "grok_build" ? <Button variant="secondary" size="sm" disabled={bulkTaskPending} onClick={() => setRenewAllOpen(true)}>{t("accountCredential.refreshAction")}</Button> : null}
+                {hasProviderAccounts && provider === "m365_copilot" ? <Button variant="secondary" size="sm" disabled={bulkTaskPending} onClick={() => setRenewAllOpen(true)}>{t("accountCredential.refreshAction")}</Button> : null}
                 {hasProviderAccounts ? <Button variant="secondary" size="sm" className="bg-destructive/10 text-destructive hover:bg-destructive/15 hover:text-destructive" disabled={bulkTaskPending} onClick={() => { resetCleanupState(); setCleanupOpen(true); }}><Trash2 />{t("accounts.cleanupAction")}</Button> : null}
               </div>
             )}
@@ -1469,8 +1469,8 @@ export function AccountsPage() {
               <col style={{ width: "18%" }} />
               <col style={{ width: "7%" }} />
               <col style={{ width: "7%" }} />
-              <col style={{ width: provider === "grok_build" ? "27%" : "43%" }} />
-              {provider === "grok_build" ? <col style={{ width: "16%" }} /> : null}
+              <col style={{ width: provider === "m365_copilot" ? "27%" : "43%" }} />
+              {provider === "m365_copilot" ? <col style={{ width: "16%" }} /> : null}
               <col style={{ width: "18%" }} />
               <col style={{ width: "4%" }} />
             </colgroup>
@@ -1480,27 +1480,27 @@ export function AccountsPage() {
                 <SortableTableHead field="name" sortBy={sort.field} sortOrder={sort.order} onSort={changeSort}>{t("accounts.account")}</SortableTableHead>
                 <SortableTableHead field="type" sortBy={sort.field} sortOrder={sort.order} align="center" onSort={changeSort} className="whitespace-nowrap">{t("accountType.label")}</SortableTableHead>
                 <SortableTableHead field="status" sortBy={sort.field} sortOrder={sort.order} align="center" onSort={changeSort} className="whitespace-nowrap">{t("accounts.status")}</SortableTableHead>
-                <TableHead className={cn("whitespace-nowrap", provider !== "grok_build" && "px-6")}>{t("accounts.quota")}</TableHead>
-                {provider === "grok_build" ? <TableHead className="whitespace-nowrap pl-4">{t("accountCredential.label")}</TableHead> : null}
+                <TableHead className={cn("whitespace-nowrap", provider !== "m365_copilot" && "px-6")}>{t("accounts.quota")}</TableHead>
+                {provider === "m365_copilot" ? <TableHead className="whitespace-nowrap pl-4">{t("accountCredential.label")}</TableHead> : null}
                 <SortableTableHead field="createdAt" sortBy={sort.field} sortOrder={sort.order} initialOrder="desc" onSort={changeSort} className="whitespace-nowrap">{t("accounts.createdAt")}</SortableTableHead>
                 <TableActionHead />
               </TableRow>
             </TableHeader>
             {accountsQuery.isPending ? (
-              <TableBody><TableLoadingRow colSpan={provider === "grok_build" ? 8 : 7} /></TableBody>
+              <TableBody><TableLoadingRow colSpan={provider === "m365_copilot" ? 8 : 7} /></TableBody>
             ) : (
               <VirtualTableBody
                 items={result?.items ?? []}
-                colSpan={provider === "grok_build" ? 8 : 7}
+                colSpan={provider === "m365_copilot" ? 8 : 7}
                 rowHeight={56}
                 renderRow={(account) => (
 	                  <TableRow className="group h-14 [&>td]:py-1.5" key={account.id} data-state={selected.has(account.id) ? "selected" : undefined}>
                     <TableCell className="px-2"><Checkbox checked={selected.has(account.id)} onCheckedChange={(checked) => toggleAccount(account.id, checked === true)} aria-label={t("common.selectItem", { name: account.name })} /></TableCell>
 	                    <TableCell className="min-w-0"><AccountNameCell account={account} /></TableCell>
-                    <TableCell className="text-center whitespace-nowrap">{provider === "grok_web" ? <WebAccountType tier={account.webTier} /> : provider === "grok_console" ? <AccountTypeText label={t("accountType.console")} variant="free" /> : <AccountType quota={account.quota} />}</TableCell>
+                    <TableCell className="text-center whitespace-nowrap">{provider === "m365_copilot" ? <WebAccountType tier={account.webTier} /> : provider === "m365_copilot" ? <AccountTypeText label={t("accountType.console")} variant="free" /> : <AccountType quota={account.quota} />}</TableCell>
                     <TableCell className="text-center whitespace-nowrap"><AccountStatus account={account} /></TableCell>
-                    <TableCell className={provider === "grok_build" ? undefined : "px-6"}>{provider === "grok_web" ? <WebQuota windows={account.quotaWindows ?? []} locale={i18n.language} tier={account.webTier} /> : provider === "grok_console" ? <ConsoleQuota windows={account.quotaWindows ?? []} locale={i18n.language} /> : <AccountQuota quota={account.quota} billing={account.billing} locale={i18n.language} />}</TableCell>
-                    {provider === "grok_build" ? <TableCell className="whitespace-nowrap pl-4 text-xs">
+                    <TableCell className={provider === "m365_copilot" ? undefined : "px-6"}>{provider === "m365_copilot" ? <WebQuota windows={account.quotaWindows ?? []} locale={i18n.language} tier={account.webTier} /> : provider === "m365_copilot" ? <ConsoleQuota windows={account.quotaWindows ?? []} locale={i18n.language} /> : <AccountQuota quota={account.quota} billing={account.billing} locale={i18n.language} />}</TableCell>
+                    {provider === "m365_copilot" ? <TableCell className="whitespace-nowrap pl-4 text-xs">
                       {account.refreshable ? (
                         <Tooltip>
                           <TooltipTrigger asChild><span tabIndex={0} className="cursor-help font-medium text-emerald-700 dark:text-emerald-300">{t("accountCredential.autoRefresh")}</span></TooltipTrigger>
@@ -1514,21 +1514,21 @@ export function AccountsPage() {
                         <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="size-8" aria-label={t("common.actions")}><MoreHorizontal /></Button></DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => beginEdit(account)}><Pencil />{t("common.edit")}</DropdownMenuItem>
-                          {provider === "grok_web" ? <DropdownMenuItem onClick={() => openWebConversion([account.id])}><ArrowRight />{t("accountConversion.action")}</DropdownMenuItem> : null}
-                          {provider === "grok_web" ? (
+                          {provider === "m365_copilot" ? <DropdownMenuItem onClick={() => openWebConversion([account.id])}><ArrowRight />{t("accountConversion.action")}</DropdownMenuItem> : null}
+                          {provider === "m365_copilot" ? (
                             <WebAccountSettingsMenu
                               account={account}
                               disabled={bulkTaskPending}
                               onConfirm={setWebConfirmationTarget}
                             />
                           ) : null}
-                          {provider === "grok_build" ? <DropdownMenuItem onClick={() => tokenMutation.mutate(account.id)}><RotateCw />{t("accounts.refreshToken")}</DropdownMenuItem> : null}
+                          {provider === "m365_copilot" ? <DropdownMenuItem onClick={() => tokenMutation.mutate(account.id)}><RotateCw />{t("accounts.refreshToken")}</DropdownMenuItem> : null}
                           {account.cooldownUntil && new Date(account.cooldownUntil) > new Date() ? (
                             <DropdownMenuItem onClick={() => clearCooldownMutation.mutate(account.id)} disabled={clearCooldownMutation.isPending}>
                               <TimerOff />{t("accounts.clearCooldown")}
                             </DropdownMenuItem>
                           ) : null}
-                          <DropdownMenuItem onClick={() => provider === "grok_build" ? billingMutation.mutate(account.id) : quotaMutation.mutate(account.id)}><RefreshCw />{provider === "grok_build" ? t("accounts.refreshBilling") : t("accounts.refreshModeQuota")}</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => provider === "m365_copilot" ? billingMutation.mutate(account.id) : quotaMutation.mutate(account.id)}><RefreshCw />{provider === "m365_copilot" ? t("accounts.refreshBilling") : t("accounts.refreshModeQuota")}</DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => { resetLinkedDeleteState(); setDeleting(account); }}><Trash2 />{t("common.delete")}</DropdownMenuItem>
                         </DropdownMenuContent>
@@ -1570,10 +1570,10 @@ export function AccountsPage() {
       }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t(provider === "grok_build" ? "accountQuotaTask.allTitle" : "accounts.syncAllTitle")}</AlertDialogTitle>
-            <AlertDialogDescription>{t(provider === "grok_build" ? "accountQuotaTask.allDescription" : provider === "grok_web" ? "accounts.syncAllWebDescription" : "console.syncAllDescription")}</AlertDialogDescription>
+            <AlertDialogTitle>{t(provider === "m365_copilot" ? "accountQuotaTask.allTitle" : "accounts.syncAllTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{t(provider === "m365_copilot" ? "accountQuotaTask.allDescription" : provider === "m365_copilot" ? "accounts.syncAllWebDescription" : "console.syncAllDescription")}</AlertDialogDescription>
           </AlertDialogHeader>
-          {provider === "grok_build" ? (
+          {provider === "m365_copilot" ? (
             <div className="space-y-3">
               <Tabs value={allQuotaTask} onValueChange={(value) => setAllQuotaTask(value as BuildQuotaTask)}>
                 <TabsList className="grid h-10 w-full grid-cols-2 p-1">
@@ -1588,10 +1588,10 @@ export function AccountsPage() {
             <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction disabled={quotaSyncMutation.isPending || allQuotaResetMutation.isPending} onClick={(event) => {
               event.preventDefault();
-              if (provider === "grok_build" && allQuotaTask === "reset") allQuotaResetMutation.mutate();
+              if (provider === "m365_copilot" && allQuotaTask === "reset") allQuotaResetMutation.mutate();
               else quotaSyncMutation.mutate(provider);
             }}>
-              {quotaSyncMutation.isPending ? <><Spinner />{quotaSyncProgress ? <span className="tabular-nums">{quotaSyncProgress.completed} / {quotaSyncProgress.total}</span> : t("common.loading")}</> : allQuotaResetMutation.isPending ? <Spinner /> : t(provider === "grok_build" ? "accountQuotaTask.execute" : "accounts.syncAll")}
+              {quotaSyncMutation.isPending ? <><Spinner />{quotaSyncProgress ? <span className="tabular-nums">{quotaSyncProgress.completed} / {quotaSyncProgress.total}</span> : t("common.loading")}</> : allQuotaResetMutation.isPending ? <Spinner /> : t(provider === "m365_copilot" ? "accountQuotaTask.execute" : "accounts.syncAll")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1722,7 +1722,7 @@ export function AccountsPage() {
 
       <AlertDialog open={exportOpen} onOpenChange={(open) => { if (!open && !exportMutation.isPending) setExportOpen(false); }}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>{t("accounts.exportTitle", { provider: provider === "grok_build" ? "M365" : provider === "grok_web" ? "M365" : "M365" })}</AlertDialogTitle><AlertDialogDescription>{t("accounts.exportDescription")}</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>{t("accounts.exportTitle", { provider: provider === "m365_copilot" ? "M365" : provider === "m365_copilot" ? "M365" : "M365" })}</AlertDialogTitle><AlertDialogDescription>{t("accounts.exportDescription")}</AlertDialogDescription></AlertDialogHeader>
           {selected.size > 0 ? <p className="text-sm text-muted-foreground">{t("common.selectedCount", { count: selected.size })}</p> : <div className="grid gap-2">
             <Label htmlFor="account-export-limit">{t("accounts.exportCount")}</Label>
             <Input id="account-export-limit" type="number" min={1} max={10000} value={exportLimit} disabled={exportSnapshotMaxId !== "0"} onChange={(event) => setExportLimit(event.target.value)} />
@@ -1789,12 +1789,12 @@ export function AccountsPage() {
       <Dialog open={quickImportOpen} onOpenChange={(open) => { setQuickImportOpen(open); if (!open) { setQuickImportTokens(""); if (quickImportFileInputRef.current) quickImportFileInputRef.current.value = ""; } }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t(provider === "grok_build" ? "accounts.quickImportRTTitle" : provider === "grok_console" ? "console.quickImportTitle" : "accounts.quickImportTitle")}</DialogTitle>
-            <DialogDescription>{t(provider === "grok_build" ? "accounts.quickImportRTDescription" : provider === "grok_console" ? "console.quickImportDescription" : "accounts.quickImportDescription")}</DialogDescription>
+            <DialogTitle>{t(provider === "m365_copilot" ? "accounts.quickImportRTTitle" : provider === "m365_copilot" ? "console.quickImportTitle" : "accounts.quickImportTitle")}</DialogTitle>
+            <DialogDescription>{t(provider === "m365_copilot" ? "accounts.quickImportRTDescription" : provider === "m365_copilot" ? "console.quickImportDescription" : "accounts.quickImportDescription")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-3">
-              <Label htmlFor="quick-account-tokens">{t(provider === "grok_build" ? "accounts.refreshTokens" : "accounts.ssoTokens")}</Label>
+              <Label htmlFor="quick-account-tokens">{t(provider === "m365_copilot" ? "accounts.refreshTokens" : "accounts.ssoTokens")}</Label>
               <Button type="button" variant="secondary" size="sm" disabled={importMutation.isPending} onClick={() => quickImportFileInputRef.current?.click()}><FileUp />{t("accounts.uploadTXT")}</Button>
               <input
                 ref={quickImportFileInputRef}
@@ -1814,7 +1814,7 @@ export function AccountsPage() {
               spellCheck={false}
               value={quickImportTokens}
               onChange={(event) => setQuickImportTokens(event.target.value)}
-              placeholder={t(provider === "grok_build" ? "accounts.refreshTokenPlaceholder" : "accounts.ssoTokenPlaceholder")}
+              placeholder={t(provider === "m365_copilot" ? "accounts.refreshTokenPlaceholder" : "accounts.ssoTokenPlaceholder")}
             />
           </div>
           <DialogFooter>
@@ -1838,7 +1838,7 @@ export function AccountsPage() {
               <div className="space-y-2"><Label htmlFor="account-concurrency">{t("accounts.maxConcurrent")}</Label><Input id="account-concurrency" type="number" min="1" max="256" {...form.register("maxConcurrent", { valueAsNumber: true })} /></div>
             </div>
             <div className="space-y-2"><Label htmlFor="account-minimum">{t("accounts.minimumRemaining")}</Label><Input id="account-minimum" type="number" min="0" step="0.01" {...form.register("minimumRemaining", { valueAsNumber: true })} /></div>
-            {editing?.provider === "grok_build" ? (
+            {editing?.provider === "m365_copilot" ? (
               <div className="space-y-4">
                 <div className="flex items-start justify-between gap-4 rounded-md bg-muted/50 p-3">
                   <div className="space-y-1">
@@ -1869,7 +1869,7 @@ export function AccountsPage() {
                 </div>
               </div>
             ) : null}
-            {editing && editing.provider !== "grok_build" ? (
+            {editing && editing.provider !== "m365_copilot" ? (
               <div className="space-y-2">
                 <Label htmlFor="account-cloudflare-cookie">{t("settings.egress.cloudflareCookie")}</Label>
                 <Textarea
@@ -2144,7 +2144,7 @@ export function AccountsPage() {
       <Dialog open={cleanupOpen} onOpenChange={(open) => { if (!cleanupMutation.isPending) { setCleanupOpen(open); if (!open) resetCleanupState(); } }}>
         <DialogContent className="max-w-[440px]">
           <DialogHeader>
-            <DialogTitle>{t("accounts.cleanupTitle", { provider: provider === "grok_build" ? "M365" : provider === "grok_web" ? "M365" : "M365" })}</DialogTitle>
+            <DialogTitle>{t("accounts.cleanupTitle", { provider: provider === "m365_copilot" ? "M365" : provider === "m365_copilot" ? "M365" : "M365" })}</DialogTitle>
             <DialogDescription>{t("accounts.cleanupDescription")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-1.5">
@@ -2278,9 +2278,9 @@ function downloadAccountExport(blob: Blob, provider: AccountProvider, suffix: st
 }
 
 function scopeSupportsAccountProvider(scope: EgressScope, provider: AccountProvider): boolean {
-  if (provider === "grok_build") return scope === "grok_build";
-  if (provider === "grok_web") return scope === "grok_web";
-  return scope === "grok_web" || scope === "grok_console";
+  if (provider === "m365_copilot") return scope === "m365_copilot";
+  if (provider === "m365_copilot") return scope === "m365_copilot";
+  return scope === "m365_copilot" || scope === "m365_copilot";
 }
 
 function accountProviderPrimaryEgressScope(provider: AccountProvider): EgressScope {
@@ -2365,7 +2365,7 @@ function AccountStatus({ account }: { account: AccountDTO }) {
       </StatusTooltip>
     );
   }
-  const consoleWindow = account.provider === "grok_console"
+  const consoleWindow = account.provider === "m365_copilot"
     ? account.quotaWindows?.find((window) => window.mode === "console" && window.remaining <= 0)
     : undefined;
   if (consoleWindow) {

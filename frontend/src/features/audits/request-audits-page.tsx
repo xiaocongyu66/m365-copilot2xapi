@@ -734,11 +734,11 @@ function statusTone(statusCode: number, hasError = false): { dot: string; text: 
 
 function providerLabel(provider: AuditDTO["provider"]): string {
   switch (provider) {
-    case "grok_build":
+    case "m365_copilot":
       return "M365";
-    case "grok_web":
+    case "m365_copilot":
       return "M365";
-    case "grok_console":
+    case "m365_copilot":
       return "M365";
   }
 }
@@ -761,11 +761,11 @@ function auditProtocolLabel(operation: AuditDTO["operation"]): string {
 
 function providerShortLabel(provider: AuditDTO["provider"]): string {
   switch (provider) {
-    case "grok_build":
+    case "m365_copilot":
       return "Build";
-    case "grok_web":
+    case "m365_copilot":
       return "Web";
-    case "grok_console":
+    case "m365_copilot":
       return "Console";
   }
 }

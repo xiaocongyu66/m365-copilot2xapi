@@ -69,7 +69,7 @@ export type EgressProxyProfileListDTO = {
 	total: number;
 };
 
-export type EgressScope = "grok_build" | "grok_web" | "grok_console" | "grok_web_asset" | "grok_console_asset";
+export type EgressScope = "m365_copilot" | "m365_copilot" | "m365_copilot" | "m365_copilot_asset" | "m365_copilot_asset";
 export type EgressFallbackMode = "none" | "direct" | "fixed";
 export type EgressFallbackConfigDTO = { mode: EgressFallbackMode; nodeId?: string };
 export type EgressNodeListDTO = {
@@ -227,7 +227,7 @@ const withEgressSourceDefaults = (value: EgressSourceWireDTO): EgressSourceDTO =
   proxyConfigured: value.proxyConfigured ?? false,
 });
 const egressNodeValidator = hasShape({
-  id: isString, name: isString, scope: isOneOf("grok_build", "grok_web", "grok_console", "grok_web_asset", "grok_console_asset"), enabled: isBoolean,
+  id: isString, name: isString, scope: isOneOf("m365_copilot", "m365_copilot", "m365_copilot", "m365_copilot_asset", "m365_copilot_asset"), enabled: isBoolean,
   proxyConfigured: isBoolean, proxyDisplay: isOptional(isString), proxyFingerprint: isOptional(isString), userAgent: isString, cookieConfigured: isBoolean, accountBoundProxy: isBoolean, proxyPool: isBoolean, health: isNumber, failureCount: isNumber,
   sourceId: isOptional(isString), proxyProfileId: isOptional(isString), proxyProfileName: isOptional(isString), accountCapacity: isNumber, assignedAccountCount: isNumber,
   probeStatus: isOneOf("unknown", "healthy", "unhealthy"), lastProbedAt: isOptional(isString), probeLatencyMs: isNumber, exitIp: isOptional(isString), probeError: isOptional(isString), probeProvider: isOptional(isOneOf("ipinfo", "cloudflare")),
@@ -235,7 +235,7 @@ const egressNodeValidator = hasShape({
   cooldownUntil: isOptional(isString), lastError: isOptional(isString),
 });
 const decodeEgressNodeRaw = createObjectDecoder<EgressNodeWireDTO>("egress node", {
-  id: isString, name: isString, scope: isOneOf("grok_build", "grok_web", "grok_console", "grok_web_asset", "grok_console_asset"), enabled: isBoolean,
+  id: isString, name: isString, scope: isOneOf("m365_copilot", "m365_copilot", "m365_copilot", "m365_copilot_asset", "m365_copilot_asset"), enabled: isBoolean,
   proxyConfigured: isBoolean, proxyDisplay: isOptional(isString), proxyFingerprint: isOptional(isString), userAgent: isString, cookieConfigured: isBoolean, accountBoundProxy: isBoolean, proxyPool: isBoolean, health: isNumber, failureCount: isNumber,
   sourceId: isOptional(isString), proxyProfileId: isOptional(isString), proxyProfileName: isOptional(isString), accountCapacity: isNumber, assignedAccountCount: isNumber,
   probeStatus: isOneOf("unknown", "healthy", "unhealthy"), lastProbedAt: isOptional(isString), probeLatencyMs: isNumber, exitIp: isOptional(isString), probeError: isOptional(isString), probeProvider: isOptional(isOneOf("ipinfo", "cloudflare")),
@@ -256,14 +256,14 @@ type EgressNodeListWireDTO = {
   page?: number;
   pageSize?: number;
   total?: number;
-  defaultUserAgents: Omit<Record<EgressScope, string>, "grok_console_asset"> & { grok_console_asset?: string };
+  defaultUserAgents: Omit<Record<EgressScope, string>, "m365_copilot_asset"> & { m365_copilot_asset?: string };
 };
 const decodeEgressNodeListRaw = createObjectDecoder<EgressNodeListWireDTO>("egress node list", {
   items: isArrayOf(egressNodeValidator),
   page: isOptional(isNumber),
   pageSize: isOptional(isNumber),
   total: isOptional(isNumber),
-  defaultUserAgents: hasShape({ grok_build: isString, grok_web: isString, grok_console: isString, grok_web_asset: isString, grok_console_asset: isOptional(isString) }),
+  defaultUserAgents: hasShape({ m365_copilot: isString, m365_copilot: isString, m365_copilot: isString, m365_copilot_asset: isString, m365_copilot_asset: isOptional(isString) }),
 });
 const decodeEgressNodeList = (value: unknown): EgressNodeListDTO => {
   const decoded = decodeEgressNodeListRaw(value);
@@ -275,18 +275,18 @@ const decodeEgressNodeList = (value: unknown): EgressNodeListDTO => {
     total: decoded.total ?? decoded.items.length,
     defaultUserAgents: {
       ...decoded.defaultUserAgents,
-      grok_console_asset: decoded.defaultUserAgents.grok_console_asset ?? decoded.defaultUserAgents.grok_console,
+      m365_copilot_asset: decoded.defaultUserAgents.m365_copilot_asset ?? decoded.defaultUserAgents.m365_copilot,
     },
   };
 };
 const egressSourceValidator = hasShape({
-  id: isString, name: isString, scope: isOneOf("grok_build", "grok_web", "grok_console", "grok_web_asset", "grok_console_asset"), enabled: isBoolean, urlConfigured: isBoolean,
+  id: isString, name: isString, scope: isOneOf("m365_copilot", "m365_copilot", "m365_copilot", "m365_copilot_asset", "m365_copilot_asset"), enabled: isBoolean, urlConfigured: isBoolean,
   proxyConfigured: isOptional(isBoolean),
   refreshIntervalSeconds: isNumber, defaultAccountCapacity: isNumber, lastSyncedAt: isOptional(isString), nextSyncAt: isOptional(isString),
   lastSyncImported: isNumber, lastSyncError: isOptional(isString),
 });
 const decodeEgressSourceRaw = createObjectDecoder<EgressSourceWireDTO>("egress source", {
-  id: isString, name: isString, scope: isOneOf("grok_build", "grok_web", "grok_console", "grok_web_asset", "grok_console_asset"), enabled: isBoolean, urlConfigured: isBoolean,
+  id: isString, name: isString, scope: isOneOf("m365_copilot", "m365_copilot", "m365_copilot", "m365_copilot_asset", "m365_copilot_asset"), enabled: isBoolean, urlConfigured: isBoolean,
   proxyConfigured: isOptional(isBoolean),
   refreshIntervalSeconds: isNumber, defaultAccountCapacity: isNumber, lastSyncedAt: isOptional(isString), nextSyncAt: isOptional(isString),
   lastSyncImported: isNumber, lastSyncError: isOptional(isString),
@@ -497,10 +497,10 @@ export function rebalanceEgressAccounts(): Promise<EgressRebalanceResultDTO> {
   return apiRequest("/api/admin/v1/egress-operations/rebalance", { method: "POST" }, decodeEgressRebalanceResult);
 }
 
-export function assignEgressAccounts(nodeID: string, provider: "grok_build" | "grok_web" | "grok_console", ids: string[], mode: "manual" | "auto" = "manual"): Promise<{ assigned: number }> {
+export function assignEgressAccounts(nodeID: string, provider: "m365_copilot" | "m365_copilot" | "m365_copilot", ids: string[], mode: "manual" | "auto" = "manual"): Promise<{ assigned: number }> {
   return apiRequest(`/api/admin/v1/egress-nodes/${nodeID}/accounts`, { method: "POST", body: { provider, ids, mode } }, createObjectDecoder<{ assigned: number }>("egress account assignment", { assigned: isNumber }));
 }
 
-export function unassignEgressAccounts(provider: "grok_build" | "grok_web" | "grok_console", ids: string[]): Promise<{ assigned: number }> {
+export function unassignEgressAccounts(provider: "m365_copilot" | "m365_copilot" | "m365_copilot", ids: string[]): Promise<{ assigned: number }> {
   return apiRequest("/api/admin/v1/egress-nodes/accounts", { method: "DELETE", body: { provider, ids } }, createObjectDecoder<{ assigned: number }>("egress account assignment", { assigned: isNumber }));
 }
