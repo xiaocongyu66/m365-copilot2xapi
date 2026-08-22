@@ -19,7 +19,7 @@ func (a *Adapter) Definition() provider.Definition {
 			modeldomain.CapabilityResponses,
 			modeldomain.CapabilityChat,
 		},
-		Quota: provider.QuotaLocalWindow,
+		Quota: provider.QuotaBilling,
 		Credential: provider.CredentialSurface{
 			AuthType:    account.AuthTypeOAuth,
 			Import:      true,
