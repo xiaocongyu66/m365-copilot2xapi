@@ -296,7 +296,7 @@ func shouldHoldQualityStream(input Input, ownership *inferencedomain.ResponseOwn
 	if isResponsesCompactionRequest(input.Body) {
 		return false
 	}
-	if route.Provider != accountdomain.ProviderBuild && route.Provider != accountdomain.ProviderConsole {
+	if route.Provider != accountdomain.ProviderM365 && route.Provider != accountdomain.ProviderM365 {
 		return false
 	}
 	// Grok TUI always declares a tools schema, and after local tools run the

@@ -738,6 +738,9 @@ func (h *Handler) pollDevice(c *gin.Context) {
 }
 
 func (h *Handler) importAuth(c *gin.Context) {
+	h.importFile(c, accountdomain.ProviderM365)
+}
+
 func prepareAccountEventStream(c *gin.Context) {
 	c.Header("Content-Type", "text/event-stream; charset=utf-8")
 	c.Header("Cache-Control", "no-cache, no-transform")
