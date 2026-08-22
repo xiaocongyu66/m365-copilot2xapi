@@ -188,11 +188,18 @@ type STTInput struct {
 	URL             string
 	AudioFormat     string
 	SampleRate      string
-	Channels         int
+	Channels        int
 	Multichannel    bool
 	Language        string
 	Format          bool
 	ResponseFormat  string
+	Diarize         bool
+	FillerWords     bool
+	KeyTerms        []string
+	VADThreshold    *float64
+	FileData        []byte
+	FileName        string
+	FileMIME        string
 	Method          string
 	Path            string
 	Headers         http.Header
