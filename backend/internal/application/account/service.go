@@ -321,8 +321,6 @@ type Service struct {
 	sticky              repository.StickySessionRepository
 	refreshLock         repository.DistributedLock
 	concurrency         repository.ConcurrencyLimiter
-	quotaQueue          repository.QuotaRecoveryQueue
-	quotaRefreshState   repository.QuotaRefreshCoordinator
 	providers           *provider.Registry
 	cipher              *security.Cipher
 	refreshes           singleflight.Group
@@ -350,14 +348,6 @@ type Service struct {
 	autoCleanWake          chan struct{}
 	logger                 *slog.Logger
 	now                    func() time.Time
-}
-
-func (s *Service) SetQuotaRecoveryQueue(queue repository.QuotaRecoveryQueue) {
-	s.quotaQueue = queue
-}
-
-func (s *Service) SetQuotaRefreshCoordinator(value repository.QuotaRefreshCoordinator) {
-	s.quotaRefreshState = value
 }
 
 func (s *Service) QuotaRefreshStats() QuotaRefreshStats {
