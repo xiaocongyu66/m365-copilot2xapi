@@ -44,12 +44,5 @@ func applyMediaJobEgress(job *media.Job, trace *infraegress.Trace, provider acco
 }
 
 func primaryEgressScope(provider accountdomain.Provider) egressdomain.Scope {
-	switch provider {
-	case accountdomain.ProviderM365:
-		return egressdomain.ScopeWeb
-	case accountdomain.ProviderM365:
-		return egressdomain.ScopeConsole
-	default:
-		return egressdomain.ScopeBuild
-	}
+	return egressdomain.ScopeBuild
 }
