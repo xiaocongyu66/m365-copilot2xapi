@@ -621,7 +621,7 @@ func newQuotaView(billing *accountdomain.Billing, observedTokens int64, recovery
 }
 
 func isEstimatedFreeBillingProfile(billing *accountdomain.Billing) bool {
-	return billing != nil && (billing.HasFreeProfileSignal() || billing.HasInferredFreeProfileSignal())
+	return false
 }
 
 // StartDeviceLogin 启动短期 Device OAuth，会话只保存在有界运行态存储中。
@@ -691,9 +691,9 @@ func (s *Service) ClearCooldown(ctx context.Context, id uint64) (View, error) {
 	return s.Get(ctx, id)
 }
 
-// MarkBuildAPIFallback 幂等写入 Build 账号 XAI 推理回退标记；失败不吞掉，调用方可重试。
+// MarkBuildAPIFallback is retained for API compatibility but is a no-op for M365.
 func (s *Service) MarkBuildAPIFallback(ctx context.Context, id uint64, enabled bool) error {
-	return mapRepositoryError(s.accounts.MarkBuildAPIFallback(ctx, id, enabled))
+	return nil
 }
 
 func (s *Service) Delete(ctx context.Context, id uint64) error {
@@ -870,7 +870,7 @@ func (s *Service) ensureCredential(ctx context.Context, value accountdomain.Cred
 				"provider", latest.Provider,
 				"refresh_token_rotated", refreshed.RefreshTokenRotated,
 				"egress_node_id", latest.EgressNodeID,
-				"build_api_fallback_marked", latest.BuildAPIFallback,
+				"build_api_fallback_marked", false,
 				"distributed_lock", release != nil,
 				"error", err,
 			)
@@ -1038,7 +1038,7 @@ func (s *Service) recordCredentialRefreshFailure(ctx context.Context, credential
 		"access_token_alive", accessTokenAlive,
 		"refresh_token_rotated", false,
 		"egress_node_id", credential.EgressNodeID,
-		"build_api_fallback_marked", credential.BuildAPIFallback,
+		"build_api_fallback_marked", false,
 		"distributed_lock", distributedLock,
 	)
 	if permanent && accessTokenAlive {
@@ -1149,10 +1149,7 @@ func credentialRefreshBackoff(accountID uint64, failureCount int, retryAfter tim
 // QueueQuotaRefresh asynchronously refreshes the remote quota window after a successful request.
 func (s *Service) QueueQuotaRefresh(id uint64, mode string) {
 	mode = strings.TrimSpace(mode)
-	if isWebImagineQuotaMode(mode) {
-		mode = accountdomain.QuotaGroupWebImagine
-	}
-	if id == 0 || (!isConsoleUsageQuotaMode(mode) && mode != "weekly" && mode != accountdomain.QuotaGroupWebImagine && !isWebChatQuotaMode(mode)) {
+	if id == 0 || mode == "" {
 		return
 	}
 	key := strconv.FormatUint(id, 10) + ":" + mode
@@ -1268,48 +1265,6 @@ func (s *Service) runQuotaRefresh(parent context.Context, request quotaRefreshRe
 		s.quotaRefreshMu.Unlock()
 
 		ctx, cancel := context.WithTimeout(parent, quotaRefreshTimeout)
-		if s.quotaRefreshState != nil && publishedGeneration < localGeneration {
-			generation, err := s.quotaRefreshState.MarkQuotaRefreshDirty(ctx, request.accountID, request.mode, quotaRefreshDirtyTTL)
-			if err != nil {
-				cancel()
-				s.deferQuotaRefresh(request.key)
-				perfmetrics.Default.Add("quota_refresh_events", perfmetrics.Labels{Subsystem: "quota", Stage: "publish", Outcome: "failed"}, 1)
-				s.logger.Warn("quota_refresh_dirty_publish_failed", "account_id", request.accountID, "mode", request.mode, "error", err)
-				return
-			}
-			sharedGeneration = generation
-			s.quotaRefreshMu.Lock()
-			if current := s.quotaRefreshes[request.key]; current != nil && current.publishedGeneration < localGeneration {
-				current.publishedGeneration = localGeneration
-				current.sharedGeneration = generation
-			}
-			s.quotaRefreshMu.Unlock()
-		}
-		if s.quotaRefreshState != nil && publishedGeneration >= localGeneration && sharedGeneration > 0 {
-			generation, dirty, err := s.quotaRefreshState.QuotaRefreshGeneration(ctx, request.accountID, request.mode)
-			if err != nil {
-				cancel()
-				s.deferQuotaRefresh(request.key)
-				return
-			}
-			if generation > sharedGeneration {
-				sharedGeneration = generation
-				s.quotaRefreshMu.Lock()
-				if current := s.quotaRefreshes[request.key]; current != nil {
-					current.sharedGeneration = generation
-				}
-				s.quotaRefreshMu.Unlock()
-			}
-			if !dirty && generation == sharedGeneration {
-				cancel()
-				s.quotaRefreshMu.Lock()
-				if current := s.quotaRefreshes[request.key]; current != nil && current.generation == localGeneration {
-					delete(s.quotaRefreshes, request.key)
-				}
-				s.quotaRefreshMu.Unlock()
-				return
-			}
-		}
 		refreshMode := request.mode
 		consoleMode := isConsoleUsageQuotaMode(request.mode)
 		skipUpstream := false
@@ -1375,43 +1330,18 @@ func (s *Service) runQuotaRefresh(parent context.Context, request quotaRefreshRe
 		}
 
 		currentShared := sharedGeneration
-		sharedDirty := s.quotaRefreshState != nil
-		if s.quotaRefreshState != nil {
-			generationCtx, generationCancel := context.WithTimeout(context.WithoutCancel(parent), 3*time.Second)
-			var generationErr error
-			currentShared, sharedDirty, generationErr = s.quotaRefreshState.QuotaRefreshGeneration(generationCtx, request.accountID, request.mode)
-			generationCancel()
-			if generationErr != nil {
-				s.deferQuotaRefresh(request.key)
-				return
-			}
-		}
+		sharedDirty := false
 		s.quotaRefreshMu.Lock()
 		state = s.quotaRefreshes[request.key]
 		localChanged := state != nil && state.generation != localGeneration
 		s.quotaRefreshMu.Unlock()
-		if localChanged || (s.quotaRefreshState != nil && currentShared != sharedGeneration) {
+		if localChanged {
 			perfmetrics.Default.Add("quota_refresh_events", perfmetrics.Labels{Subsystem: "quota", Stage: "refresh", Outcome: "trailing"}, 1)
 			if consoleMode {
 				s.deferSuccessfulQuotaRefresh(request.key, true)
 				return
 			}
 			continue
-		}
-		if s.quotaRefreshState != nil && sharedDirty {
-			clearCtx, clearCancel := context.WithTimeout(context.WithoutCancel(parent), 3*time.Second)
-			cleared, clearErr := s.quotaRefreshState.ClearQuotaRefreshDirty(clearCtx, request.accountID, request.mode, sharedGeneration)
-			clearCancel()
-			if clearErr != nil || !cleared {
-				if clearErr != nil {
-					s.logger.Warn("quota_refresh_dirty_clear_failed", "account_id", request.accountID, "mode", request.mode, "error", clearErr)
-				}
-				if consoleMode {
-					s.deferSuccessfulQuotaRefresh(request.key, true)
-					return
-				}
-				continue
-			}
 		}
 		s.quotaRefreshMu.Lock()
 		state = s.quotaRefreshes[request.key]
@@ -1536,34 +1466,6 @@ func (s *Service) requeueQuotaRefreshes() {
 }
 
 func (s *Service) recoverSharedQuotaRefreshes(parent context.Context, now time.Time) {
-	if s.quotaRefreshState == nil {
-		return
-	}
-	ctx, cancel := context.WithTimeout(parent, 3*time.Second)
-	values, err := s.quotaRefreshState.ListQuotaRefreshDirty(ctx, now, 100)
-	cancel()
-	if err != nil {
-		s.logger.Warn("quota_refresh_dirty_list_failed", "error", err)
-		return
-	}
-	s.quotaRefreshMu.Lock()
-	for _, value := range values {
-		key := strconv.FormatUint(value.AccountID, 10) + ":" + value.Mode
-		state := s.quotaRefreshes[key]
-		if state == nil {
-			state = &quotaRefreshState{generation: 1, publishedGeneration: 1, sharedGeneration: value.Generation, pending: true}
-			s.quotaRefreshes[key] = state
-		} else {
-			if value.Generation > state.sharedGeneration {
-				state.sharedGeneration = value.Generation
-			}
-			state.pending = true
-		}
-		if !state.queued && !state.running && !now.Before(state.nextAttemptAt) && !s.enqueueQuotaRefreshLocked(quotaRefreshRequest{key: key, accountID: value.AccountID, mode: value.Mode}, state) {
-			break
-		}
-	}
-	s.quotaRefreshMu.Unlock()
 }
 
 func (s *Service) ListDueWebQuotaWindows(ctx context.Context, now time.Time, limit int) ([]accountdomain.QuotaWindow, error) {

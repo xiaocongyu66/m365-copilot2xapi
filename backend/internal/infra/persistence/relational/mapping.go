@@ -55,9 +55,7 @@ func toAccountDomain(value accountModel) account.Credential {
 	}
 	var egressIdentity string
 	if value.WebProfile != nil {
-		}
 		egressIdentity = value.WebProfile.EgressIdentity
-	}
 	}
 	return account.Credential{
 		ID: value.ID, Provider: account.Provider(value.Provider), AuthType: authType, Name: value.Name, Email: value.Email,

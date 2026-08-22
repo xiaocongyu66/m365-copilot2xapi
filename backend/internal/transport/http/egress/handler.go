@@ -809,7 +809,7 @@ func (value nodeRequest) input() egressapp.Input {
 		AccountCapacity: value.AccountCapacity,
 		ProxyURL:        value.ProxyURL, ProxyProfileID: value.ProxyProfileID,
 		ClearProxyURL: value.ClearProxyURL, UserAgent: value.UserAgent,
-		CloudflareCookies: value.CloudflareCookies, ClearCookies: value.ClearCookies,
+		ClearCookies: value.ClearCookies,
 	}
 }
 
