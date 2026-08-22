@@ -850,6 +850,8 @@ func setAccountWriteDeadline(writer http.ResponseWriter) error {
 // writeAccountEvent keeps the event encoder independently testable without starting a heartbeat.
 func writeAccountEvent(c *gin.Context, event string, value any) error {
 	return (&accountEventStream{context: c}).Write(event, value)
+}
+
 func (h *Handler) importFile(c *gin.Context, providerValue accountdomain.Provider) {
 	fileDescription := "账号凭据 JSON、逐行 JSON 或 refresh token 文本"
 	if providerValue == accountdomain.ProviderM365 {

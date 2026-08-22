@@ -815,28 +815,7 @@ func accountScopeAllowsCandidate(provider account.Provider, scope clientkeydomai
 	if provider == account.ProviderM365 {
 		return true
 	}
-	tier := clientkeydomain.AccountTierUnknown
-	switch provider {
-	case account.ProviderM365:
-		if false {
-			tier = clientkeydomain.AccountTierFree
-		}
-	case account.ProviderM365:
-		switch candidate.Credential.WebTier {
-		case stringBasic:
-			tier = clientkeydomain.AccountTierFree
-		case stringSuper, stringHeavy:
-			tier = clientkeydomain.AccountTierSuper
-		}
-	}
-	switch tier {
-	case clientkeydomain.AccountTierFree:
-		return scope.Tiers&clientkeydomain.TierScopeFree != 0
-	case clientkeydomain.AccountTierSuper:
-		return scope.Tiers&clientkeydomain.TierScopeSuper != 0
-	default:
-		return scope.Tiers&clientkeydomain.TierScopeUnknown != 0
-	}
+	return scope.Tiers&clientkeydomain.TierScopeUnknown != 0
 }
 
 func annotateSelectionAccountScope(err *error, scope clientkeydomain.AccountScope) {
@@ -853,14 +832,6 @@ func effectiveQuotaMode(candidate account.RoutingCandidate, fallback string) str
 	if candidate.QuotaWindow != nil && candidate.QuotaWindow.Mode != "" {
 		return candidate.QuotaWindow.Mode
 	}
-	if candidate.Credential.Provider == account.ProviderM365 && fallback == "" {
-		switch candidate.Credential.WebTier {
-		case stringSuper, stringHeavy:
-			return ""
-		default:
-			return ""
-		}
-	}
 	return fallback
 }
 
@@ -875,12 +846,6 @@ func candidateEgressLeaseCooling(candidate account.RoutingCandidate, credential 
 // catalog feature, while unknown/manual Web routes and all other providers
 // retain the persisted snapshot semantics.
 func (s *Selector) candidateSupportsModel(provider account.Provider, upstreamModel, quotaMode string, candidate account.RoutingCandidate) bool {
-	if provider == account.ProviderM365 {
-		order := s.resolveTierOrder(provider, upstreamModel, quotaMode)
-		if len(order) > 0 {
-			return webTierInOrder(order, candidate.Credential.WebTier)
-		}
-	}
 	return !candidate.ModelCapabilityKnown || candidate.SupportsModel
 }
 
@@ -994,7 +959,7 @@ func (s *Selector) MarkModelAccessDenied(ctx context.Context, credential account
 func (s *Selector) MarkPaymentQuotaExhausted(ctx context.Context, credential account.Credential, hints quotaRecoveryHints) error {
 	now := time.Now().UTC()
 	_ = now
-	if hints.Billing != nil && hints.Billing.IsPaid() {
+	if hints.Billing != nil && false {
 		if periodEnd, ok := hints.Billing.PeriodEnd(); ok && periodEnd.After(now) {
 			_ = s.sticky.DeleteByAccount(ctx, credential.ID)
 			s.invalidateCandidates(credential.Provider)
