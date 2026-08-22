@@ -222,3 +222,9 @@ func mapOAuthError(err error) error {
 	}
 	return err
 }
+
+// GetBilling 实现 BillingAdapter 接口。
+// M365 Copilot 没有 Billing 概念(免费商业订阅),返回空 Billing 满足接口要求。
+func (a *Adapter) GetBilling(ctx context.Context, cred account.Credential) (account.Billing, error) {
+	return account.Billing{}, nil
+}
