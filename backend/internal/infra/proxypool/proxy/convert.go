@@ -166,7 +166,7 @@ func ClashJSONToProxy(data []byte) Proxy {
 	case "trojan":
 		password, _ := m["password"].(string)
 		sni, _ := m["sni"].(string)
-		t := &Trojan{Password: password, Sni: sni}
+		t := &Trojan{Password: password, SNI: sni}
 		t.Base = Base{Name: name, Server: server, Port: port, Type: "trojan"}
 		return t
 	case "vless":
@@ -189,7 +189,7 @@ func ClashJSONToProxy(data []byte) Proxy {
 	case "hysteria2":
 		password, _ := m["password"].(string)
 		sni, _ := m["sni"].(string)
-		h := &Hysteria2{Password: password, Sni: sni}
+		h := &Hysteria2{Password: password, SNI: sni}
 		h.Base = Base{Name: name, Server: server, Port: port, Type: "hysteria2"}
 		return h
 	case "http":
