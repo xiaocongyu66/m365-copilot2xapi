@@ -18,9 +18,72 @@ permissions:
   contents: read
 
 jobs:
-  build:
-    name: Build backend
+  build-frontend:
+    name: Build frontend
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.5.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend
+        working-directory: frontend
+        run: pnpm build
+
+      - name: Upload frontend dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
+          retention-days: 1
+
+  build-binaries:
+    name: Build (${{ matrix.os }}/${{ matrix.arch }})
+    needs: build-frontend
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: linux
+            arch: amd64
+            goarch: amd64
+          - os: linux
+            arch: arm64
+            goarch: arm64
+          - os: linux
+            arch: arm32
+            goarch: arm
+          - os: linux
+            arch: x86
+            goarch: 386
+          - os: macos
+            arch: amd64
+            goarch: amd64
+          - os: macos
+            arch: arm64
+            goarch: arm64
+          - os: windows
+            arch: amd64
+            goarch: amd64
+          - os: windows
+            arch: arm64
+            goarch: arm64
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -31,6 +94,56 @@ jobs:
           go-version-file: backend/go.mod
           cache-dependency-path: backend/go.sum
 
+      - name: Download frontend dist
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
+
+      - name: Build binary
+        working-directory: backend
+        env:
+          GOOS: ${{ matrix.os == 'macos' && 'darwin' || matrix.os }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 0
+        run: |
+          binary_name="m365-copilot2xapi-${{ matrix.os }}-${{ matrix.arch }}"
+          if [ "${{ matrix.os }}" = "windows" ]; then
+            binary_name="${binary_name}.exe"
+          fi
+          go build -o "../../${binary_name}" ./cmd/grok2api
+          echo "binary_name=${binary_name}" >> $GITHUB_ENV
+
+      - name: Verify binary
+        run: file m365-copilot2xapi-${{ matrix.os }}-${{ matrix.arch }}*
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: m365-copilot2xapi-${{ matrix.os }}-${{ matrix.arch }}
+          path: m365-copilot2xapi-${{ matrix.os }}-${{ matrix.arch }}*
+          retention-days: 30
+
+  verify:
+    name: Verify backend
+    runs-on: ubuntu-latest
+    needs: build-frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+
+      - name: Download frontend dist
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
+
       - name: Build backend
         working-directory: backend
         run: go build ./...
@@ -39,10 +152,6 @@ jobs:
         working-directory: backend
         continue-on-error: true
         run: go vet ./...
-
-      - name: Build M365 provider
-        working-directory: backend
-        run: go build ./internal/infra/provider/m365/...
 
       - name: Check Grok residue
         working-directory: backend
@@ -54,14 +163,3 @@ jobs:
             echo "---残留文件清单---"
             grep -rln "ProviderBuild\|ProviderWeb\|ProviderConsole\|WebTier\|BuildRouteMode\|BuildSuperEntitled\|CloudflareCookie\|AuthTypeSSO" --include="*.go" internal/ | grep -v "_test.go"
           fi
-
-      - name: Build binary
-        working-directory: backend
-        run: go build -o /tmp/m365-copilot2xapi ./cmd/grok2api
-
-      - name: Upload binary
-        uses: actions/upload-artifact@v4
-        with:
-          name: m365-copilot2xapi-linux-amd64
-          path: /tmp/m365-copilot2xapi
-          retention-days: 7
