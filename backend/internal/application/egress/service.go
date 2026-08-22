@@ -1354,3 +1354,9 @@ func NormalizeProxyURL(value string) (string, error) {
 	return parsed.String(), nil
 }
 
+// SanitizeCloudflareCookies is retained for compatibility with egress manager
+// and flaresolverr callers. M365 does not use Cloudflare cookies; this stub
+// returns an empty string so all cookie-handling paths become no-ops.
+func SanitizeCloudflareCookies(value string) string {
+	return ""
+}

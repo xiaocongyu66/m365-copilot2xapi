@@ -33,13 +33,11 @@ func toAccountDomain(value accountModel) account.Credential {
 	var lastRefreshErrorResponse string
 	var refreshPermanent bool
 	var authType account.AuthType
-	var clientID, encryptedPrimary, encryptedRefresh, encryptedCloudflareCookie string
 	if value.Credential != nil {
 		authType = account.AuthType(value.Credential.AuthType)
 		clientID = value.Credential.ClientID
 		encryptedPrimary = value.Credential.EncryptedPrimary
 		encryptedRefresh = value.Credential.EncryptedRefresh
-		encryptedCloudflareCookie = value.Credential.EncryptedCloudflareCookie
 		// The account-level Cloudflare cookie is intentionally never exposed by
 		// the transport DTO; it is only used when constructing the upstream Cookie header.
 		if value.Credential.ExpiresAt != nil {
@@ -55,41 +53,21 @@ func toAccountDomain(value accountModel) account.Credential {
 		lastRefreshErrorResponse = value.Credential.LastRefreshErrorResponse
 		refreshPermanent = value.Credential.RefreshPermanent
 	}
-	var webTier account.WebTier
-	var webTierSyncedAt *time.Time
-	var webNSFWEnabledAt *time.Time
-	var webTermsAcceptedAt *time.Time
-	var webTermsAcceptedVersion int
-	var webBirthDateSetAt *time.Time
 	var egressIdentity string
 	if value.WebProfile != nil {
-		webTier = account.WebTier(value.WebProfile.Tier)
-		webTierSyncedAt = value.WebProfile.SyncedAt
-		webNSFWEnabledAt = value.WebProfile.NSFWEnabledAt
-		webTermsAcceptedVersion = value.WebProfile.TermsAcceptedVersion
-		if webTermsAcceptedVersion >= account.CurrentWebTermsVersion {
-			webTermsAcceptedAt = value.WebProfile.TermsAcceptedAt
 		}
-		webBirthDateSetAt = value.WebProfile.BirthDateSetAt
 		egressIdentity = value.WebProfile.EgressIdentity
 	}
-	buildRouteMode := account.BuildRouteMode(value.BuildRouteMode)
-	if account.Provider(value.Provider) != account.ProviderM365 || !buildRouteMode.IsValid() {
-		buildRouteMode = account.BuildRouteAuto
 	}
 	return account.Credential{
 		ID: value.ID, Provider: account.Provider(value.Provider), AuthType: authType, Name: value.Name, Email: value.Email,
 		UserID: value.UserID, TeamID: value.TeamID, SourceKey: value.SourceKey, OIDCClientID: clientID,
-		EncryptedAccessToken: encryptedPrimary, EncryptedRefreshToken: encryptedRefresh, EncryptedCloudflareCookie: encryptedCloudflareCookie,
 		ExpiresAt: expiresAt, RefreshDueAt: refreshDueAt, LastRefreshAt: lastRefreshAt,
 		RefreshFailureCount: refreshFailures, RefreshUnclassifiedAuthCount: refreshUnclassifiedAuthFailures, LastRefreshErrorStatus: lastRefreshErrorStatus, LastRefreshErrorCode: lastRefreshError, LastRefreshErrorMessage: lastRefreshErrorMessage, LastRefreshErrorResponse: lastRefreshErrorResponse, RefreshPermanent: refreshPermanent,
 		Enabled: value.Enabled, AuthStatus: account.AuthStatus(value.AuthStatus), ReauthMarkedAt: value.ReauthMarkedAt, Priority: value.Priority,
 		MaxConcurrent: value.MaxConcurrent, MinimumRemaining: value.MinimumRemaining, FailureCount: value.FailureCount,
 		CooldownUntil: value.CooldownUntil, LastError: value.LastError, LastUsedAt: value.LastUsedAt,
-		ObservedModel: value.ObservedModel, ObservedModelAt: value.ObservedModelAt, WebTier: webTier, WebTierSyncedAt: webTierSyncedAt,
-		WebNSFWEnabledAt: webNSFWEnabledAt, WebTermsAcceptedAt: webTermsAcceptedAt, WebTermsAcceptedVersion: webTermsAcceptedVersion, WebBirthDateSetAt: webBirthDateSetAt, EgressIdentity: egressIdentity,
 		EgressNodeID: valueEgressNodeID(value.EgressNodeID), EgressAssignmentMode: account.EgressAssignmentMode(value.EgressAssignmentMode), EgressAssignedAt: value.EgressAssignedAt,
-		BuildAPIFallback: value.BuildAPIFallback, BuildRouteMode: buildRouteMode,
 		BuildSuperEntitled: value.BuildSuperEntitled && account.Provider(value.Provider) == account.ProviderM365,
 		BuildBotFlagSource: normalizedBuildBotFlagSource(account.Provider(value.Provider), value.Credential),
 		CreatedAt:          value.CreatedAt, UpdatedAt: value.UpdatedAt,
@@ -104,7 +82,7 @@ func toCredentialMaterialDomain(value accountCredentialModel, provider account.P
 	return account.CredentialMaterial{
 		AccountID: value.AccountID, Provider: provider, AuthType: account.AuthType(value.AuthType), OIDCClientID: value.ClientID,
 		EncryptedAccessToken: value.EncryptedPrimary, EncryptedRefreshToken: value.EncryptedRefresh,
-		EncryptedCloudflareCookie: value.EncryptedCloudflareCookie, ExpiresAt: expiresAt,
+		ExpiresAt: expiresAt,
 		RefreshDueAt: value.RefreshDueAt, LastRefreshAt: value.LastRefreshAt,
 		RefreshFailureCount: value.RefreshFailures, RefreshUnclassifiedAuthCount: value.RefreshUnclassifiedAuthFailures, LastRefreshErrorStatus: value.LastRefreshErrorStatus, LastRefreshErrorCode: value.LastRefreshError, LastRefreshErrorMessage: value.LastRefreshErrorMessage, LastRefreshErrorResponse: value.LastRefreshErrorResponse,
 		RefreshPermanent: value.RefreshPermanent, UpdatedAt: value.UpdatedAt,
@@ -115,9 +93,7 @@ func fromAccountDomain(value account.Credential) accountModel {
 	// entitlement、推理地址与 XAI 回退标记仅对 grok_build 有意义。
 	buildAPIFallback := value.BuildAPIFallback && value.Provider == account.ProviderM365
 	buildSuperEntitled := value.BuildSuperEntitled && value.Provider == account.ProviderM365
-	buildRouteMode := account.BuildRouteAuto
 	if value.Provider == account.ProviderM365 && value.BuildRouteMode.IsValid() {
-		buildRouteMode = value.BuildRouteMode
 	}
 	return accountModel{
 		ID: value.ID, IdentityKey: accountIdentity(value), Provider: string(value.Provider), Name: value.Name, Email: value.Email,
@@ -126,7 +102,6 @@ func fromAccountDomain(value account.Credential) accountModel {
 		MaxConcurrent: value.MaxConcurrent, MinimumRemaining: value.MinimumRemaining, FailureCount: value.FailureCount,
 		CooldownUntil: value.CooldownUntil, LastError: value.LastError, LastUsedAt: value.LastUsedAt,
 		ObservedModel: value.ObservedModel, ObservedModelAt: value.ObservedModelAt,
-		BuildAPIFallback: buildAPIFallback, BuildRouteMode: string(buildRouteMode), BuildSuperEntitled: buildSuperEntitled,
 		EgressNodeID: egressNodeID(value.EgressNodeID), EgressAssignmentMode: string(value.EgressAssignmentMode), EgressAssignedAt: value.EgressAssignedAt,
 		CreatedAt: value.CreatedAt, UpdatedAt: value.UpdatedAt,
 	}
