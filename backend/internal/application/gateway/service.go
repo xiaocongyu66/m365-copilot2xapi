@@ -252,7 +252,7 @@ func (s *Service) ConfigureMedia(repository repository.MediaJobRepository, concu
 	s.mediaJobs = repository
 	s.mediaWorker = concurrency
 	s.mediaQueue = make(chan string, min(2048, max(64, concurrency*32)))
-	s.mediaInputSlots = make(chan struct{}, min(concurrency, videoInputMaterializeConcurrency))
+	s.mediaInputSlots = make(chan struct{}, min(concurrency, 4))
 	s.mediaQueued = make(map[string]struct{})
 }
 
@@ -695,16 +695,7 @@ func routeTargetScore(seed string, routeID uint64) uint64 {
 }
 
 func routeProviderPriority(providerValue accountdomain.Provider) int {
-	switch providerValue {
-	case accountdomain.ProviderM365:
-		return 0
-	case accountdomain.ProviderM365:
-		return 1
-	case accountdomain.ProviderM365:
-		return 2
-	default:
-		return 3
-	}
+	return 0
 }
 
 func routeTargetSeed(input Input) string {

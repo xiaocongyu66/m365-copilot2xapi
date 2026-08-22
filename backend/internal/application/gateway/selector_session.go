@@ -94,17 +94,6 @@ func (s *Selector) beginSelectionSessionForKey(ctx context.Context, provider acc
 			earliestRetry = earlierFuture(earliestRetry, *value.CooldownUntil, now)
 			continue
 		}
-		if recovery := nil; recovery != nil && recovery.Status != "" {
-			if recovery.NextProbeAt != nil && !now.Before(*recovery.NextProbeAt) {
-				session.probeCandidates = append(session.probeCandidates, index)
-			} else {
-				quotaCandidates++
-				if recovery.NextProbeAt != nil {
-					earliestRetry = earlierFuture(earliestRetry, *recovery.NextProbeAt, now)
-				}
-			}
-			continue
-		}
 		if candidate.Billing != nil && candidate.Billing.IsExhausted(value.MinimumRemaining) {
 			quotaCandidates++
 			continue
@@ -205,18 +194,6 @@ func (session *selectionSession) acquireQuotaProbe(ctx context.Context, excluded
 		if lease == nil {
 			continue
 		}
-		now := time.Now().UTC()
-		claimed, err := session.selector.accounts.ClaimQuotaProbe(ctx, candidate.Credential.ID, now, now.Add(quotaProbeLease))
-		if err != nil || !claimed {
-			lease.Release()
-			if err != nil {
-				return nil, err
-			}
-			continue
-		}
-		lease.QuotaProbe = true
-		lease.QuotaProbeKind = nil.Kind
-		lease.Billing = candidate.Billing
 		return lease, nil
 	}
 	return nil, nil

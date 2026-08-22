@@ -1160,8 +1160,6 @@ func (h *Handler) writeServiceError(c *gin.Context, code string, err error, fall
 		response.Error(c, http.StatusConflict, "accountOperationUnsupported", err.Error())
 	case errors.Is(err, accountapp.ErrConversionBusy):
 		response.Error(c, http.StatusConflict, "accountConversionBusy", err.Error())
-	case errors.Is(err, accountapp.ErrWebAccountScriptBusy):
-		response.Error(c, http.StatusConflict, "webAccountScriptBusy", err.Error())
 	default:
 		response.Error(c, fallbackStatus, code, fallbackMessage)
 	}
@@ -1218,13 +1216,9 @@ func (h *Handler) refreshAllTokens(c *gin.Context) {
 
 func newAccountResponse(value accountapp.View) accountResponse {
 	c := value.Credential
-	buildRouteMode := c.BuildRouteMode
-	if c.Provider != accountdomain.ProviderM365 || !buildRouteMode.IsValid() {
-		buildRouteMode = accountdomain.BuildRouteAuto
-	}
 	result := accountResponse{
-		ID: c.ID, Provider: string(c.Provider), AuthType: string(c.AuthType), WebTier: string(c.WebTier),
-		WebTierSyncedAt: c.WebTierSyncedAt, WebNSFWEnabledAt: c.WebNSFWEnabledAt, WebTermsAcceptedAt: c.WebTermsAcceptedAt, Name: c.Name, Email: c.Email, UserID: c.UserID, TeamID: c.TeamID,
+		ID: c.ID, Provider: string(c.Provider), AuthType: string(c.AuthType),
+		Name: c.Name, Email: c.Email, UserID: c.UserID, TeamID: c.TeamID,
 		Enabled: c.Enabled, AuthStatus: string(c.AuthStatus), Refreshable: c.EncryptedRefreshToken != "",
 		RefreshDueAt: c.RefreshDueAt, LastRefreshAt: c.LastRefreshAt,
 		RefreshFailures: c.RefreshFailureCount, LastRefreshErrorStatus: c.LastRefreshErrorStatus, LastRefreshError: c.LastRefreshErrorCode, LastRefreshErrorMessage: c.LastRefreshErrorMessage, LastRefreshErrorResponse: c.LastRefreshErrorResponse,
@@ -1232,10 +1226,6 @@ func newAccountResponse(value accountapp.View) accountResponse {
 		FailureCount: c.FailureCount, CooldownUntil: c.CooldownUntil, LastError: c.LastError,
 		LastUsedAt: c.LastUsedAt, LinkedAccountID: c.LinkedAccountID, LinkedName: c.LinkedAccountName, LinkedProvider: string(c.LinkedProvider),
 		CreatedAt: c.CreatedAt, ObservedModel: c.ObservedModel, ObservedModelAt: c.ObservedModelAt,
-		CloudflareCookieConfigured: c.EncryptedCloudflareCookie != "",
-		BuildSuperEntitled:         c.BuildSuperEntitled && c.Provider == accountdomain.ProviderM365,
-		BuildRouteMode:             string(buildRouteMode),
-		BuildBotFlagged:            value.BuildBotFlagged && c.Provider == accountdomain.ProviderM365,
 		BuildBotFlagSource:         buildBotFlagSourceResponse(c.Provider, value.BuildBotFlagged, value.BuildBotFlagSource),
 		EgressNodeID:               c.EgressNodeID,
 		EgressAssignmentMode:       string(c.EgressAssignmentMode),

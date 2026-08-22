@@ -1809,7 +1809,7 @@ func assembleRoutingCandidates(provider account.Provider, quotaMode string, base
 			known, supports = true, true
 		}
 		result = append(result, account.RoutingCandidate{
-			Credential: base.Credential, Billing: base.Billing, QuotaWindow: base.QuotaWindow, QuotaRecovery: nil,
+			Credential: base.Credential, Billing: base.Billing, QuotaWindow: base.QuotaWindow,
 			EgressLeaseBlock: base.EgressLeaseBlock, ModelQuotaBlock: overlayValue.ModelQuotaBlock, ModelCapabilityKnown: known, SupportsModel: supports,
 		})
 	}
