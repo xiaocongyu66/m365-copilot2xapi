@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"strings"
 
-	clientkeydomain "github.com/chenyme/grok2api/backend/internal/domain/clientkey"
-	"github.com/chenyme/grok2api/backend/internal/domain/media"
-	settingsdomain "github.com/chenyme/grok2api/backend/internal/domain/settings"
+	clientkeydomain "m365-copilot2xapi/backend/internal/domain/clientkey"
+	"m365-copilot2xapi/backend/internal/domain/media"
+	settingsdomain "m365-copilot2xapi/backend/internal/domain/settings"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )

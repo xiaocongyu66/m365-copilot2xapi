@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chenyme/grok2api/backend/internal/infra/config"
+	"m365-copilot2xapi/backend/internal/infra/config"
 )
 
 func TestPrepareWritesPrivateScopedBootstrap(t *testing.T) {

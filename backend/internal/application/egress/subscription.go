@@ -17,7 +17,7 @@ import (
 	"unicode/utf8"
 
 	_ "github.com/bdandy/go-socks4"
-	"github.com/chenyme/grok2api/backend/internal/pkg/tunnelproxy"
+	"m365-copilot2xapi/backend/internal/pkg/tunnelproxy"
 	xproxy "golang.org/x/net/proxy"
 )
 

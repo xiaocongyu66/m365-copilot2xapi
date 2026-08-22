@@ -12,9 +12,9 @@ import (
 	"testing"
 	"time"
 
-	auditapp "github.com/chenyme/grok2api/backend/internal/application/audit"
-	auditdomain "github.com/chenyme/grok2api/backend/internal/domain/audit"
-	"github.com/chenyme/grok2api/backend/internal/infra/persistence/relational"
+	auditapp "m365-copilot2xapi/backend/internal/application/audit"
+	auditdomain "m365-copilot2xapi/backend/internal/domain/audit"
+	"m365-copilot2xapi/backend/internal/infra/persistence/relational"
 	"github.com/gin-gonic/gin"
 )
 

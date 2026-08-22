@@ -16,8 +16,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	mediadomain "github.com/chenyme/grok2api/backend/internal/domain/media"
-	"github.com/chenyme/grok2api/backend/internal/repository"
+	mediadomain "m365-copilot2xapi/backend/internal/domain/media"
+	"m365-copilot2xapi/backend/internal/repository"
 )
 
 var (

@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/chenyme/grok2api/backend/internal/domain/account"
-	"github.com/chenyme/grok2api/backend/internal/domain/media"
-	modeldomain "github.com/chenyme/grok2api/backend/internal/domain/model"
+	"m365-copilot2xapi/backend/internal/domain/account"
+	"m365-copilot2xapi/backend/internal/domain/media"
+	modeldomain "m365-copilot2xapi/backend/internal/domain/model"
 )
 
 var (
@@ -445,7 +445,6 @@ type DeviceAuthorization struct {
 type CredentialSeed struct {
 	Provider                account.Provider
 	AuthType                account.AuthType
-	WebTier                 account.WebTier
 	Name                    string
 	Email                   string
 	UserID                  string
@@ -454,16 +453,10 @@ type CredentialSeed struct {
 	OIDCClientID            string
 	AccessToken             string
 	RefreshToken            string
-	CloudflareCookies       string
 	ExpiresAt               time.Time
-	WebNSFWEnabledAt        *time.Time
-	WebTermsAcceptedAt      *time.Time
-	WebTermsAcceptedVersion int
-	WebBirthDateSetAt       *time.Time
 }
 
 type QuotaSnapshot struct {
-	Tier     account.WebTier
 	Windows  []account.QuotaWindow
 	SyncedAt time.Time
 }
@@ -771,15 +764,6 @@ type QuotaRefreshMetadataAdapter interface {
 	QuotaRefreshGroup(upstreamModel string) string
 }
 
-// WebAccountSettingsAdapter defines upstream profile-setting capabilities for Grok Web SSO accounts.
-// This capability belongs only to the Web Provider; Build and Console must not emulate it through generic account logic.
-type WebAccountSettingsAdapter interface {
-	Adapter
-	AcceptTerms(ctx context.Context, credential account.Credential) error
-	SetBirthDate(ctx context.Context, credential account.Credential, birthDate time.Time) error
-	EnableNSFW(ctx context.Context, credential account.Credential) error
-}
-
 // ImageGenerationAdapter defines an optional Provider image-generation capability.
 type ImageGenerationAdapter interface {
 	Adapter
@@ -849,14 +833,6 @@ type VoiceWebSocketAdapter interface {
 type RoutingMetadataAdapter interface {
 	Adapter
 	QuotaMode(upstreamModel string) string
-	TierOrder(upstreamModel string) []account.WebTier
-}
-
-// QuotaTierOrderAdapter optionally narrows account tiers for a concrete quota
-// product. It is used when one public model exposes parameter variants backed
-// by different upstream entitlements.
-type QuotaTierOrderAdapter interface {
-	TierOrderForQuotaMode(upstreamModel, quotaMode string) []account.WebTier
 }
 
 // ModelAlias resolves a hidden compatibility model name to one public route and can fix reasoning effort.
@@ -1200,16 +1176,6 @@ func (r *Registry) QuotaGroup(value account.Provider) (QuotaGroupAdapter, bool) 
 	return result, ok
 }
 
-// WebAccountSettings returns the Grok Web-specific account profile settings capability.
-func (r *Registry) WebAccountSettings() (WebAccountSettingsAdapter, bool) {
-	adapter, ok := r.Get(account.ProviderWeb)
-	if !ok {
-		return nil, false
-	}
-	result, ok := adapter.(WebAccountSettingsAdapter)
-	return result, ok
-}
-
 func (r *Registry) QuotaMode(value account.Provider, upstreamModel string) string {
 	adapter, ok := r.Get(value)
 	if !ok {
@@ -1232,33 +1198,6 @@ func (r *Registry) QuotaRefreshGroup(value account.Provider, upstreamModel strin
 		return ""
 	}
 	return metadata.QuotaRefreshGroup(upstreamModel)
-}
-
-func (r *Registry) TierOrder(value account.Provider, upstreamModel string) []account.WebTier {
-	adapter, ok := r.Get(value)
-	if !ok {
-		return nil
-	}
-	metadata, ok := adapter.(RoutingMetadataAdapter)
-	if !ok {
-		return nil
-	}
-	return metadata.TierOrder(upstreamModel)
-}
-
-func (r *Registry) TierOrderForQuotaMode(value account.Provider, upstreamModel, quotaMode string) []account.WebTier {
-	adapter, ok := r.Get(value)
-	if !ok {
-		return nil
-	}
-	if metadata, ok := adapter.(QuotaTierOrderAdapter); ok {
-		return metadata.TierOrderForQuotaMode(upstreamModel, quotaMode)
-	}
-	metadata, ok := adapter.(RoutingMetadataAdapter)
-	if !ok {
-		return nil
-	}
-	return metadata.TierOrder(upstreamModel)
 }
 
 func (r *Registry) PricingModel(value account.Provider, upstreamModel string) string {

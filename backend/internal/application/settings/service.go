@@ -8,9 +8,9 @@ import (
 	"sync"
 	"time"
 
-	settingsdomain "github.com/chenyme/grok2api/backend/internal/domain/settings"
-	"github.com/chenyme/grok2api/backend/internal/infra/config"
-	"github.com/chenyme/grok2api/backend/internal/repository"
+	settingsdomain "m365-copilot2xapi/backend/internal/domain/settings"
+	"m365-copilot2xapi/backend/internal/infra/config"
+	"m365-copilot2xapi/backend/internal/repository"
 )
 
 var (

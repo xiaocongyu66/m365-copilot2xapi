@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/chenyme/grok2api/backend/internal/domain/account"
+	"m365-copilot2xapi/backend/internal/domain/account"
 )
 
 // AccountConcurrencyKey 返回账号推理租约使用的统一运行态键。
@@ -156,10 +156,10 @@ func (e InvalidationEvent) Valid() bool {
 		return e.Provider == "" && e.AccountID == 0 && e.UpstreamModel == ""
 	}
 	if e.Kind == InvalidationAccountHealthChanged {
-		return e.AccountID != 0 && (e.Provider == account.ProviderBuild || e.Provider == account.ProviderWeb || e.Provider == account.ProviderConsole)
+		return e.AccountID != 0 && e.Provider == account.ProviderM365
 	}
 	switch e.Provider {
-	case "", account.ProviderBuild, account.ProviderWeb, account.ProviderConsole:
+	case "", account.ProviderM365:
 		return true
 	default:
 		return false
@@ -173,16 +173,6 @@ type InvalidationObserver func(context.Context, InvalidationEvent)
 type InvalidationBus interface {
 	PublishInvalidation(ctx context.Context, event InvalidationEvent) error
 	ListenInvalidations(ctx context.Context, handler func(context.Context, InvalidationEvent) error) error
-}
-
-// QuotaRecoveryQueue 保存分模式额度的到期探测事件，支持多实例原子认领。
-type QuotaRecoveryQueue interface {
-	ScheduleQuotaRecovery(ctx context.Context, value account.QuotaRecoveryEvent) error
-	EnsureQuotaRecovery(ctx context.Context, value account.QuotaRecoveryEvent) error
-	CancelQuotaRecovery(ctx context.Context, accountID uint64, mode string) error
-	ClaimDueQuotaRecoveries(ctx context.Context, now time.Time, limit int, lease time.Duration) ([]account.QuotaRecoveryEvent, error)
-	AckQuotaRecovery(ctx context.Context, value account.QuotaRecoveryEvent) error
-	RescheduleQuotaRecovery(ctx context.Context, value account.QuotaRecoveryEvent) error
 }
 
 type QuotaRefreshDirty struct {

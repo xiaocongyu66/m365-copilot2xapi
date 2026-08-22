@@ -30,7 +30,7 @@ func TestCheckFindsLatestRelease(t *testing.T) {
 	if snapshot.Status != StatusUpdateAvailable || !snapshot.UpdateAvailable || snapshot.LatestVersion != "v3.0.1" || snapshot.CheckedAt == nil || !snapshot.CheckedAt.Equal(now) {
 		t.Fatalf("snapshot = %#v", snapshot)
 	}
-	if snapshot.ReleaseURL != "https://github.com/chenyme/grok2api/releases/tag/v3.0.1" || snapshot.ReleaseNotes != "Release notes" {
+	if snapshot.ReleaseURL != "https://github.com/xiaocongyu66/m365-copilot2xapi/releases/tag/v3.0.1" || snapshot.ReleaseNotes != "Release notes" {
 		t.Fatalf("release = %#v", snapshot)
 	}
 }

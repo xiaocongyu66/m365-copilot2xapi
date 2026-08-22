@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	"github.com/chenyme/grok2api/backend/internal/domain/egress"
+	"m365-copilot2xapi/backend/internal/domain/egress"
 )
 
 type EgressRepository interface {

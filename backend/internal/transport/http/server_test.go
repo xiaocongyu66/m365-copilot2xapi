@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chenyme/grok2api/backend/internal/transport/http/middleware"
+	"m365-copilot2xapi/backend/internal/transport/http/middleware"
 )
 
 func testDependencies() Dependencies {

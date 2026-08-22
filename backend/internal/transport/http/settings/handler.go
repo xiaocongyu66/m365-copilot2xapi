@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	settingsapp "github.com/chenyme/grok2api/backend/internal/application/settings"
-	"github.com/chenyme/grok2api/backend/internal/shared/response"
+	settingsapp "m365-copilot2xapi/backend/internal/application/settings"
+	"m365-copilot2xapi/backend/internal/shared/response"
 	"github.com/gin-gonic/gin"
 )
 

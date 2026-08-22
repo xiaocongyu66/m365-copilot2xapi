@@ -16,14 +16,14 @@ import (
 	"time"
 	"unicode/utf8"
 
-	egressapp "github.com/chenyme/grok2api/backend/internal/application/egress"
-	accountdomain "github.com/chenyme/grok2api/backend/internal/domain/account"
-	"github.com/chenyme/grok2api/backend/internal/infra/provider"
-	"github.com/chenyme/grok2api/backend/internal/infra/security"
-	"github.com/chenyme/grok2api/backend/internal/pkg/batch"
-	"github.com/chenyme/grok2api/backend/internal/pkg/perfmetrics"
-	"github.com/chenyme/grok2api/backend/internal/pkg/resultcache"
-	"github.com/chenyme/grok2api/backend/internal/repository"
+	egressapp "m365-copilot2xapi/backend/internal/application/egress"
+	accountdomain "m365-copilot2xapi/backend/internal/domain/account"
+	"m365-copilot2xapi/backend/internal/infra/provider"
+	"m365-copilot2xapi/backend/internal/infra/security"
+	"m365-copilot2xapi/backend/internal/pkg/batch"
+	"m365-copilot2xapi/backend/internal/pkg/perfmetrics"
+	"m365-copilot2xapi/backend/internal/pkg/resultcache"
+	"m365-copilot2xapi/backend/internal/repository"
 	"golang.org/x/sync/singleflight"
 )
 
@@ -4563,3 +4563,4 @@ func mapRepositoryError(err error) error {
 	}
 	return err
 }
+

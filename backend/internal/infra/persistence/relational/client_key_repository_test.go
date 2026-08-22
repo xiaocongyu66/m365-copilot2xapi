@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	auditdomain "github.com/chenyme/grok2api/backend/internal/domain/audit"
-	clientkeydomain "github.com/chenyme/grok2api/backend/internal/domain/clientkey"
-	"github.com/chenyme/grok2api/backend/internal/repository"
+	auditdomain "m365-copilot2xapi/backend/internal/domain/audit"
+	clientkeydomain "m365-copilot2xapi/backend/internal/domain/clientkey"
+	"m365-copilot2xapi/backend/internal/repository"
 )
 
 func TestClientKeyBillingReservationsEnforceLimitAndExpire(t *testing.T) {

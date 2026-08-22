@@ -3,7 +3,7 @@ package clientkey
 import (
 	"time"
 
-	"github.com/chenyme/grok2api/backend/internal/domain/account"
+	"m365-copilot2xapi/backend/internal/domain/account"
 )
 
 const (
@@ -19,10 +19,8 @@ const InternalKindQualityGuard = "quality_guard"
 type ProviderScope uint8
 
 const (
-	ProviderScopeBuild ProviderScope = 1 << iota
-	ProviderScopeWeb
-	ProviderScopeConsole
-	ProviderScopeAll = ProviderScopeBuild | ProviderScopeWeb | ProviderScopeConsole
+	ProviderScopeM365 ProviderScope = 1 << iota
+	ProviderScopeAll  ProviderScope = ProviderScopeM365
 )
 
 type TierScope uint8
@@ -59,12 +57,8 @@ func ParseProviderScopeValues(values []string) (ProviderScope, bool) {
 				return 0, false
 			}
 			return ProviderScopeAll, true
-		case string(account.ProviderBuild):
-			scope |= ProviderScopeBuild
-		case string(account.ProviderWeb):
-			scope |= ProviderScopeWeb
-		case string(account.ProviderConsole):
-			scope |= ProviderScopeConsole
+		case string(account.ProviderM365):
+			scope |= ProviderScopeM365
 		default:
 			return 0, false
 		}
@@ -100,15 +94,9 @@ func (s ProviderScope) Values() []string {
 	if !valid || value == ProviderScopeAll {
 		return []string{"all"}
 	}
-	values := make([]string, 0, 3)
-	if value&ProviderScopeBuild != 0 {
-		values = append(values, string(account.ProviderBuild))
-	}
-	if value&ProviderScopeWeb != 0 {
-		values = append(values, string(account.ProviderWeb))
-	}
-	if value&ProviderScopeConsole != 0 {
-		values = append(values, string(account.ProviderConsole))
+	values := make([]string, 0, 1)
+	if value&ProviderScopeM365 != 0 {
+		values = append(values, string(account.ProviderM365))
 	}
 	return values
 }
@@ -162,12 +150,8 @@ func (s ProviderScope) Allows(provider account.Provider) bool {
 		return false
 	}
 	switch provider {
-	case account.ProviderBuild:
-		return value&ProviderScopeBuild != 0
-	case account.ProviderWeb:
-		return value&ProviderScopeWeb != 0
-	case account.ProviderConsole:
-		return value&ProviderScopeConsole != 0
+	case account.ProviderM365:
+		return value&ProviderScopeM365 != 0
 	default:
 		return false
 	}
@@ -201,9 +185,6 @@ func (s AccountScope) AllowsAccount(provider account.Provider, tier AccountTier)
 	value, valid := NormalizeAccountScope(s)
 	if !valid || !value.Providers.Allows(provider) {
 		return false
-	}
-	if provider == account.ProviderConsole {
-		return true
 	}
 	return value.Tiers.Allows(tier)
 }

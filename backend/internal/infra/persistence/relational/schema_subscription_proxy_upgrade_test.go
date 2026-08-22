@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	egressdomain "github.com/chenyme/grok2api/backend/internal/domain/egress"
+	egressdomain "m365-copilot2xapi/backend/internal/domain/egress"
 )
 
 type legacyOperationsConfigWithSubscriptionProxy struct {

@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	clientkeyapp "github.com/chenyme/grok2api/backend/internal/application/clientkey"
+	clientkeyapp "m365-copilot2xapi/backend/internal/application/clientkey"
 	"github.com/gin-gonic/gin"
 )
 

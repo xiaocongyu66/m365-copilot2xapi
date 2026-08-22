@@ -17,9 +17,9 @@ import (
 	"testing"
 	"time"
 
-	mediaapp "github.com/chenyme/grok2api/backend/internal/application/media"
-	localmedia "github.com/chenyme/grok2api/backend/internal/infra/media"
-	"github.com/chenyme/grok2api/backend/internal/infra/persistence/relational"
+	mediaapp "m365-copilot2xapi/backend/internal/application/media"
+	localmedia "m365-copilot2xapi/backend/internal/infra/media"
+	"m365-copilot2xapi/backend/internal/infra/persistence/relational"
 	"github.com/gin-gonic/gin"
 )
 

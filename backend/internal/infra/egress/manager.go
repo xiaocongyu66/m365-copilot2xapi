@@ -20,13 +20,13 @@ import (
 	"sync/atomic"
 	"time"
 
-	application "github.com/chenyme/grok2api/backend/internal/application/egress"
-	accountdomain "github.com/chenyme/grok2api/backend/internal/domain/account"
-	domain "github.com/chenyme/grok2api/backend/internal/domain/egress"
-	settingsdomain "github.com/chenyme/grok2api/backend/internal/domain/settings"
-	"github.com/chenyme/grok2api/backend/internal/infra/security"
-	neterrorpkg "github.com/chenyme/grok2api/backend/internal/pkg/neterror"
-	"github.com/chenyme/grok2api/backend/internal/repository"
+	application "m365-copilot2xapi/backend/internal/application/egress"
+	accountdomain "m365-copilot2xapi/backend/internal/domain/account"
+	domain "m365-copilot2xapi/backend/internal/domain/egress"
+	settingsdomain "m365-copilot2xapi/backend/internal/domain/settings"
+	"m365-copilot2xapi/backend/internal/infra/security"
+	neterrorpkg "m365-copilot2xapi/backend/internal/pkg/neterror"
+	"m365-copilot2xapi/backend/internal/repository"
 	"golang.org/x/sync/singleflight"
 )
 
@@ -463,21 +463,9 @@ func (m *Manager) AcquireCredential(ctx context.Context, scope domain.Scope, cre
 	if identity == "" {
 		identity = string(credential.Provider) + "_" + strconv.FormatUint(credential.ID, 10)
 	}
-	// Web and Console accounts can be two database projections of the same SSO
-	// login. Resin must see one stable account identity across both channels;
-	// otherwise the proxy rotates the IP while the clearance remains bound to
-	// the other lease. The digest is non-reversible and is only used as a proxy
-	// template account label.
-	if strings.TrimSpace(credential.EgressIdentity) == "" && credential.AuthType == accountdomain.AuthTypeSSO && strings.TrimSpace(credential.EncryptedAccessToken) != "" {
-		token, decryptErr := m.cipher.Decrypt(credential.EncryptedAccessToken)
-		if decryptErr != nil {
-			return nil, decryptErr
-		}
-		identity = "sso_" + security.HashToken(token)[:32]
-	}
 	ctx = WithAccountIdentity(ctx, identity)
 	ctx = WithEgressNode(ctx, credential.EgressNodeID)
-	lease, _, err := m.acquire(ctx, scope, strconv.FormatUint(credential.ID, 10), true, credential.EncryptedCloudflareCookie, credential.EgressNodeID)
+	lease, _, err := m.acquire(ctx, scope, strconv.FormatUint(credential.ID, 10), true, "", credential.EgressNodeID)
 	return lease, err
 }
 

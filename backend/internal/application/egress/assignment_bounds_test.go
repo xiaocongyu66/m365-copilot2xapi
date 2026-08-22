@@ -4,8 +4,8 @@ import (
 	"math"
 	"testing"
 
-	accountdomain "github.com/chenyme/grok2api/backend/internal/domain/account"
-	domain "github.com/chenyme/grok2api/backend/internal/domain/egress"
+	accountdomain "m365-copilot2xapi/backend/internal/domain/account"
+	domain "m365-copilot2xapi/backend/internal/domain/egress"
 )
 
 func TestNormalizeAndParseAutoAssignShare(t *testing.T) {

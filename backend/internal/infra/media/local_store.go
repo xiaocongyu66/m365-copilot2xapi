@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/chenyme/grok2api/backend/internal/pkg/mediafile"
+	"m365-copilot2xapi/backend/internal/pkg/mediafile"
 )
 
 // LocalStore 将媒体对象限制在单一根目录内，并使用临时文件与原子硬链接完成提交。

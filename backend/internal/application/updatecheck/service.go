@@ -155,7 +155,7 @@ func (s *Service) fetchLatest(ctx context.Context) (latestRelease, error) {
 	}
 	return latestRelease{
 		Tag:   payload.Tag,
-		URL:   "https://github.com/chenyme/grok2api/releases/tag/" + url.PathEscape(payload.Tag),
+		URL:   "https://github.com/xiaocongyu66/m365-copilot2xapi/releases/tag/" + url.PathEscape(payload.Tag),
 		Notes: truncateRunes(strings.TrimSpace(payload.Body), maxNotesRunes),
 	}, nil
 }

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/chenyme/grok2api/backend/internal/domain/account"
+	"m365-copilot2xapi/backend/internal/domain/account"
 )
 
 const (

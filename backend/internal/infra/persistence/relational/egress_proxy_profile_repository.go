@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/chenyme/grok2api/backend/internal/domain/egress"
-	"github.com/chenyme/grok2api/backend/internal/repository"
+	"m365-copilot2xapi/backend/internal/domain/egress"
+	"m365-copilot2xapi/backend/internal/repository"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )

@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	auditdomain "github.com/chenyme/grok2api/backend/internal/domain/audit"
-	"github.com/chenyme/grok2api/backend/internal/infra/persistence/relational"
+	auditdomain "m365-copilot2xapi/backend/internal/domain/audit"
+	"m365-copilot2xapi/backend/internal/infra/persistence/relational"
 )
 
 func BenchmarkAuditServiceSQLite(b *testing.B) {

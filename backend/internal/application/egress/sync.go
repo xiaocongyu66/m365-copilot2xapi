@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	domain "github.com/chenyme/grok2api/backend/internal/domain/egress"
+	domain "m365-copilot2xapi/backend/internal/domain/egress"
 )
 
 var ErrSubscriptionSync = errors.New("代理订阅同步失败")

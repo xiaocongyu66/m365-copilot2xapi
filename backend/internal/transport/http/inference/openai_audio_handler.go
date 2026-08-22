@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/chenyme/grok2api/backend/internal/application/gateway"
+	"m365-copilot2xapi/backend/internal/application/gateway"
 	"github.com/gin-gonic/gin"
 )
 

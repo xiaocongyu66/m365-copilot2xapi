@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	domain "github.com/chenyme/grok2api/backend/internal/domain/egress"
-	"github.com/chenyme/grok2api/backend/internal/repository"
+	domain "m365-copilot2xapi/backend/internal/domain/egress"
+	"m365-copilot2xapi/backend/internal/repository"
 )
 
 type qualityProbeRepository struct{ node domain.Node }

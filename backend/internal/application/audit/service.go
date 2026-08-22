@@ -14,12 +14,12 @@ import (
 	"sync/atomic"
 	"time"
 
-	auditdomain "github.com/chenyme/grok2api/backend/internal/domain/audit"
-	"github.com/chenyme/grok2api/backend/internal/pkg/batch"
-	"github.com/chenyme/grok2api/backend/internal/pkg/perfmetrics"
-	"github.com/chenyme/grok2api/backend/internal/pkg/requestmeta"
-	"github.com/chenyme/grok2api/backend/internal/pkg/resultcache"
-	"github.com/chenyme/grok2api/backend/internal/repository"
+	auditdomain "m365-copilot2xapi/backend/internal/domain/audit"
+	"m365-copilot2xapi/backend/internal/pkg/batch"
+	"m365-copilot2xapi/backend/internal/pkg/perfmetrics"
+	"m365-copilot2xapi/backend/internal/pkg/requestmeta"
+	"m365-copilot2xapi/backend/internal/pkg/resultcache"
+	"m365-copilot2xapi/backend/internal/repository"
 )
 
 var (

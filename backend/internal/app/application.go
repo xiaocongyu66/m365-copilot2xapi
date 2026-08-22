@@ -13,40 +13,35 @@ import (
 	"sync"
 	"time"
 
-	accountapp "github.com/chenyme/grok2api/backend/internal/application/account"
-	accountsyncapp "github.com/chenyme/grok2api/backend/internal/application/accountsync"
-	"github.com/chenyme/grok2api/backend/internal/application/adminauth"
-	auditapp "github.com/chenyme/grok2api/backend/internal/application/audit"
-	clientkeyapp "github.com/chenyme/grok2api/backend/internal/application/clientkey"
-	dashboardapp "github.com/chenyme/grok2api/backend/internal/application/dashboard"
-	egressapp "github.com/chenyme/grok2api/backend/internal/application/egress"
-	"github.com/chenyme/grok2api/backend/internal/application/gateway"
-	invalidationapp "github.com/chenyme/grok2api/backend/internal/application/invalidation"
-	mediaapp "github.com/chenyme/grok2api/backend/internal/application/media"
-	modelapp "github.com/chenyme/grok2api/backend/internal/application/model"
-	quotarecoveryapp "github.com/chenyme/grok2api/backend/internal/application/quotarecovery"
-	settingsapp "github.com/chenyme/grok2api/backend/internal/application/settings"
-	updatecheckapp "github.com/chenyme/grok2api/backend/internal/application/updatecheck"
-	"github.com/chenyme/grok2api/backend/internal/buildinfo"
-	"github.com/chenyme/grok2api/backend/internal/domain/account"
-	"github.com/chenyme/grok2api/backend/internal/infra/config"
-	infraegress "github.com/chenyme/grok2api/backend/internal/infra/egress"
-	inframedia "github.com/chenyme/grok2api/backend/internal/infra/media"
-	"github.com/chenyme/grok2api/backend/internal/infra/persistence/relational"
-	"github.com/chenyme/grok2api/backend/internal/infra/provider"
-	cliprovider "github.com/chenyme/grok2api/backend/internal/infra/provider/cli"
-	consoleprovider "github.com/chenyme/grok2api/backend/internal/infra/provider/console"
-	webprovider "github.com/chenyme/grok2api/backend/internal/infra/provider/web"
-	infraqualityguard "github.com/chenyme/grok2api/backend/internal/infra/qualityguard"
-	"github.com/chenyme/grok2api/backend/internal/infra/runtime/memory"
-	redisruntime "github.com/chenyme/grok2api/backend/internal/infra/runtime/redis"
-	"github.com/chenyme/grok2api/backend/internal/infra/security"
-	"github.com/chenyme/grok2api/backend/internal/pkg/batch"
-	"github.com/chenyme/grok2api/backend/internal/pkg/perfmetrics"
-	"github.com/chenyme/grok2api/backend/internal/pkg/reasoningreplay"
-	"github.com/chenyme/grok2api/backend/internal/repository"
-	httpserver "github.com/chenyme/grok2api/backend/internal/transport/http"
-	httpmiddleware "github.com/chenyme/grok2api/backend/internal/transport/http/middleware"
+	accountapp "m365-copilot2xapi/backend/internal/application/account"
+	accountsyncapp "m365-copilot2xapi/backend/internal/application/accountsync"
+	"m365-copilot2xapi/backend/internal/application/adminauth"
+	auditapp "m365-copilot2xapi/backend/internal/application/audit"
+	clientkeyapp "m365-copilot2xapi/backend/internal/application/clientkey"
+	dashboardapp "m365-copilot2xapi/backend/internal/application/dashboard"
+	egressapp "m365-copilot2xapi/backend/internal/application/egress"
+	"m365-copilot2xapi/backend/internal/application/gateway"
+	invalidationapp "m365-copilot2xapi/backend/internal/application/invalidation"
+	mediaapp "m365-copilot2xapi/backend/internal/application/media"
+	modelapp "m365-copilot2xapi/backend/internal/application/model"
+	settingsapp "m365-copilot2xapi/backend/internal/application/settings"
+	updatecheckapp "m365-copilot2xapi/backend/internal/application/updatecheck"
+	"m365-copilot2xapi/backend/internal/buildinfo"
+	"m365-copilot2xapi/backend/internal/infra/config"
+	infraegress "m365-copilot2xapi/backend/internal/infra/egress"
+	inframedia "m365-copilot2xapi/backend/internal/infra/media"
+	"m365-copilot2xapi/backend/internal/infra/persistence/relational"
+	"m365-copilot2xapi/backend/internal/infra/provider"
+	m365provider "m365-copilot2xapi/backend/internal/infra/provider/m365"
+	infraqualityguard "m365-copilot2xapi/backend/internal/infra/qualityguard"
+	"m365-copilot2xapi/backend/internal/infra/runtime/memory"
+	redisruntime "m365-copilot2xapi/backend/internal/infra/runtime/redis"
+	"m365-copilot2xapi/backend/internal/infra/security"
+	"m365-copilot2xapi/backend/internal/pkg/batch"
+	"m365-copilot2xapi/backend/internal/pkg/perfmetrics"
+	"m365-copilot2xapi/backend/internal/repository"
+	httpserver "m365-copilot2xapi/backend/internal/transport/http"
+	httpmiddleware "m365-copilot2xapi/backend/internal/transport/http/middleware"
 )
 
 const (
@@ -72,7 +67,6 @@ type Application struct {
 	settings        *settingsapp.Service
 	gateway         *gateway.Service
 	media           *mediaapp.Service
-	quotaRecovery   *quotarecoveryapp.Service
 	accounts        *accountapp.Service
 	models          *modelapp.Service
 	clientKeys      *clientkeyapp.Service
@@ -81,7 +75,6 @@ type Application struct {
 	accountRepo     repository.AccountRepository
 	modelRepo       repository.ModelRepository
 	providers       *provider.Registry
-	web             *webprovider.Adapter
 	egress          *infraegress.Manager
 	egressOps       *egressapp.Service
 	startup         *startupState
@@ -150,13 +143,9 @@ func New(ctx context.Context, cfg config.Config, logger *slog.Logger) (*Applicat
 	var rateLimiter repository.RateLimiter
 	var concurrency repository.ConcurrencyLimiter
 	var sticky repository.StickySessionRepository
-	var reasoningReplayStore repository.ReasoningReplayRepository
 	var deviceSessions repository.DeviceSessionRepository
 	var refreshLock repository.DistributedLock
 	var settingsBus repository.SettingsChangeBus
-	var quotaQueue repository.QuotaRecoveryQueue
-	var quotaRefreshState repository.QuotaRefreshCoordinator
-	var observedModelStore repository.ObservedModelStateRepository
 	var invalidationBus repository.InvalidationBus
 	var runtimeStore io.Closer
 	runtimeHealth := func(context.Context) error { return nil }
@@ -178,22 +167,15 @@ func New(ctx context.Context, cfg config.Config, logger *slog.Logger) (*Applicat
 		rateLimiter = redisStore
 		concurrency = redisruntime.NewConcurrencyLimiter(redisStore)
 		sticky = redisStore
-		reasoningReplayStore = redisruntime.NewReasoningReplayStore(redisStore)
 		deviceSessions = redisruntime.NewDeviceSessionStore(redisStore)
 		refreshLock = redisruntime.NewLockStore(redisStore)
 		settingsBus = redisStore
-		quotaQueue = redisStore
-		quotaRefreshState = redisStore
-		observedModelStore = redisStore
 	case "memory":
 		rateLimiter = memory.NewRateLimiter()
 		concurrency = memory.NewConcurrencyLimiter()
 		sticky = memory.NewStickyStore()
-		reasoningReplayStore = memory.NewReasoningReplayStore(cfg.Routing.ReasoningReplayMaxEntries)
 		deviceSessions = memory.NewDeviceSessionStore()
 		refreshLock = memory.NewLockStore()
-		quotaQueue = memory.NewQuotaRecoveryQueue()
-		quotaRefreshState = memory.NewQuotaRefreshCoordinator()
 	default:
 		database.Close()
 		return nil, fmt.Errorf("不支持的运行态驱动: %s", cfg.RuntimeStore.Driver)
@@ -203,29 +185,8 @@ func New(ctx context.Context, cfg config.Config, logger *slog.Logger) (*Applicat
 
 	egressManager := infraegress.NewManager(egressRepo, cipher)
 	egressManager.SetLogger(logger)
-	egressManager.SetClearanceLock(refreshLock)
-	egressManager.UpdateClearanceConfig(clearanceConfig(cfg))
-	egressManager.UpdateBuildResponseHeaderTimeout(cfg.Provider.Build.ResponseHeaderTimeout.Value())
-	egressManager.UpdateBuildStreamIdleTimeout(cfg.Provider.Build.StreamIdleTimeout.Value())
-	cliAdapter := cliprovider.NewAdapter(cliprovider.Config{
-		BaseURL: cfg.Provider.Build.BaseURL, FallbackBaseURL: config.NormalizeBuildFallbackBaseURL(cfg.Provider.Build.FallbackBaseURL),
-		ClientVersion: cfg.Provider.Build.ClientVersion, ClientIdentifier: cfg.Provider.Build.ClientIdentifier,
-		TokenAuth: cfg.Provider.Build.TokenAuth, UserAgent: cfg.Provider.Build.UserAgent,
-		ResponseHeaderTimeout: cfg.Provider.Build.ResponseHeaderTimeout.Value(),
-		StreamIdleTimeout:     cfg.Provider.Build.StreamIdleTimeout.Value(),
-	}, cipher)
-	cliAdapter.SetLogger(logger)
-	cliAdapter.SetEgress(egressManager)
-	cliAdapter.SetVideoUploadIssuer(mediaService)
-	reasoningReplay := reasoningreplay.New(reasoningReplayStore, reasoningreplay.Config{
-		Enabled: cfg.Routing.ReasoningReplayEnabled,
-		TTL:     cfg.Routing.ReasoningReplayTTL.Value(),
-	}, logger)
-	cliAdapter.SetReasoningReplay(reasoningReplay)
-	webAdapter := webprovider.NewAdapter(webProviderConfig(cfg), egressManager, cipher, responseRepo, mediaService)
-	webAdapter.SetLogger(logger)
-	consoleAdapter := consoleprovider.NewAdapter(consoleProviderConfig(cfg), egressManager, cipher, mediaService)
-	providers := provider.NewRegistry(cliAdapter, webAdapter, consoleAdapter)
+	m365Adapter := m365provider.NewAdapter(cfg.Provider.M365, cipher)
+	providers := provider.NewRegistry(m365Adapter)
 	if err := providers.Validate(); err != nil {
 		if runtimeStore != nil {
 			_ = runtimeStore.Close()
@@ -244,67 +205,20 @@ func New(ctx context.Context, cfg config.Config, logger *slog.Logger) (*Applicat
 	}
 	bulkPool := batch.NewSharedPool(maxBatchConcurrency(cfg.Batch), concurrency, "bulk:upstream")
 	importPool := batch.NewSharedChildPool(cfg.Batch.ImportConcurrency, concurrency, "bulk:import", bulkPool)
-	conversionPool := batch.NewSharedChildPool(cfg.Batch.ConversionConcurrency, concurrency, "bulk:conversion", bulkPool)
 	syncPool := batch.NewSharedChildPool(cfg.Batch.SyncConcurrency, concurrency, "bulk:sync", bulkPool)
 	refreshPool := batch.NewSharedChildPool(cfg.Batch.RefreshConcurrency, concurrency, "bulk:refresh", bulkPool)
-	// detectPool 固定 32 并发，与额度同步/续期隔离，避免全量探测挤占维护任务。
-	detectPool := batch.NewSharedChildPool(32, concurrency, "bulk:detect", bulkPool)
-	for _, pool := range []*batch.Pool{importPool, conversionPool, syncPool, refreshPool, detectPool} {
+	for _, pool := range []*batch.Pool{importPool, syncPool, refreshPool} {
 		pool.UpdateJitter(cfg.Batch.RandomDelay.Value())
 	}
 	accountService := accountapp.NewService(accountRepo, auditRepo, deviceSessions, sticky, providers, cipher, refreshLock)
-	cliAdapter.SetFallbackMarker(accountService)
 	accountService.SetLogger(logger)
 	accountService.UpdateAutoCleanConfig(accountAutoCleanConfig(cfg.Accounts))
 	accountService.SetConcurrencyLimiter(concurrency)
-	accountService.SetQuotaRecoveryQueue(quotaQueue)
-	accountService.SetQuotaRefreshCoordinator(quotaRefreshState)
-	accountService.SetObservedModelStore(observedModelStore)
-	accountService.SetTaskPools(conversionPool, syncPool, refreshPool)
-	accountService.SetDetectPool(detectPool)
-	if err := accountService.RebuildBuildBotFlagIndex(ctx); err != nil {
-		if runtimeStore != nil {
-			_ = runtimeStore.Close()
-		}
-		database.Close()
-		return nil, fmt.Errorf("重建 Build 风控路由索引: %w", err)
-	}
-	windows, err := accountRepo.ListQuotaRecoveryWindows(ctx, 100000)
-	if err != nil {
-		if runtimeStore != nil {
-			_ = runtimeStore.Close()
-		}
-		database.Close()
-		return nil, fmt.Errorf("加载 Web 额度恢复事件: %w", err)
-	}
-	for _, window := range windows {
-		if window.ResetAt != nil {
-			if err := quotaQueue.ScheduleQuotaRecovery(ctx, account.QuotaRecoveryEvent{AccountID: window.AccountID, Mode: window.Mode, DueAt: *window.ResetAt}); err != nil {
-				if runtimeStore != nil {
-					_ = runtimeStore.Close()
-				}
-				database.Close()
-				return nil, fmt.Errorf("恢复 Web 额度事件: %w", err)
-			}
-		}
-	}
+	accountService.SetBulkPool(syncPool)
+	accountService.SetDetectPool(refreshPool)
 	modelService := modelapp.NewService(modelRepo, accountRepo, accountService, providers)
 	modelService.SetBulkPool(syncPool)
 	modelService.SetLogger(logger)
-	if err := modelRepo.ReplaceProviderRoutes(ctx, account.ProviderWeb, webprovider.Routes()); err != nil {
-		if runtimeStore != nil {
-			_ = runtimeStore.Close()
-		}
-		database.Close()
-		return nil, fmt.Errorf("初始化 Grok Web 模型目录: %w", err)
-	}
-	if err := modelRepo.ReplaceProviderRoutes(ctx, account.ProviderConsole, consoleprovider.Routes()); err != nil {
-		if runtimeStore != nil {
-			_ = runtimeStore.Close()
-		}
-		database.Close()
-		return nil, fmt.Errorf("初始化 Grok Console 模型目录: %w", err)
-	}
 	accountSyncService := accountsyncapp.NewService(logger, accountService, accountService, accountService, modelService)
 	accountSyncService.SetBulkPool(importPool)
 	accountSyncService.UpdateConcurrency(cfg.Batch.ImportConcurrency)
@@ -339,11 +253,6 @@ func New(ctx context.Context, cfg config.Config, logger *slog.Logger) (*Applicat
 	dashboardService := dashboardapp.NewService(dashboardRepo)
 	selector := gateway.NewSelector(accountRepo, concurrency, sticky, providers, cfg.Routing.StickyTTL.Value(), cfg.Routing.CooldownBase.Value(), cfg.Routing.CooldownMax.Value(), cfg.Routing.CapacityWait.Value())
 	selector.SetLogger(logger)
-	selector.UpdatePreferFreeBuild(cfg.Routing.PreferFreeBuild)
-	selector.UpdateSegmentedSelector(cfg.Routing.SegmentedSelectorEnabled, cfg.Routing.SegmentedMinCandidates, cfg.Routing.SegmentedWindowSize)
-	selector.UpdateExcludeBuildBotFlaggedFromScheduling(cfg.Accounts.ExcludeBuildBotFlaggedFromScheduling)
-	accountService.UpdateExcludeBuildBotFlaggedFromScheduling(cfg.Accounts.ExcludeBuildBotFlaggedFromScheduling)
-	egressManager.UpdateAccountIsolatedConnections(cfg.Routing.AccountIsolatedConnections)
 	invalidationService := invalidationapp.NewService(invalidationBus, invalidationSourceInstance(cfg), func(event repository.InvalidationEvent) {
 		selector.ApplyInvalidation(event)
 		clientKeyService.ApplyInvalidation(event)
@@ -352,17 +261,9 @@ func New(ctx context.Context, cfg config.Config, logger *slog.Logger) (*Applicat
 	modelRepo.SetInvalidationObserver(invalidationService.Notify)
 	clientKeyRepo.SetInvalidationObserver(invalidationService.Notify)
 	gatewayService := gateway.NewService(modelService, auditService, accountService, clientKeyService, providers, selector, responseRepo, cfg.Routing.MaxAttempts)
-	gatewayService.UpdateQualityRetry(qualityRetryRuntime(cfg.QualityGuard.RequestRetry))
-	gatewayService.UpdateVideoMaxAttempts(cfg.Routing.VideoMaxAttempts)
-	gatewayService.UpdateMarkBuildChatDeniedAsReauth(cfg.Routing.MarkBuildChatDeniedAsReauth)
 	gatewayService.SetLogger(logger)
 	egressService.SetQualityProber(gatewayService)
-	gatewayService.UpdateBuildForbiddenReauthPolicy(cfg.Accounts.MarkBuildForbiddenReauth, cfg.Accounts.BuildForbiddenReauthCodes)
 	gatewayService.UpdateRequestTimeout(cfg.Server.RequestTimeout.Value())
-	gatewayService.ConfigureMedia(mediaJobRepo, cfg.Provider.Web.MediaConcurrency)
-	gatewayService.ConfigureMediaAssets(mediaService)
-	quotaRecoveryService := quotarecoveryapp.NewService(logger, quotaQueue, accountService, cfg.Provider.Web.RecoveryBackoffBase.Value(), cfg.Provider.Web.RecoveryBackoffMax.Value())
-	quotaRecoveryService.SetBulkPool(syncPool)
 	inferenceConcurrency := httpmiddleware.NewConcurrencyGate(cfg.Server.MaxConcurrentRequests)
 	var notifySettings func(context.Context)
 	if settingsBus != nil {
@@ -378,41 +279,15 @@ func New(ctx context.Context, cfg config.Config, logger *slog.Logger) (*Applicat
 		inferenceConcurrency.UpdateLimit(next.Server.MaxConcurrentRequests)
 		bulkPool.UpdateLimit(maxBatchConcurrency(next.Batch))
 		importPool.UpdateLimit(next.Batch.ImportConcurrency)
-		conversionPool.UpdateLimit(next.Batch.ConversionConcurrency)
 		syncPool.UpdateLimit(next.Batch.SyncConcurrency)
 		refreshPool.UpdateLimit(next.Batch.RefreshConcurrency)
-		detectPool.UpdateLimit(32)
-		for _, pool := range []*batch.Pool{importPool, conversionPool, syncPool, refreshPool, detectPool} {
+		for _, pool := range []*batch.Pool{importPool, syncPool, refreshPool} {
 			pool.UpdateJitter(next.Batch.RandomDelay.Value())
 		}
-		cliAdapter.UpdateConfig(cliprovider.Config{
-			BaseURL: next.Provider.Build.BaseURL, FallbackBaseURL: config.NormalizeBuildFallbackBaseURL(next.Provider.Build.FallbackBaseURL),
-			ClientVersion: next.Provider.Build.ClientVersion, ClientIdentifier: next.Provider.Build.ClientIdentifier,
-			TokenAuth: next.Provider.Build.TokenAuth, UserAgent: next.Provider.Build.UserAgent,
-			ResponseHeaderTimeout: next.Provider.Build.ResponseHeaderTimeout.Value(),
-			StreamIdleTimeout:     next.Provider.Build.StreamIdleTimeout.Value(),
-		})
-		egressManager.UpdateBuildResponseHeaderTimeout(next.Provider.Build.ResponseHeaderTimeout.Value())
-		egressManager.UpdateBuildStreamIdleTimeout(next.Provider.Build.StreamIdleTimeout.Value())
-		webAdapter.UpdateConfig(webProviderConfig(next))
-		egressManager.UpdateClearanceConfig(clearanceConfig(next))
-		consoleAdapter.UpdateConfig(consoleProviderConfig(next))
 		mediaService.UpdateConfig(mediaConfig(next))
-		quotaRecoveryService.UpdateConfig(next.Provider.Web.RecoveryBackoffBase.Value(), next.Provider.Web.RecoveryBackoffMax.Value())
 		accountSyncService.UpdateConcurrency(next.Batch.ImportConcurrency)
 		selector.UpdateConfig(next.Routing.StickyTTL.Value(), next.Routing.CooldownBase.Value(), next.Routing.CooldownMax.Value(), next.Routing.CapacityWait.Value())
-		selector.UpdatePreferFreeBuild(next.Routing.PreferFreeBuild)
-		selector.UpdateSegmentedSelector(next.Routing.SegmentedSelectorEnabled, next.Routing.SegmentedMinCandidates, next.Routing.SegmentedWindowSize)
 		egressService.ConfigureAutoAssignBounds(next.Routing.AutoAssignMaxNodeShare, next.Routing.AutoAssignMaxMigrationShare)
-		selector.UpdateExcludeBuildBotFlaggedFromScheduling(next.Accounts.ExcludeBuildBotFlaggedFromScheduling)
-		accountService.UpdateExcludeBuildBotFlaggedFromScheduling(next.Accounts.ExcludeBuildBotFlaggedFromScheduling)
-		egressManager.UpdateAccountIsolatedConnections(next.Routing.AccountIsolatedConnections)
-		reasoningReplay.UpdateConfig(reasoningreplay.Config{Enabled: next.Routing.ReasoningReplayEnabled, TTL: next.Routing.ReasoningReplayTTL.Value()})
-		gatewayService.UpdateMaxAttempts(next.Routing.MaxAttempts)
-		gatewayService.UpdateQualityRetry(qualityRetryRuntime(next.QualityGuard.RequestRetry))
-		gatewayService.UpdateVideoMaxAttempts(next.Routing.VideoMaxAttempts)
-		gatewayService.UpdateMarkBuildChatDeniedAsReauth(next.Routing.MarkBuildChatDeniedAsReauth)
-		gatewayService.UpdateBuildForbiddenReauthPolicy(next.Accounts.MarkBuildForbiddenReauth, next.Accounts.BuildForbiddenReauthCodes)
 		auditService.UpdateWriterConfig(next.Audit.BatchSize, next.Audit.FlushInterval.Value(), next.Audit.CommitDelay.Value())
 		auditService.UpdateLedgerConfig(auditLedgerConfig(next.Audit))
 		clientKeyService.UpdateDefaults(next.ClientKeyDefaults.RPMLimit, next.ClientKeyDefaults.MaxConcurrent)
@@ -420,7 +295,7 @@ func New(ctx context.Context, cfg config.Config, logger *slog.Logger) (*Applicat
 	})
 	updateService := updatecheckapp.NewService(buildinfo.CurrentVersion(), nil)
 
-	startup := newStartupState(len(windows))
+	startup := newStartupState(0)
 	readiness := func(readyCtx context.Context) httpserver.ReadinessSnapshot {
 		return readinessSnapshot(readyCtx, startup, runtimeHealth, modelRepo, accountRepo, providers, auditService)
 	}
@@ -437,8 +312,8 @@ func New(ctx context.Context, cfg config.Config, logger *slog.Logger) (*Applicat
 	return &Application{
 		logger: logger, database: database, server: server,
 		audits: auditService, responses: responseRepo, cleanupLock: refreshLock, runtime: runtimeStore,
-		settingsBus: settingsBus, invalidationBus: invalidationBus, settings: settingsService, gateway: gatewayService, media: mediaService, quotaRecovery: quotaRecoveryService, accounts: accountService, models: modelService, clientKeys: clientKeyService, updates: updateService, invalidations: invalidationService,
-		accountRepo: accountRepo, modelRepo: modelRepo, providers: providers, web: webAdapter, egress: egressManager, egressOps: egressService, startup: startup,
+		settingsBus: settingsBus, invalidationBus: invalidationBus, settings: settingsService, gateway: gatewayService, media: mediaService, accounts: accountService, models: modelService, clientKeys: clientKeyService, updates: updateService, invalidations: invalidationService,
+		accountRepo: accountRepo, modelRepo: modelRepo, providers: providers, egress: egressManager, egressOps: egressService, startup: startup,
 	}, nil
 }
 
@@ -450,34 +325,7 @@ func invalidationSourceInstance(cfg config.Config) string {
 }
 
 func maxBatchConcurrency(value config.BatchConfig) int {
-	return max(value.ImportConcurrency, value.ConversionConcurrency, value.SyncConcurrency, value.RefreshConcurrency)
-}
-
-func webProviderConfig(cfg config.Config) webprovider.Config {
-	return webprovider.Config{
-		BaseURL: cfg.Provider.Web.BaseURL, QuotaTimeoutSeconds: int(cfg.Provider.Web.QuotaTimeout.Value().Seconds()),
-		StatsigMode: cfg.Provider.Web.StatsigMode, StatsigManualValue: cfg.Provider.Web.StatsigManualValue,
-		StatsigSignerURL:   cfg.Provider.Web.StatsigSignerURL,
-		ChatTimeoutSeconds: int(cfg.Provider.Web.ChatTimeout.Value().Seconds()), StreamIdleTimeoutSeconds: int(cfg.Provider.Web.StreamIdleTimeout.Value().Seconds()),
-		ImageTimeoutSeconds: int(cfg.Provider.Web.ImageTimeout.Value().Seconds()),
-		VideoTimeoutSeconds: int(cfg.Provider.Web.VideoTimeout.Value().Seconds()), MaxInputImageBytes: cfg.Media.MaxImageBytes,
-		AllowNSFW: cfg.Provider.Web.AllowNSFW,
-	}
-}
-
-func clearanceConfig(cfg config.Config) infraegress.ClearanceConfig {
-	return infraegress.ClearanceConfig{
-		Mode: cfg.Provider.Web.ClearanceMode, FlareSolverrURL: cfg.Provider.Web.FlareSolverrURL,
-		TargetURL: cfg.Provider.Web.BaseURL, Timeout: cfg.Provider.Web.ClearanceTimeout.Value(),
-		RefreshInterval: cfg.Provider.Web.ClearanceRefresh.Value(),
-	}
-}
-
-func consoleProviderConfig(cfg config.Config) consoleprovider.Config {
-	return consoleprovider.Config{
-		BaseURL: cfg.Provider.Console.BaseURL, SessionBaseURL: cfg.Provider.Web.BaseURL,
-		TimeoutSeconds: int(cfg.Provider.Console.ChatTimeout.Value().Seconds()), StreamIdleTimeoutSeconds: int(cfg.Provider.Console.StreamIdleTimeout.Value().Seconds()),
-	}
+	return max(value.ImportConcurrency, value.SyncConcurrency, value.RefreshConcurrency)
 }
 
 func accountAutoCleanConfig(value config.AccountsConfig) accountapp.AutoCleanConfig {
@@ -486,18 +334,6 @@ func accountAutoCleanConfig(value config.AccountsConfig) accountapp.AutoCleanCon
 		Interval:        value.AutoCleanReauthInterval.Value(),
 		MinAge:          value.AutoCleanReauthMinAge.Value(),
 		IncludeDisabled: value.AutoCleanIncludeDisabled,
-	}
-}
-
-func qualityRetryRuntime(value config.QualityGuardRequestRetryConfig) gateway.QualityRetryRuntime {
-	return gateway.QualityRetryRuntime{
-		Enabled:             value.Enabled,
-		MaxAttempts:         value.MaxAttempts,
-		HoldTimeout:         value.HoldTimeout.Value(),
-		MinOutputTokens:     int64(value.MinOutputTokens),
-		OnExhausted:         value.OnExhausted,
-		AccountCooldown:     value.AccountCooldown.Value(),
-		IdleAccountCooldown: value.IdleAccountCooldown.Value(),
 	}
 }
 
@@ -603,14 +439,6 @@ func (a *Application) Run(ctx context.Context) error {
 		})
 		return nil
 	})
-	startBackground("quota_recovery", func(taskCtx context.Context) error {
-		a.quotaRecovery.Run(taskCtx)
-		return nil
-	})
-	startBackground("quota_refresh", func(taskCtx context.Context) error {
-		a.accounts.RunQuotaRefresh(taskCtx)
-		return nil
-	})
 	startBackground("credential_refresh", func(taskCtx context.Context) error {
 		a.accounts.RunCredentialRefresh(taskCtx)
 		return nil
@@ -619,45 +447,9 @@ func (a *Application) Run(ctx context.Context) error {
 		a.accounts.RunAccountAutoClean(taskCtx)
 		return nil
 	})
-	startBackground("statsig_warmup", func(taskCtx context.Context) error {
-		a.runStatsigWarmup(taskCtx)
-		return nil
-	})
-	startBackground("web_quota_startup_catchup", func(taskCtx context.Context) error {
-		a.runWebQuotaCatchup(taskCtx)
-		return nil
-	})
-	startBackground("console_usage_migration", func(taskCtx context.Context) error {
-		a.runConsoleUsageMigration(taskCtx)
-		return nil
-	})
-	startBackground("model_catalog_startup_catchup", func(taskCtx context.Context) error {
-		a.runModelCatalogCatchup(taskCtx)
-		return nil
-	})
-	startBackground("video_recovery", func(taskCtx context.Context) error {
-		a.gateway.RunVideoRecovery(taskCtx)
-		return nil
-	})
-	startBackground("video_workers", func(taskCtx context.Context) error {
-		a.gateway.RunVideoWorkers(taskCtx)
-		return nil
-	})
 	startBackground("media_cleanup", func(taskCtx context.Context) error {
 		a.media.RunCleanup(taskCtx, func(err error) {
 			a.logger.Warn("media_cleanup_failed", "error", err)
-		})
-		return nil
-	})
-	startBackground("clearance_refresh", func(taskCtx context.Context) error {
-		if err := a.egress.RefreshDueClearances(taskCtx, false); err != nil {
-			a.logger.Warn("clearance_initial_refresh_failed", "error", err)
-		}
-		a.runPeriodicTask(taskCtx, time.Minute, "clearance_refresh", func(runCtx context.Context) error {
-			if err := a.egress.RefreshDueClearances(runCtx, false); err != nil {
-				a.logger.Warn("clearance_refresh_failed", "error", err)
-			}
-			return nil
 		})
 		return nil
 	})
@@ -680,7 +472,6 @@ func (a *Application) Run(ctx context.Context) error {
 			})
 		})
 	}
-	a.queueDueWebQuotaRefresh(runCtx)
 	select {
 	case <-ctx.Done():
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -759,13 +550,6 @@ func (a *Application) logPerformanceMetrics() {
 	perfmetrics.Default.SetGauge("db_wait_duration_us", databaseLabels, stats.WaitDuration.Microseconds())
 	if a.audits != nil {
 		a.audits.LedgerSnapshot()
-	}
-	if a.accounts != nil {
-		quota := a.accounts.QuotaRefreshStats()
-		labels := perfmetrics.Labels{Subsystem: "quota", Operation: "refresh"}
-		perfmetrics.Default.SetGauge("quota_refresh_pending", labels, int64(quota.Pending))
-		perfmetrics.Default.SetGauge("quota_refresh_queued", labels, int64(quota.Queued))
-		perfmetrics.Default.SetGauge("quota_refresh_running", labels, int64(quota.Running))
 	}
 	for _, sample := range perfmetrics.Default.CollectAndReset() {
 		a.logger.Info("performance_metric",

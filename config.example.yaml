@@ -123,6 +123,38 @@ audit:
   ledgerUnhealthyGrace: 10s
   ledgerQueueHighWatermarkPercent: 90
 
+# [按需修改] Microsoft 365 Copilot 渠道配置。默认值已可用,仅在需要自定义时覆盖。
+provider:
+  m365:
+    # [通常不要修改] ChatHub WebSocket 根地址。
+    baseURL: "wss://substrate.office.com/m365Copilot/Chathub"
+    # [通常不要修改] 附件上传根地址。
+    uploadBaseURL: "https://substrate.office.com/m365Copilot"
+    # [通常不要修改] WebSocket/HTTP Origin 头。
+    origin: "https://m365.cloud.microsoft"
+    # [通常不要修改] User-Agent 头。
+    userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:148.0) Gecko/20100101 Firefox/148.0"
+    # [按需修改] 浏览器 PKCE 授权用的 OAuth 客户端 ID。默认是 Office Web Copilot 第一方客户端。
+    clientId: "c0ab8ce9-e9a0-42e7-b064-33d422df41f1"
+    # [通常不要修改] OAuth authority。
+    authority: "https://login.microsoftonline.com/common"
+    # [通常不要修改] OAuth 回调地址。
+    redirectUri: "https://login.microsoftonline.com/common/oauth2/nativeclient"
+    # [通常不要修改] OAuth scope。
+    scope: "openid profile offline_access https://substrate.office.com/sydney/M365Chat.Read https://substrate.office.com/sydney/sydney.readwrite"
+    # [按需修改] Device Code 授权用的客户端 ID。默认是 FOCI 客户端。
+    deviceClientId: "d3590ed6-52b3-4102-aeff-aad2292ab01c"
+    # [通常不要修改] Device Code authority。
+    deviceAuthority: "https://login.microsoftonline.com/common"
+    # [通常不要修改] Device Code scope。
+    deviceScope: "openid profile offline_access https://substrate.office.com/sydney/M365Chat.Read https://substrate.office.com/sydney/sydney.readwrite"
+    # [按需修改] 单次 ChatHub 对话最长时长。
+    chatTimeout: 2m
+    # [按需修改] 流式响应空闲超时。
+    streamIdleTimeout: 90s
+    # [按需修改] 每个账号同时进行的上游调用上限。
+    maxConcurrent: 8
+
 # [按需启用] Grok Build 出口质量守护。仅配置后仍不会自动启动 sidecar；
 # 使用 docker compose --profile quality-guard up -d --build 启动。
 qualityGuard:

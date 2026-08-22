@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chenyme/grok2api/backend/internal/domain/audit"
-	repositorypkg "github.com/chenyme/grok2api/backend/internal/repository"
+	"m365-copilot2xapi/backend/internal/domain/audit"
+	repositorypkg "m365-copilot2xapi/backend/internal/repository"
 )
 
 func TestAuditRepositorySumTokensByAccountsSince(t *testing.T) {

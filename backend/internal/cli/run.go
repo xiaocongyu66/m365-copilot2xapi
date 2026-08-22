@@ -9,9 +9,9 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"github.com/chenyme/grok2api/backend/internal/app"
-	"github.com/chenyme/grok2api/backend/internal/infra/config"
-	"github.com/chenyme/grok2api/backend/internal/infra/observability"
+	"m365-copilot2xapi/backend/internal/app"
+	"m365-copilot2xapi/backend/internal/infra/config"
+	"m365-copilot2xapi/backend/internal/infra/observability"
 )
 
 // Run 解析启动参数并运行后端服务。

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	egressapp "github.com/chenyme/grok2api/backend/internal/application/egress"
+	egressapp "m365-copilot2xapi/backend/internal/application/egress"
 )
 
 func TestQualityProbeSelectionFailureCanBeIdentifiedByCaller(t *testing.T) {

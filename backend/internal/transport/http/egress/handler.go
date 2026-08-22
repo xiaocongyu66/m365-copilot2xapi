@@ -15,11 +15,11 @@ import (
 	"sync"
 	"time"
 
-	egressapp "github.com/chenyme/grok2api/backend/internal/application/egress"
-	accountdomain "github.com/chenyme/grok2api/backend/internal/domain/account"
-	egressdomain "github.com/chenyme/grok2api/backend/internal/domain/egress"
-	"github.com/chenyme/grok2api/backend/internal/repository"
-	"github.com/chenyme/grok2api/backend/internal/shared/response"
+	egressapp "m365-copilot2xapi/backend/internal/application/egress"
+	accountdomain "m365-copilot2xapi/backend/internal/domain/account"
+	egressdomain "m365-copilot2xapi/backend/internal/domain/egress"
+	"m365-copilot2xapi/backend/internal/repository"
+	"m365-copilot2xapi/backend/internal/shared/response"
 	"github.com/gin-gonic/gin"
 )
 

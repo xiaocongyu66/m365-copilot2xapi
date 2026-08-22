@@ -13,9 +13,9 @@ import (
 	"testing"
 	"time"
 
-	domain "github.com/chenyme/grok2api/backend/internal/domain/egress"
-	"github.com/chenyme/grok2api/backend/internal/infra/security"
-	"github.com/chenyme/grok2api/backend/internal/pkg/tunnelproxy"
+	domain "m365-copilot2xapi/backend/internal/domain/egress"
+	"m365-copilot2xapi/backend/internal/infra/security"
+	"m365-copilot2xapi/backend/internal/pkg/tunnelproxy"
 )
 
 type subscriptionSyncRepositoryStub struct {

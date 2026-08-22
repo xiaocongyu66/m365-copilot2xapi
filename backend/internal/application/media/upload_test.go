@@ -17,10 +17,10 @@ import (
 	"testing"
 	"time"
 
-	mediadomain "github.com/chenyme/grok2api/backend/internal/domain/media"
-	"github.com/chenyme/grok2api/backend/internal/infra/media"
-	"github.com/chenyme/grok2api/backend/internal/infra/persistence/relational"
-	"github.com/chenyme/grok2api/backend/internal/repository"
+	mediadomain "m365-copilot2xapi/backend/internal/domain/media"
+	"m365-copilot2xapi/backend/internal/infra/media"
+	"m365-copilot2xapi/backend/internal/infra/persistence/relational"
+	"m365-copilot2xapi/backend/internal/repository"
 )
 
 func TestIssueAndReceiveVideoUploadOnce(t *testing.T) {

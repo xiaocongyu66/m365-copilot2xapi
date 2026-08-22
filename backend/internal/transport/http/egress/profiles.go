@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	egressapp "github.com/chenyme/grok2api/backend/internal/application/egress"
-	"github.com/chenyme/grok2api/backend/internal/shared/response"
+	egressapp "m365-copilot2xapi/backend/internal/application/egress"
+	"m365-copilot2xapi/backend/internal/shared/response"
 	"github.com/gin-gonic/gin"
 )
 

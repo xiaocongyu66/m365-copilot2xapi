@@ -1,0 +1,67 @@
+name: Build & Verify
+
+on:
+  push:
+    branches:
+      - feat/m365-copilot2xapi
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+
+      - name: Build backend
+        working-directory: backend
+        run: go build ./...
+
+      - name: Vet backend (non-blocking)
+        working-directory: backend
+        continue-on-error: true
+        run: go vet ./...
+
+      - name: Build M365 provider
+        working-directory: backend
+        run: go build ./internal/infra/provider/m365/...
+
+      - name: Check Grok residue
+        working-directory: backend
+        run: |
+          echo "=== Grok 残留检查(生产代码)==="
+          count=$(grep -rln "ProviderBuild\|ProviderWeb\|ProviderConsole\|WebTier\|BuildRouteMode\|BuildSuperEntitled\|CloudflareCookie\|AuthTypeSSO" --include="*.go" internal/ | grep -v "_test.go" | wc -l)
+          echo "残留文件数: $count"
+          if [ "$count" -gt 0 ]; then
+            echo "---残留文件清单---"
+            grep -rln "ProviderBuild\|ProviderWeb\|ProviderConsole\|WebTier\|BuildRouteMode\|BuildSuperEntitled\|CloudflareCookie\|AuthTypeSSO" --include="*.go" internal/ | grep -v "_test.go"
+          fi
+
+      - name: Build binary
+        working-directory: backend
+        run: go build -o /tmp/m365-copilot2xapi ./cmd/grok2api
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: m365-copilot2xapi-linux-amd64
+          path: /tmp/m365-copilot2xapi
+          retention-days: 7

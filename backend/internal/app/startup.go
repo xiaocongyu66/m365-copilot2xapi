@@ -7,40 +7,26 @@ import (
 	"sync"
 	"time"
 
-	accountapp "github.com/chenyme/grok2api/backend/internal/application/account"
-	auditapp "github.com/chenyme/grok2api/backend/internal/application/audit"
-	accountdomain "github.com/chenyme/grok2api/backend/internal/domain/account"
-	"github.com/chenyme/grok2api/backend/internal/infra/provider"
-	"github.com/chenyme/grok2api/backend/internal/repository"
-	httpserver "github.com/chenyme/grok2api/backend/internal/transport/http"
+	accountapp "m365-copilot2xapi/backend/internal/application/account"
+	auditapp "m365-copilot2xapi/backend/internal/application/audit"
+	accountdomain "m365-copilot2xapi/backend/internal/domain/account"
+	"m365-copilot2xapi/backend/internal/infra/provider"
+	"m365-copilot2xapi/backend/internal/repository"
+	httpserver "m365-copilot2xapi/backend/internal/transport/http"
 )
 
 const (
-	startupRecoveryBudget      = 20 * time.Second
-	startupCriticalWindow      = 2 * time.Minute
-	startupCriticalLimit       = 100
-	statsigWarmupInterval      = 15 * time.Minute
-	webQuotaStaleAfter         = 30 * time.Minute
-	webQuotaCatchupEvery       = 30 * time.Minute
-	consoleUsageMigrationEvery = 24 * time.Hour
-	consoleUsageMigrationRetry = 5 * time.Minute
-	modelCatalogStaleAfter     = 24 * time.Hour
-	modelCatalogCatchupEvery   = 6 * time.Hour
+	startupRecoveryBudget = 20 * time.Second
+	startupCriticalWindow = 2 * time.Minute
+	startupCriticalLimit  = 100
 )
 
 type startupReport struct {
-	StartedAt                time.Time
-	CompletedAt              *time.Time
-	Credentials              accountapp.CredentialStartupReport
-	CooldownsRestored        int
-	QuotaRecoveriesRestored  int
-	DueWebQuotasQueued       int
-	StatsigKeysWarmed        int
-	StaleWebQuotasFound      int
-	StaleWebQuotasSynced     int
-	StaleModelCatalogsFound  int
-	StaleModelCatalogsSynced int
-	ErrorCount               int
+	StartedAt           time.Time
+	CompletedAt         *time.Time
+	Credentials         accountapp.CredentialStartupReport
+	CooldownsRestored   int
+	ErrorCount          int
 }
 
 type startupState struct {
@@ -48,7 +34,6 @@ type startupState struct {
 	phase     string
 	updatedAt time.Time
 	report    startupReport
-	statsig   httpserver.ReadinessComponent
 }
 
 func newStartupState(restoredQuotaRecoveries int) *startupState {
@@ -57,10 +42,8 @@ func newStartupState(restoredQuotaRecoveries int) *startupState {
 		phase:     "booting",
 		updatedAt: now,
 		report: startupReport{
-			StartedAt:               now,
-			QuotaRecoveriesRestored: restoredQuotaRecoveries,
+			StartedAt: now,
 		},
-		statsig: httpserver.ReadinessComponent{State: "cold"},
 	}
 }
 
@@ -91,20 +74,10 @@ func (s *startupState) recordError(err error) {
 	})
 }
 
-func (s *startupState) setStatsig(state, detail string, warmed int) {
-	s.mu.Lock()
-	s.statsig = httpserver.ReadinessComponent{State: state, Detail: detail}
-	if warmed > 0 {
-		s.report.StatsigKeysWarmed = warmed
-	}
-	s.updatedAt = time.Now().UTC()
-	s.mu.Unlock()
-}
-
-func (s *startupState) snapshot() (string, time.Time, startupReport, httpserver.ReadinessComponent) {
+func (s *startupState) snapshot() (string, time.Time, startupReport) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	return s.phase, s.updatedAt, s.report, s.statsig
+	return s.phase, s.updatedAt, s.report
 }
 
 func (s *startupState) acceptsTraffic() bool {
@@ -122,15 +95,12 @@ func readinessSnapshot(
 	providers *provider.Registry,
 	ledger *auditapp.Service,
 ) httpserver.ReadinessSnapshot {
-	phase, updatedAt, report, statsig := state.snapshot()
+	phase, updatedAt, report := state.snapshot()
 	snapshot := httpserver.ReadinessSnapshot{
 		Ready: false, State: phase, UpdatedAt: updatedAt, Startup: newReadinessStartupReport(report),
 		Components: map[string]httpserver.ReadinessComponent{
 			"runtime_store":  {State: "unknown"},
 			"billing_ledger": {State: "unknown"},
-			"grok_build":     {State: "unknown"},
-			"grok_web":       {State: "unknown"},
-			"statsig":        statsig,
 		},
 	}
 	if phase != "running" {
@@ -174,9 +144,9 @@ func readinessSnapshot(
 	}
 	snapshot.Components["model_routes"] = httpserver.ReadinessComponent{State: "ready", Detail: fmt.Sprintf("%d 条已启用路由", len(routes))}
 
-	required := make(map[accountdomain.Provider]bool, 3)
-	usable := make(map[accountdomain.Provider]bool, 3)
-	providerErrors := make(map[accountdomain.Provider]bool, 3)
+	required := make(map[accountdomain.Provider]bool, 1)
+	usable := make(map[accountdomain.Provider]bool, 1)
+	providerErrors := make(map[accountdomain.Provider]bool, 1)
 	now := time.Now().UTC()
 	for _, route := range routes {
 		required[route.Provider] = true
@@ -226,17 +196,6 @@ func readinessSnapshot(
 		}
 		snapshot.Components[name] = httpserver.ReadinessComponent{State: "unavailable", Detail: detail}
 	}
-	if required[accountdomain.ProviderWeb] && usable[accountdomain.ProviderWeb] && statsig.State != "warm" {
-		component := snapshot.Components[string(accountdomain.ProviderWeb)]
-		if statsig.State == "warming" || statsig.State == "cold" {
-			component.State = "warming"
-		} else {
-			component.State = "degraded"
-		}
-		component.Detail = "Statsig 尚未完成预热；请求仍可按需刷新"
-		snapshot.Components[string(accountdomain.ProviderWeb)] = component
-		unavailableProviders++
-	}
 	if readyProviders == 0 {
 		snapshot.State = "not_ready"
 		return snapshot
@@ -253,23 +212,16 @@ func readinessSnapshot(
 // newReadinessStartupReport 只公开稳定统计，不把启动错误原文暴露到无鉴权就绪端点。
 func newReadinessStartupReport(report startupReport) *httpserver.ReadinessStartupReport {
 	return &httpserver.ReadinessStartupReport{
-		StartedAt:   report.StartedAt,
-		CompletedAt: report.CompletedAt,
+		StartedAt:         report.StartedAt,
+		CompletedAt:       report.CompletedAt,
 		Credentials: httpserver.ReadinessCredentialReport{
 			SchedulesBackfilled: report.Credentials.SchedulesBackfilled,
 			CriticalFound:       report.Credentials.CriticalFound,
 			Refreshed:           report.Credentials.Refreshed,
 			Failed:              report.Credentials.Failed,
 		},
-		CooldownsRestored:        report.CooldownsRestored,
-		QuotaRecoveriesRestored:  report.QuotaRecoveriesRestored,
-		DueWebQuotasQueued:       report.DueWebQuotasQueued,
-		StatsigKeysWarmed:        report.StatsigKeysWarmed,
-		StaleWebQuotasFound:      report.StaleWebQuotasFound,
-		StaleWebQuotasSynced:     report.StaleWebQuotasSynced,
-		StaleModelCatalogsFound:  report.StaleModelCatalogsFound,
-		StaleModelCatalogsSynced: report.StaleModelCatalogsSynced,
-		ErrorCount:               report.ErrorCount,
+		CooldownsRestored: report.CooldownsRestored,
+		ErrorCount:        report.ErrorCount,
 	}
 }
 
@@ -294,9 +246,6 @@ func startupCandidateUsable(candidate accountdomain.RoutingCandidate, now time.T
 	if candidate.ModelQuotaBlock != nil && now.Before(candidate.ModelQuotaBlock.CooldownUntil) {
 		return false
 	}
-	if candidate.QuotaRecovery != nil && candidate.QuotaRecovery.Status != accountdomain.QuotaRecoveryStatusActive {
-		return false
-	}
 	if candidate.Billing != nil && candidate.Billing.IsExhausted(credential.MinimumRemaining) {
 		return false
 	}
@@ -310,10 +259,6 @@ func (a *Application) reconcileStartup(ctx context.Context) {
 
 	if _, err := a.clientKeys.CleanupExpiredBilling(recoveryCtx, 1000); err != nil {
 		a.logger.Warn("billing_reservation_cleanup_failed", "error", err)
-		a.startup.recordError(err)
-	}
-	if err := a.gateway.RecoverVideoJobs(recoveryCtx); err != nil {
-		a.logger.Warn("video_job_recovery_failed", "error", err)
 		a.startup.recordError(err)
 	}
 	if _, err := a.accountRepo.PruneExpiredModelQuotaBlocks(recoveryCtx, time.Now().UTC(), 1000); err != nil {
@@ -343,128 +288,4 @@ func (a *Application) reconcileStartup(ctx context.Context) {
 	}
 	a.startup.setPhase("running")
 	a.logger.Info("startup_reconciliation_completed", "credentials_backfilled", report.SchedulesBackfilled, "critical_found", report.CriticalFound, "credentials_refreshed", report.Refreshed, "credentials_failed", report.Failed)
-}
-
-func (a *Application) runStatsigWarmup(ctx context.Context) {
-	timer := time.NewTimer(0)
-	defer timer.Stop()
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-timer.C:
-		}
-		a.startup.setStatsig("warming", "正在预热共享签名", 0)
-		values, err := a.accountRepo.ListEnabled(ctx, accountdomain.ProviderWeb)
-		if err == nil && len(values) == 0 {
-			a.startup.setStatsig("disabled", "没有启用的 Grok Web 账号", 0)
-		} else if err == nil {
-			warmCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
-			var warmed int
-			warmed, err = a.web.WarmStatsig(warmCtx, values[0])
-			cancel()
-			if err == nil {
-				a.startup.setStatsig("warm", "共享签名已预热", warmed)
-			}
-		}
-		if err != nil && ctx.Err() == nil {
-			a.logger.Warn("web_statsig_warmup_failed", "error", err)
-			a.startup.setStatsig("unavailable", "预热失败，将由请求按需重试", 0)
-		}
-		resetTimer(timer, statsigWarmupInterval)
-	}
-}
-
-func (a *Application) queueDueWebQuotaRefresh(ctx context.Context) {
-	windows, err := a.accounts.ListDueWebQuotaWindows(ctx, time.Now().UTC(), 1000)
-	if err != nil {
-		a.logger.Warn("web_quota_startup_catchup_failed", "error", err)
-		a.startup.recordError(err)
-		return
-	}
-	for _, window := range windows {
-		a.accounts.QueueQuotaRefresh(window.AccountID, window.Mode)
-	}
-	a.startup.updateReport(func(report *startupReport) { report.DueWebQuotasQueued = len(windows) })
-	if len(windows) > 0 {
-		a.logger.Info("web_quota_startup_catchup_queued", "count", len(windows))
-	}
-}
-
-func (a *Application) runWebQuotaCatchup(ctx context.Context) {
-	timer := time.NewTimer(5 * time.Second)
-	defer timer.Stop()
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-timer.C:
-		}
-		ids, err := a.accountRepo.ListStaleWebQuotaAccountIDs(ctx, time.Now().UTC().Add(-webQuotaStaleAfter), 100)
-		if err == nil && len(ids) > 0 {
-			runCtx, cancel := context.WithTimeout(ctx, 2*time.Minute)
-			var succeeded int
-			succeeded, _, err = a.accounts.SyncWebQuotaAccounts(runCtx, ids)
-			cancel()
-			a.startup.updateReport(func(report *startupReport) {
-				report.StaleWebQuotasFound = len(ids)
-				report.StaleWebQuotasSynced = succeeded
-			})
-		}
-		if err != nil && ctx.Err() == nil {
-			a.logger.Warn("web_quota_stale_catchup_failed", "error", err)
-		}
-		resetTimer(timer, webQuotaCatchupEvery)
-	}
-}
-
-func (a *Application) runConsoleUsageMigration(ctx context.Context) {
-	timer := time.NewTimer(5 * time.Second)
-	defer timer.Stop()
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-timer.C:
-		}
-		succeeded, failed, err := a.accounts.SyncIncompleteConsoleQuotas(ctx)
-		nextRun := consoleUsageMigrationEvery
-		if err != nil && ctx.Err() == nil {
-			a.logger.Warn("console_usage_migration_failed", "succeeded", succeeded, "failed", failed, "error", err)
-			nextRun = consoleUsageMigrationRetry
-		} else if failed > 0 {
-			a.logger.Warn("console_usage_migration_incomplete", "succeeded", succeeded, "failed", failed)
-			nextRun = consoleUsageMigrationRetry
-		} else if succeeded > 0 {
-			a.logger.Info("console_usage_migration_completed", "succeeded", succeeded, "failed", failed)
-		}
-		resetTimer(timer, nextRun)
-	}
-}
-
-func (a *Application) runModelCatalogCatchup(ctx context.Context) {
-	timer := time.NewTimer(20 * time.Second)
-	defer timer.Stop()
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-timer.C:
-		}
-		ids, err := a.modelRepo.ListStaleAccountSyncIDs(ctx, time.Now().UTC().Add(-modelCatalogStaleAfter), 100)
-		if err == nil && len(ids) > 0 {
-			runCtx, cancel := context.WithTimeout(ctx, 5*time.Minute)
-			var succeeded int
-			succeeded, _, err = a.models.SyncAccounts(runCtx, ids)
-			cancel()
-			a.startup.updateReport(func(report *startupReport) {
-				report.StaleModelCatalogsFound = len(ids)
-				report.StaleModelCatalogsSynced = succeeded
-			})
-		}
-		if err != nil && ctx.Err() == nil {
-			a.logger.Warn("model_catalog_stale_catchup_failed", "error", err)
-		}
-		resetTimer(timer, modelCatalogCatchupEvery)
-	}
 }

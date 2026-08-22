@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	adminapp "github.com/chenyme/grok2api/backend/internal/application/adminauth"
-	"github.com/chenyme/grok2api/backend/internal/infra/persistence/relational"
-	"github.com/chenyme/grok2api/backend/internal/infra/security"
+	adminapp "m365-copilot2xapi/backend/internal/application/adminauth"
+	"m365-copilot2xapi/backend/internal/infra/persistence/relational"
+	"m365-copilot2xapi/backend/internal/infra/security"
 	"github.com/gin-gonic/gin"
 )
 

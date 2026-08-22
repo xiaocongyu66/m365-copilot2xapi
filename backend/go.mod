@@ -1,4 +1,4 @@
-module github.com/chenyme/grok2api/backend
+module m365-copilot2xapi/backend
 
 go 1.26
 

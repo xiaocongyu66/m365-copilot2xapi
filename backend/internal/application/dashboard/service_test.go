@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	dashboarddomain "github.com/chenyme/grok2api/backend/internal/domain/dashboard"
-	"github.com/chenyme/grok2api/backend/internal/repository"
+	dashboarddomain "m365-copilot2xapi/backend/internal/domain/dashboard"
+	"m365-copilot2xapi/backend/internal/repository"
 )
 
 func TestGetBuildsStableBucketsAndEnrichedData(t *testing.T) {

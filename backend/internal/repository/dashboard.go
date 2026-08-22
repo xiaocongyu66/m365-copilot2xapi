@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/chenyme/grok2api/backend/internal/domain/dashboard"
+	"m365-copilot2xapi/backend/internal/domain/dashboard"
 )
 
 // DashboardSnapshotWindow 定义主趋势、上一周期与活动热力图所需的时间边界。

@@ -10,7 +10,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/chenyme/grok2api/backend/internal/domain/audit"
+	"m365-copilot2xapi/backend/internal/domain/audit"
 )
 
 const (

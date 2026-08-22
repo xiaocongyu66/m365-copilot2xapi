@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/chenyme/grok2api/backend/internal/application/adminauth"
-	clientkeyapp "github.com/chenyme/grok2api/backend/internal/application/clientkey"
-	"github.com/chenyme/grok2api/backend/internal/shared/response"
+	"m365-copilot2xapi/backend/internal/application/adminauth"
+	clientkeyapp "m365-copilot2xapi/backend/internal/application/clientkey"
+	"m365-copilot2xapi/backend/internal/shared/response"
 	"github.com/gin-gonic/gin"
 )
 

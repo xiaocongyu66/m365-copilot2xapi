@@ -6,8 +6,8 @@ import (
 	"strings"
 	"sync"
 
-	accountdomain "github.com/chenyme/grok2api/backend/internal/domain/account"
-	domain "github.com/chenyme/grok2api/backend/internal/domain/egress"
+	accountdomain "m365-copilot2xapi/backend/internal/domain/account"
+	domain "m365-copilot2xapi/backend/internal/domain/egress"
 )
 
 // Selection is the egress snapshot actually selected for an upstream request. It contains only metadata safe for audit
@@ -46,9 +46,6 @@ func WithCredential(ctx context.Context, credential accountdomain.Credential) co
 	identity := strings.TrimSpace(credential.EgressIdentity)
 	if identity == "" {
 		provider := credential.Provider
-		if provider == "" {
-			provider = accountdomain.ProviderBuild
-		}
 		return WithEgressNode(WithAccount(ctx, string(provider), credential.ID), credential.EgressNodeID)
 	}
 	return WithEgressNode(WithAccountIdentity(ctx, identity), credential.EgressNodeID)

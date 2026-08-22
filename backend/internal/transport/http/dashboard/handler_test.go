@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	dashboardapp "github.com/chenyme/grok2api/backend/internal/application/dashboard"
-	dashboarddomain "github.com/chenyme/grok2api/backend/internal/domain/dashboard"
-	"github.com/chenyme/grok2api/backend/internal/repository"
+	dashboardapp "m365-copilot2xapi/backend/internal/application/dashboard"
+	dashboarddomain "m365-copilot2xapi/backend/internal/domain/dashboard"
+	"m365-copilot2xapi/backend/internal/repository"
 	"github.com/gin-gonic/gin"
 )
 

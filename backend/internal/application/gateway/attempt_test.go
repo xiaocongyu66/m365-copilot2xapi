@@ -12,9 +12,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chenyme/grok2api/backend/internal/domain/account"
-	"github.com/chenyme/grok2api/backend/internal/domain/audit"
-	"github.com/chenyme/grok2api/backend/internal/infra/provider"
+	"m365-copilot2xapi/backend/internal/domain/account"
+	"m365-copilot2xapi/backend/internal/domain/audit"
+	"m365-copilot2xapi/backend/internal/infra/provider"
 )
 
 func TestFailureAttemptRecorderLimitsAndSanitizesHTTPResponse(t *testing.T) {

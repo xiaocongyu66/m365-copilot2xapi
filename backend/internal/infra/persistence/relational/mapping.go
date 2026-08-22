@@ -7,11 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/chenyme/grok2api/backend/internal/domain/account"
-	"github.com/chenyme/grok2api/backend/internal/domain/admin"
-	"github.com/chenyme/grok2api/backend/internal/domain/audit"
-	"github.com/chenyme/grok2api/backend/internal/domain/clientkey"
-	"github.com/chenyme/grok2api/backend/internal/domain/model"
+	"m365-copilot2xapi/backend/internal/domain/account"
+	"m365-copilot2xapi/backend/internal/domain/admin"
+	"m365-copilot2xapi/backend/internal/domain/audit"
+	"m365-copilot2xapi/backend/internal/domain/clientkey"
+	"m365-copilot2xapi/backend/internal/domain/model"
 )
 
 func toAdminDomain(value adminModel) admin.Admin {

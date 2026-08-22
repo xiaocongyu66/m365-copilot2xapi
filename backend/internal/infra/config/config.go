@@ -14,9 +14,9 @@ import (
 	"strings"
 	"time"
 
-	clientkeydomain "github.com/chenyme/grok2api/backend/internal/domain/clientkey"
-	settingsdomain "github.com/chenyme/grok2api/backend/internal/domain/settings"
-	"github.com/chenyme/grok2api/backend/internal/pkg/signerurl"
+	clientkeydomain "m365-copilot2xapi/backend/internal/domain/clientkey"
+	settingsdomain "m365-copilot2xapi/backend/internal/domain/settings"
+	"m365-copilot2xapi/backend/internal/pkg/signerurl"
 	"gopkg.in/yaml.v3"
 )
 
@@ -147,7 +147,48 @@ type ProviderConfig struct {
 	Build   BuildProviderConfig   `yaml:"build"`
 	Web     WebProviderConfig     `yaml:"web"`
 	Console ConsoleProviderConfig `yaml:"console"`
+	M365    M365ProviderConfig    `yaml:"m365"`
 }
+
+// M365ProviderConfig 配置 Microsoft 365 Copilot 渠道。
+type M365ProviderConfig struct {
+	// BaseURL 是 ChatHub WebSocket 根地址,默认 wss://substrate.office.com/m365Copilot/Chathub。
+	BaseURL string `yaml:"baseURL"`
+	// UploadBaseURL 是附件上传根地址,默认 https://substrate.office.com/m365Copilot。
+	UploadBaseURL string `yaml:"uploadBaseURL"`
+	// Origin 是 WebSocket/HTTP 请求的 Origin 头,默认 https://m365.cloud.microsoft。
+	Origin string `yaml:"origin"`
+	// UserAgent 是 WebSocket/HTTP 请求的 User-Agent 头。
+	UserAgent string `yaml:"userAgent"`
+	// OAuth 客户端配置
+	ClientID    string `yaml:"clientId"`
+	Authority   string `yaml:"authority"`
+	RedirectURI string `yaml:"redirectUri"`
+	Scope       string `yaml:"scope"`
+	// DeviceCode OAuth 客户端配置(可与浏览器 PKCE 不同)
+	DeviceClientID  string `yaml:"deviceClientId"`
+	DeviceAuthority string `yaml:"deviceAuthority"`
+	DeviceScope     string `yaml:"deviceScope"`
+	// ChatTimeout 单次 ChatHub 对话最长时长。
+	ChatTimeout Duration `yaml:"chatTimeout"`
+	// StreamIdleTimeout 流式响应空闲超时。
+	StreamIdleTimeout Duration `yaml:"streamIdleTimeout"`
+	// MaxConcurrent 每个账号同时进行的上游 ChatHub 调用上限。
+	MaxConcurrent int `yaml:"maxConcurrent"`
+}
+
+// M365 默认配置常量(与 M365-Copilot2API/internal/auth/config.go 对齐)。
+const (
+	M365DefaultBaseURL       = "wss://substrate.office.com/m365Copilot/Chathub"
+	M365DefaultUploadBaseURL = "https://substrate.office.com/m365Copilot"
+	M365DefaultOrigin        = "https://m365.cloud.microsoft"
+	M365DefaultUserAgent     = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:148.0) Gecko/20100101 Firefox/148.0"
+	M365DefaultClientID      = "c0ab8ce9-e9a0-42e7-b064-33d422df41f1"
+	M365FOCIClientID        = "d3590ed6-52b3-4102-aeff-aad2292ab01c"
+	M365DefaultAuthority     = "https://login.microsoftonline.com/common"
+	M365DefaultRedirectURI   = "https://login.microsoftonline.com/common/oauth2/nativeclient"
+	M365DefaultScope         = "openid profile offline_access https://substrate.office.com/sydney/M365Chat.Read https://substrate.office.com/sydney/sydney.readwrite"
+)
 
 type BuildProviderConfig struct {
 	BaseURL               string   `yaml:"baseURL"`
@@ -901,6 +942,22 @@ func defaultConfig() Config {
 				RecoveryBackoffMax: Duration(30 * time.Minute),
 			},
 			Console: ConsoleProviderConfig{BaseURL: "https://console.x.ai", ChatTimeout: Duration(5 * time.Minute), StreamIdleTimeout: Duration(settingsdomain.DefaultConsoleStreamIdleTimeout)},
+			M365: M365ProviderConfig{
+				BaseURL:        M365DefaultBaseURL,
+				UploadBaseURL:  M365DefaultUploadBaseURL,
+				Origin:         M365DefaultOrigin,
+				UserAgent:      M365DefaultUserAgent,
+				ClientID:       M365DefaultClientID,
+				Authority:      M365DefaultAuthority,
+				RedirectURI:    M365DefaultRedirectURI,
+				Scope:          M365DefaultScope,
+				DeviceClientID: M365FOCIClientID,
+				DeviceAuthority: M365DefaultAuthority,
+				DeviceScope:    M365DefaultScope,
+				ChatTimeout:    Duration(2 * time.Minute),
+				StreamIdleTimeout: Duration(90 * time.Second),
+				MaxConcurrent:  8,
+			},
 		},
 		Batch: BatchConfig{
 			ImportConcurrency: 25, ConversionConcurrency: 25, SyncConcurrency: 25,

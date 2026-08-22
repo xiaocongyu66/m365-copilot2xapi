@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"time"
 
-	dashboardapp "github.com/chenyme/grok2api/backend/internal/application/dashboard"
-	dashboarddomain "github.com/chenyme/grok2api/backend/internal/domain/dashboard"
-	"github.com/chenyme/grok2api/backend/internal/shared/response"
+	dashboardapp "m365-copilot2xapi/backend/internal/application/dashboard"
+	dashboarddomain "m365-copilot2xapi/backend/internal/domain/dashboard"
+	"m365-copilot2xapi/backend/internal/shared/response"
 	"github.com/gin-gonic/gin"
 )
 

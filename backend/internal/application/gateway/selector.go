@@ -15,10 +15,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/chenyme/grok2api/backend/internal/domain/account"
-	clientkeydomain "github.com/chenyme/grok2api/backend/internal/domain/clientkey"
-	"github.com/chenyme/grok2api/backend/internal/pkg/resultcache"
-	"github.com/chenyme/grok2api/backend/internal/repository"
+	"m365-copilot2xapi/backend/internal/domain/account"
+	clientkeydomain "m365-copilot2xapi/backend/internal/domain/clientkey"
+	"m365-copilot2xapi/backend/internal/pkg/resultcache"
+	"m365-copilot2xapi/backend/internal/repository"
 	"golang.org/x/sync/singleflight"
 )
 

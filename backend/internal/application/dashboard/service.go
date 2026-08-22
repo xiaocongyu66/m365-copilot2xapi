@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	dashboarddomain "github.com/chenyme/grok2api/backend/internal/domain/dashboard"
-	"github.com/chenyme/grok2api/backend/internal/pkg/resultcache"
-	"github.com/chenyme/grok2api/backend/internal/repository"
+	dashboarddomain "m365-copilot2xapi/backend/internal/domain/dashboard"
+	"m365-copilot2xapi/backend/internal/pkg/resultcache"
+	"m365-copilot2xapi/backend/internal/repository"
 )
 
 var ErrInvalidPeriod = errors.New("Dashboard 时间范围无效")

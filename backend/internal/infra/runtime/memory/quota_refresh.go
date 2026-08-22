@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/chenyme/grok2api/backend/internal/repository"
+	"m365-copilot2xapi/backend/internal/repository"
 )
 
 const (

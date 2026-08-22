@@ -16,10 +16,10 @@ import (
 	"time"
 	"unicode/utf8"
 
-	accountdomain "github.com/chenyme/grok2api/backend/internal/domain/account"
-	"github.com/chenyme/grok2api/backend/internal/domain/audit"
-	"github.com/chenyme/grok2api/backend/internal/infra/provider"
-	neterrorpkg "github.com/chenyme/grok2api/backend/internal/pkg/neterror"
+	accountdomain "m365-copilot2xapi/backend/internal/domain/account"
+	"m365-copilot2xapi/backend/internal/domain/audit"
+	"m365-copilot2xapi/backend/internal/infra/provider"
+	neterrorpkg "m365-copilot2xapi/backend/internal/pkg/neterror"
 )
 
 type failureAttemptRecorder struct {

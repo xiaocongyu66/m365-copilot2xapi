@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/chenyme/grok2api/backend/internal/domain/account"
-	modeldomain "github.com/chenyme/grok2api/backend/internal/domain/model"
-	"github.com/chenyme/grok2api/backend/internal/repository"
+	"m365-copilot2xapi/backend/internal/domain/account"
+	modeldomain "m365-copilot2xapi/backend/internal/domain/model"
+	"m365-copilot2xapi/backend/internal/repository"
 	"gorm.io/gorm"
 )
 

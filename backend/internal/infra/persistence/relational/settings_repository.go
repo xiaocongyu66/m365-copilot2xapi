@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"time"
 
-	settingsdomain "github.com/chenyme/grok2api/backend/internal/domain/settings"
-	"github.com/chenyme/grok2api/backend/internal/infra/security"
-	"github.com/chenyme/grok2api/backend/internal/repository"
+	settingsdomain "m365-copilot2xapi/backend/internal/domain/settings"
+	"m365-copilot2xapi/backend/internal/infra/security"
+	"m365-copilot2xapi/backend/internal/repository"
 	"gorm.io/gorm"
 )
 

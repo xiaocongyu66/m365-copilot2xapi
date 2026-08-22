@@ -10,9 +10,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/chenyme/grok2api/backend/internal/application/gateway"
-	"github.com/chenyme/grok2api/backend/internal/infra/provider"
-	"github.com/chenyme/grok2api/backend/internal/transport/http/middleware"
+	"m365-copilot2xapi/backend/internal/application/gateway"
+	"m365-copilot2xapi/backend/internal/infra/provider"
+	"m365-copilot2xapi/backend/internal/transport/http/middleware"
 	"github.com/gin-gonic/gin"
 )
 

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/chenyme/grok2api/backend/internal/infra/security"
-	"github.com/chenyme/grok2api/backend/internal/pkg/requestmeta"
+	"m365-copilot2xapi/backend/internal/infra/security"
+	"m365-copilot2xapi/backend/internal/pkg/requestmeta"
 	"github.com/gin-gonic/gin"
 )
 

@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	clientkeyapp "github.com/chenyme/grok2api/backend/internal/application/clientkey"
-	clientkeydomain "github.com/chenyme/grok2api/backend/internal/domain/clientkey"
-	"github.com/chenyme/grok2api/backend/internal/repository"
-	"github.com/chenyme/grok2api/backend/internal/shared/response"
+	clientkeyapp "m365-copilot2xapi/backend/internal/application/clientkey"
+	clientkeydomain "m365-copilot2xapi/backend/internal/domain/clientkey"
+	"m365-copilot2xapi/backend/internal/repository"
+	"m365-copilot2xapi/backend/internal/shared/response"
 	"github.com/gin-gonic/gin"
 )
 

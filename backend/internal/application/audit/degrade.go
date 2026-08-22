@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	auditdomain "github.com/chenyme/grok2api/backend/internal/domain/audit"
-	"github.com/chenyme/grok2api/backend/internal/repository"
+	auditdomain "m365-copilot2xapi/backend/internal/domain/audit"
+	"m365-copilot2xapi/backend/internal/repository"
 )
 
 const (

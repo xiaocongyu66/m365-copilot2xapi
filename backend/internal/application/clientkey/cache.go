@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	clientkeydomain "github.com/chenyme/grok2api/backend/internal/domain/clientkey"
+	clientkeydomain "m365-copilot2xapi/backend/internal/domain/clientkey"
 )
 
 const (

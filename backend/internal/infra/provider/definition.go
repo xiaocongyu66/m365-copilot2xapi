@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/chenyme/grok2api/backend/internal/domain/account"
-	modeldomain "github.com/chenyme/grok2api/backend/internal/domain/model"
+	"m365-copilot2xapi/backend/internal/domain/account"
+	modeldomain "m365-copilot2xapi/backend/internal/domain/model"
 )
 
 // ModelCatalogKind 表示模型目录来自真实上游发现还是项目内置目录。
@@ -146,7 +146,7 @@ func (d Definition) Validate() error {
 	if d.Quota != QuotaBilling && d.Quota != QuotaRemoteWindow && d.Quota != QuotaLocalWindow {
 		return fmt.Errorf("Provider %s 的额度策略无效", d.Provider)
 	}
-	if d.Credential.AuthType != account.AuthTypeOAuth && d.Credential.AuthType != account.AuthTypeSSO {
+	if d.Credential.AuthType != account.AuthTypeOAuth {
 		return fmt.Errorf("Provider %s 的认证类型无效", d.Provider)
 	}
 	if d.Inference.Usage != UsageUpstream && d.Inference.Usage != UsageEstimated {

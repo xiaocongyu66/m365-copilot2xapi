@@ -14,11 +14,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	accountapp "github.com/chenyme/grok2api/backend/internal/application/account"
-	accountsyncapp "github.com/chenyme/grok2api/backend/internal/application/accountsync"
-	accountdomain "github.com/chenyme/grok2api/backend/internal/domain/account"
-	"github.com/chenyme/grok2api/backend/internal/repository"
-	"github.com/chenyme/grok2api/backend/internal/shared/response"
+	accountapp "m365-copilot2xapi/backend/internal/application/account"
+	accountsyncapp "m365-copilot2xapi/backend/internal/application/accountsync"
+	accountdomain "m365-copilot2xapi/backend/internal/domain/account"
+	"m365-copilot2xapi/backend/internal/repository"
+	"m365-copilot2xapi/backend/internal/shared/response"
 	"github.com/gin-gonic/gin"
 )
 

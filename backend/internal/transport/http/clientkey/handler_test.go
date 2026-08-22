@@ -9,9 +9,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	clientkeyapp "github.com/chenyme/grok2api/backend/internal/application/clientkey"
-	"github.com/chenyme/grok2api/backend/internal/infra/persistence/relational"
-	"github.com/chenyme/grok2api/backend/internal/infra/security"
+	clientkeyapp "m365-copilot2xapi/backend/internal/application/clientkey"
+	"m365-copilot2xapi/backend/internal/infra/persistence/relational"
+	"m365-copilot2xapi/backend/internal/infra/security"
 	"github.com/gin-gonic/gin"
 )
 

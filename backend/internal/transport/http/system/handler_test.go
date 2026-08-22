@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	updatecheckapp "github.com/chenyme/grok2api/backend/internal/application/updatecheck"
+	updatecheckapp "m365-copilot2xapi/backend/internal/application/updatecheck"
 	"github.com/gin-gonic/gin"
 )
 

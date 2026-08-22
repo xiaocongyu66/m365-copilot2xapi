@@ -16,7 +16,7 @@ import (
 	tlsclient "github.com/bogdanfinn/tls-client"
 	"github.com/bogdanfinn/tls-client/profiles"
 	"github.com/bogdanfinn/websocket"
-	"github.com/chenyme/grok2api/backend/internal/pkg/tunnelproxy"
+	"m365-copilot2xapi/backend/internal/pkg/tunnelproxy"
 )
 
 type browserClient struct{ inner tlsclient.HttpClient }

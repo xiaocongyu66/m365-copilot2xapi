@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/chenyme/grok2api/backend/internal/pkg/perfmetrics"
+	"m365-copilot2xapi/backend/internal/pkg/perfmetrics"
 )
 
 func TestPhysicalCallTraceRecordsPlaneStageOrdinalAndOutcome(t *testing.T) {

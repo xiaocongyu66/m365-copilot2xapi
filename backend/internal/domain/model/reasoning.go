@@ -3,7 +3,7 @@ package model
 import (
 	"strings"
 
-	"github.com/chenyme/grok2api/backend/internal/domain/account"
+	"m365-copilot2xapi/backend/internal/domain/account"
 )
 
 // ReasoningEffort is a client-facing reasoning depth level accepted by Grok models.
@@ -62,20 +62,12 @@ func IsGrokComposerModel(value string) bool {
 	return strings.HasPrefix(strings.ToLower(externalModelSlug(value)), grokComposerModelPrefix)
 }
 
-// The Console reasoning variant has a fixed reasoning mode: it produces reasoning
-// but rejects the reasoningEffort parameter. Build may expose a different contract
-// for the same model slug, so this restriction must remain provider-scoped.
-var providerReasoningEffortOverrides = map[account.Provider]map[string][]string{
-	account.ProviderConsole: {
-		"grok-4.20-0309-reasoning": {},
-	},
-}
+// The Console reasoning variant had a fixed reasoning mode: it produced reasoning
+// but rejected the reasoningEffort parameter. With Grok providers removed, no
+// provider-scoped overrides remain; the maps are kept for forward compatibility.
+var providerReasoningEffortOverrides = map[account.Provider]map[string][]string{}
 
-var providerFixedReasoningModels = map[account.Provider]map[string]struct{}{
-	account.ProviderConsole: {
-		"grok-4.20-0309-reasoning": {},
-	},
-}
+var providerFixedReasoningModels = map[account.Provider]map[string]struct{}{}
 
 // SupportedReasoningEfforts returns the reasoning levels a public model ID actually supports.
 // Provider prefixes are stripped; unknown models only advertise "none".

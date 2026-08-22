@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	settingsdomain "github.com/chenyme/grok2api/backend/internal/domain/settings"
+	settingsdomain "m365-copilot2xapi/backend/internal/domain/settings"
 )
 
 // RuntimeSettingsRepository 定义运行设置的单实例持久化边界。

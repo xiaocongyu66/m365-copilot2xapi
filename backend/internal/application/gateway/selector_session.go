@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/chenyme/grok2api/backend/internal/domain/account"
-	clientkeydomain "github.com/chenyme/grok2api/backend/internal/domain/clientkey"
+	"m365-copilot2xapi/backend/internal/domain/account"
+	clientkeydomain "m365-copilot2xapi/backend/internal/domain/clientkey"
 )
 
 // selectionSession 保存一次下游请求的候选快照和计划。账号切换时复用它，

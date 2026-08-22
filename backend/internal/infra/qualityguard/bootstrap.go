@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/chenyme/grok2api/backend/internal/infra/config"
+	"m365-copilot2xapi/backend/internal/infra/config"
 )
 
 const bootstrapVersion = 1

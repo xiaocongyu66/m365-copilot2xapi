@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/chenyme/grok2api/backend/internal/domain/account"
-	inferencedomain "github.com/chenyme/grok2api/backend/internal/domain/inference"
-	"github.com/chenyme/grok2api/backend/internal/repository"
+	"m365-copilot2xapi/backend/internal/domain/account"
+	inferencedomain "m365-copilot2xapi/backend/internal/domain/inference"
+	"m365-copilot2xapi/backend/internal/repository"
 	"gorm.io/gorm"
 )
 

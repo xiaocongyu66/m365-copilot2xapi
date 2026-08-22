@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/chenyme/grok2api/backend/internal/infra/config"
+	"m365-copilot2xapi/backend/internal/infra/config"
 )
 
 func TestPreflightDeploymentCreatesAndValidatesSharedMediaMarker(t *testing.T) {

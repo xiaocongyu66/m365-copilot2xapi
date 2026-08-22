@@ -10,10 +10,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	clientkeydomain "github.com/chenyme/grok2api/backend/internal/domain/clientkey"
-	"github.com/chenyme/grok2api/backend/internal/infra/security"
-	"github.com/chenyme/grok2api/backend/internal/pkg/perfmetrics"
-	"github.com/chenyme/grok2api/backend/internal/repository"
+	clientkeydomain "m365-copilot2xapi/backend/internal/domain/clientkey"
+	"m365-copilot2xapi/backend/internal/infra/security"
+	"m365-copilot2xapi/backend/internal/pkg/perfmetrics"
+	"m365-copilot2xapi/backend/internal/repository"
 )
 
 var (
@@ -173,7 +173,7 @@ func (s *Service) EnsureQualityGuardIdentity(ctx context.Context, enabled bool) 
 	value.BillingLimitUSDTicks = 0
 	value.AllowModelAliases = false
 	value.AllowedModels = nil
-	value.ProviderScope = clientkeydomain.ProviderScopeBuild
+	value.ProviderScope = clientkeydomain.ProviderScopeAll
 	value.TierScope = clientkeydomain.TierScopeAll
 	updated, err := s.keys.Update(ctx, value)
 	if err != nil {
@@ -200,7 +200,7 @@ func (s *Service) createQualityGuardIdentity(ctx context.Context) (clientkeydoma
 		Name: qualityGuardInternalName, Prefix: qualityGuardInternalPrefix,
 		SecretHash: security.HashToken(raw), EncryptedSecret: encrypted,
 		InternalKind: clientkeydomain.InternalKindQualityGuard, Enabled: true,
-		ProviderScope: clientkeydomain.ProviderScopeBuild, TierScope: clientkeydomain.TierScopeAll,
+		ProviderScope: clientkeydomain.ProviderScopeAll, TierScope: clientkeydomain.TierScopeAll,
 	})
 }
 

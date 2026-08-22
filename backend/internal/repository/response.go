@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	inferencedomain "github.com/chenyme/grok2api/backend/internal/domain/inference"
+	inferencedomain "m365-copilot2xapi/backend/internal/domain/inference"
 )
 
 type ResponseCleanupResult struct {

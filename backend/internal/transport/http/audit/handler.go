@@ -8,10 +8,10 @@ import (
 	"time"
 	"unicode/utf8"
 
-	auditapp "github.com/chenyme/grok2api/backend/internal/application/audit"
-	auditdomain "github.com/chenyme/grok2api/backend/internal/domain/audit"
-	"github.com/chenyme/grok2api/backend/internal/repository"
-	"github.com/chenyme/grok2api/backend/internal/shared/response"
+	auditapp "m365-copilot2xapi/backend/internal/application/audit"
+	auditdomain "m365-copilot2xapi/backend/internal/domain/audit"
+	"m365-copilot2xapi/backend/internal/repository"
+	"m365-copilot2xapi/backend/internal/shared/response"
 	"github.com/gin-gonic/gin"
 )
 

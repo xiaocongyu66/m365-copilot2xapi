@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	adminapp "github.com/chenyme/grok2api/backend/internal/application/adminauth"
-	admindomain "github.com/chenyme/grok2api/backend/internal/domain/admin"
-	"github.com/chenyme/grok2api/backend/internal/shared/response"
-	"github.com/chenyme/grok2api/backend/internal/transport/http/middleware"
+	adminapp "m365-copilot2xapi/backend/internal/application/adminauth"
+	admindomain "m365-copilot2xapi/backend/internal/domain/admin"
+	"m365-copilot2xapi/backend/internal/shared/response"
+	"m365-copilot2xapi/backend/internal/transport/http/middleware"
 	"github.com/gin-gonic/gin"
 )
 

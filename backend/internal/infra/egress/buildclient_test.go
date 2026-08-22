@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	application "github.com/chenyme/grok2api/backend/internal/application/egress"
-	neterrorpkg "github.com/chenyme/grok2api/backend/internal/pkg/neterror"
+	application "m365-copilot2xapi/backend/internal/application/egress"
+	neterrorpkg "m365-copilot2xapi/backend/internal/pkg/neterror"
 )
 
 func TestBuildClientUsesConfiguredResponseHeaderTimeout(t *testing.T) {

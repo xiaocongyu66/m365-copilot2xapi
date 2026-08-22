@@ -9,12 +9,12 @@ import (
 	"sync"
 	"time"
 
-	accountdomain "github.com/chenyme/grok2api/backend/internal/domain/account"
-	domain "github.com/chenyme/grok2api/backend/internal/domain/egress"
-	modeldomain "github.com/chenyme/grok2api/backend/internal/domain/model"
-	"github.com/chenyme/grok2api/backend/internal/infra/security"
-	"github.com/chenyme/grok2api/backend/internal/pkg/tunnelproxy"
-	"github.com/chenyme/grok2api/backend/internal/repository"
+	accountdomain "m365-copilot2xapi/backend/internal/domain/account"
+	domain "m365-copilot2xapi/backend/internal/domain/egress"
+	modeldomain "m365-copilot2xapi/backend/internal/domain/model"
+	"m365-copilot2xapi/backend/internal/infra/security"
+	"m365-copilot2xapi/backend/internal/pkg/tunnelproxy"
+	"m365-copilot2xapi/backend/internal/repository"
 )
 
 var (
@@ -202,7 +202,7 @@ func (s *Service) ProbeQuality(ctx context.Context, nodeID uint64, input Quality
 			return QualityProbeResult{}, fmt.Errorf("%w: 账号定向探测仅支持按账号派生代理的节点", ErrInvalidInput)
 		}
 		credential, loadErr := s.qualityLeases.Get(ctx, input.AccountID)
-		if loadErr != nil || credential.Provider != accountdomain.ProviderBuild || !credential.Enabled || credential.AuthStatus != accountdomain.AuthStatusActive || credential.EgressNodeID != nodeID {
+		if loadErr != nil || credential.Provider != accountdomain.ProviderM365 || !credential.Enabled || credential.AuthStatus != accountdomain.AuthStatusActive || credential.EgressNodeID != nodeID {
 			return QualityProbeResult{}, ErrQualityProbeNoAccount
 		}
 	}
@@ -215,7 +215,7 @@ func (s *Service) ProbeQuality(ctx context.Context, nodeID uint64, input Quality
 	// A profile may request the thinking guard, but only a known reasoning-capable
 	// Build model can make zero reasoning tokens meaningful. Unknown/custom and
 	// non-reasoning models stay observable without being falsely quarantined.
-	input.RequireThinking = input.RequireThinking && modeldomain.SupportsReasoningForProvider(accountdomain.ProviderBuild, input.Model)
+	input.RequireThinking = input.RequireThinking && modeldomain.SupportsReasoningForProvider(accountdomain.ProviderM365, input.Model)
 	result, err := prober.ProbeEgressQuality(ctx, nodeID, input)
 	if err != nil {
 		return QualityProbeResult{}, err
@@ -333,7 +333,7 @@ func (s *Service) QuarantineQualityLease(ctx context.Context, input QualityLease
 		return accountdomain.EgressLeaseBlock{}, ErrInvalidInput
 	}
 	credential, err := s.qualityLeases.Get(ctx, input.AccountID)
-	if err != nil || credential.Provider != accountdomain.ProviderBuild || !credential.Enabled || credential.AuthStatus != accountdomain.AuthStatusActive || credential.EgressNodeID != input.NodeID {
+	if err != nil || credential.Provider != accountdomain.ProviderM365 || !credential.Enabled || credential.AuthStatus != accountdomain.AuthStatusActive || credential.EgressNodeID != input.NodeID {
 		return accountdomain.EgressLeaseBlock{}, ErrQualityLeaseConflict
 	}
 	version, err := security.NewOpaqueToken(18)
@@ -1058,12 +1058,8 @@ func (s *Service) UnassignAccounts(ctx context.Context, provider accountdomain.P
 
 func scopeSupportsProvider(scope domain.Scope, provider accountdomain.Provider) bool {
 	switch provider {
-	case accountdomain.ProviderBuild:
+	case accountdomain.ProviderM365:
 		return scope == domain.ScopeBuild
-	case accountdomain.ProviderWeb:
-		return scope == domain.ScopeWeb
-	case accountdomain.ProviderConsole:
-		return domain.SupportsScope(scope, domain.ScopeConsole)
 	default:
 		return false
 	}

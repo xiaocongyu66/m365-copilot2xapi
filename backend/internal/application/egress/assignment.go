@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	accountdomain "github.com/chenyme/grok2api/backend/internal/domain/account"
-	domain "github.com/chenyme/grok2api/backend/internal/domain/egress"
-	"github.com/chenyme/grok2api/backend/internal/repository"
+	accountdomain "m365-copilot2xapi/backend/internal/domain/account"
+	domain "m365-copilot2xapi/backend/internal/domain/egress"
+	"m365-copilot2xapi/backend/internal/repository"
 )
 
 const (

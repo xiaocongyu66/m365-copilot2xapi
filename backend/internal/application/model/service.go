@@ -9,13 +9,13 @@ import (
 	"sync/atomic"
 	"time"
 
-	accountapp "github.com/chenyme/grok2api/backend/internal/application/account"
-	"github.com/chenyme/grok2api/backend/internal/domain/account"
-	clientkeydomain "github.com/chenyme/grok2api/backend/internal/domain/clientkey"
-	modeldomain "github.com/chenyme/grok2api/backend/internal/domain/model"
-	"github.com/chenyme/grok2api/backend/internal/infra/provider"
-	"github.com/chenyme/grok2api/backend/internal/pkg/batch"
-	"github.com/chenyme/grok2api/backend/internal/repository"
+	accountapp "m365-copilot2xapi/backend/internal/application/account"
+	"m365-copilot2xapi/backend/internal/domain/account"
+	clientkeydomain "m365-copilot2xapi/backend/internal/domain/clientkey"
+	modeldomain "m365-copilot2xapi/backend/internal/domain/model"
+	"m365-copilot2xapi/backend/internal/infra/provider"
+	"m365-copilot2xapi/backend/internal/pkg/batch"
+	"m365-copilot2xapi/backend/internal/repository"
 	"golang.org/x/sync/singleflight"
 )
 

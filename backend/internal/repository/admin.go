@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/chenyme/grok2api/backend/internal/domain/admin"
+	"m365-copilot2xapi/backend/internal/domain/admin"
 )
 
 // AdminRepository 定义管理员持久化能力。

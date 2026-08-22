@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chenyme/grok2api/backend/internal/pkg/perfmetrics"
-	"github.com/chenyme/grok2api/backend/internal/pkg/requestmeta"
+	"m365-copilot2xapi/backend/internal/pkg/perfmetrics"
+	"m365-copilot2xapi/backend/internal/pkg/requestmeta"
 	"github.com/gin-gonic/gin"
 )
 

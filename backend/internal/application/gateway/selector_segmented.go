@@ -4,8 +4,8 @@ import (
 	"hash/fnv"
 	"sync/atomic"
 
-	"github.com/chenyme/grok2api/backend/internal/domain/account"
-	"github.com/chenyme/grok2api/backend/internal/pkg/perfmetrics"
+	"m365-copilot2xapi/backend/internal/domain/account"
+	"m365-copilot2xapi/backend/internal/pkg/perfmetrics"
 )
 
 const segmentedSelectorShards = 1024

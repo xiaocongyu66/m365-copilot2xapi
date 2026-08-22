@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	application "github.com/chenyme/grok2api/backend/internal/application/egress"
-	"github.com/chenyme/grok2api/backend/internal/pkg/tunnelproxy"
+	application "m365-copilot2xapi/backend/internal/application/egress"
+	"m365-copilot2xapi/backend/internal/pkg/tunnelproxy"
 )
 
 const maxFlareSolverrResponseBytes = 2 << 20

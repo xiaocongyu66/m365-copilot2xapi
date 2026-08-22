@@ -7,10 +7,10 @@ import (
 	"strconv"
 	"strings"
 
-	mediaapp "github.com/chenyme/grok2api/backend/internal/application/media"
-	"github.com/chenyme/grok2api/backend/internal/pkg/mediafile"
-	"github.com/chenyme/grok2api/backend/internal/repository"
-	"github.com/chenyme/grok2api/backend/internal/shared/response"
+	mediaapp "m365-copilot2xapi/backend/internal/application/media"
+	"m365-copilot2xapi/backend/internal/pkg/mediafile"
+	"m365-copilot2xapi/backend/internal/repository"
+	"m365-copilot2xapi/backend/internal/shared/response"
 	"github.com/gin-gonic/gin"
 )
 

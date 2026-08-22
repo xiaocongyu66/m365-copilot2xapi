@@ -9,8 +9,8 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/chenyme/grok2api/backend/internal/infra/provider"
-	neterrorpkg "github.com/chenyme/grok2api/backend/internal/pkg/neterror"
+	"m365-copilot2xapi/backend/internal/infra/provider"
+	neterrorpkg "m365-copilot2xapi/backend/internal/pkg/neterror"
 )
 
 // UpstreamFailure 保存可安全暴露给下游和审计的上游失败分类，不包含响应正文或凭据。

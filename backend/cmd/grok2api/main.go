@@ -13,7 +13,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/chenyme/grok2api/backend/internal/cli"
+	"m365-copilot2xapi/backend/internal/cli"
 )
 
 func main() {
