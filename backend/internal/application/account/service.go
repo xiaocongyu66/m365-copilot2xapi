@@ -2374,50 +2374,16 @@ func (s *Service) refreshQuotaMode(ctx context.Context, id uint64, mode string) 
 	var window accountdomain.QuotaWindow
 	var windows []accountdomain.QuotaWindow
 	var syncedAt time.Time
-	var tier accountdomain.WebTier
-	if value.Provider == accountdomain.ProviderConsole {
-		// Console /usage always returns Chat, Image and Video together. Persist the
-		// response as one authoritative snapshot so each media route observes the
-		// same upstream usage generation.
-		var snapshot provider.QuotaSnapshot
-		snapshot, err = adapter.SyncQuota(ctx, value)
-		if err == nil {
-			windows = snapshot.Windows
-			syncedAt = snapshot.SyncedAt
-			for _, candidate := range windows {
-				if candidate.Mode == mode {
-					window = candidate
-					break
-				}
-			}
-			if window.Mode == "" {
-				err = fmt.Errorf("Console usage 响应缺少 %s 额度", mode)
-			}
-		}
-	} else {
-		window, err = adapter.SyncQuotaMode(ctx, value, mode)
-		windows = []accountdomain.QuotaWindow{window}
-		syncedAt = s.now()
-	}
+	window, err = adapter.SyncQuotaMode(ctx, value, mode)
+	windows = []accountdomain.QuotaWindow{window}
+	syncedAt = s.now()
 	if err != nil {
-		if errors.Is(err, provider.ErrUnauthorized) {
-		}
 		return quotaRefreshResult{}, err
-	}
-	quotaKind, _ := s.providers.QuotaKind(value.Provider)
-	if quotaKind == provider.QuotaRemoteWindow {
-		// Web reconciliation updates one mode; Console already supplied and
-		// persisted its complete /usage snapshot above.
-		tier = value.WebTier
 	}
 	if syncedAt.IsZero() {
 		syncedAt = s.now()
 	}
-	if value.Provider == accountdomain.ProviderConsole {
-		if err := s.accounts.ReplaceQuotaWindows(ctx, id, tier, syncedAt, windows); err != nil {
-			return quotaRefreshResult{}, err
-		}
-	} else if err := s.accounts.SaveQuotaWindows(ctx, id, tier, syncedAt, windows); err != nil {
+	if err := s.accounts.SaveQuotaWindows(ctx, id, syncedAt, windows); err != nil {
 		return quotaRefreshResult{}, err
 	}
 	return quotaRefreshResult{Credential: value, Windows: windows}, nil
