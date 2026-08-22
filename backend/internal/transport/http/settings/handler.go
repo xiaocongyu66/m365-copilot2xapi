@@ -187,14 +187,14 @@ func (value settingsConfigDTO) toApplication() settingsapp.EditableConfig {
 		value.ProviderWeb.ClearanceTimeout != nil || value.ProviderWeb.ClearanceRefresh != nil
 	result := settingsapp.EditableConfig{
 		Server: settingsapp.ServerConfig{MaxConcurrentRequests: value.Server.MaxConcurrentRequests},
-		ProviderBuild: settingsapp.ProviderBuildConfig{
+		ProviderBuild: settingsapp.ProviderM365Config{
 			BaseURL: value.ProviderBuild.BaseURL, FallbackBaseURL: value.ProviderBuild.FallbackBaseURL,
 			ClientVersion: value.ProviderBuild.ClientVersion, ClientIdentifier: value.ProviderBuild.ClientIdentifier,
 			TokenAuth: value.ProviderBuild.TokenAuth, UserAgent: value.ProviderBuild.UserAgent,
 			ResponseHeaderTimeout: value.ProviderBuild.ResponseHeaderTimeout,
 			StreamIdleTimeout:     value.ProviderBuild.StreamIdleTimeout,
 		},
-		ProviderWeb: settingsapp.ProviderWebConfig{
+		ProviderWeb: settingsapp.ProviderM365WebConfig{
 			BaseURL: value.ProviderWeb.BaseURL, QuotaTimeout: value.ProviderWeb.QuotaTimeout,
 			StatsigMode: value.ProviderWeb.StatsigMode, StatsigManualValue: value.ProviderWeb.StatsigManualValue,
 			StatsigManualConfigured: value.ProviderWeb.StatsigManualConfigured, StatsigSignerURL: value.ProviderWeb.StatsigSignerURL,
@@ -207,7 +207,7 @@ func (value settingsConfigDTO) toApplication() settingsapp.EditableConfig {
 			MediaConcurrency: value.ProviderWeb.MediaConcurrency, AllowNSFW: value.ProviderWeb.AllowNSFW,
 			RecoveryBackoffBase: value.ProviderWeb.RecoveryBackoffBase, RecoveryBackoffMax: value.ProviderWeb.RecoveryBackoffMax,
 		},
-		ProviderConsole: settingsapp.ProviderConsoleConfig{
+		ProviderConsole: settingsapp.ProviderM365ConsoleConfig{
 			BaseURL: value.ProviderConsole.BaseURL, ChatTimeout: value.ProviderConsole.ChatTimeout,
 			StreamIdleTimeout: value.ProviderConsole.StreamIdleTimeout,
 		},

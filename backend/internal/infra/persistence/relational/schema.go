@@ -436,7 +436,7 @@ func (d *Database) migrateProviderStreamIdleTimeouts(ctx context.Context) error 
 		// a completely absent legacy section absent so applyDomainConfig can retain
 		// the current defaults instead of treating a timeout-only section as an
 		// explicitly configured (but invalid) Console provider.
-		if payload.Config.ProviderConsole != (settingsdomain.ProviderConsoleConfig{}) && payload.Config.ProviderConsole.StreamIdleTimeout <= 0 {
+		if payload.Config.ProviderConsole != (settingsdomain.ProviderM365ConsoleConfig{}) && payload.Config.ProviderConsole.StreamIdleTimeout <= 0 {
 			payload.Config.ProviderConsole.StreamIdleTimeout = settingsdomain.DefaultConsoleStreamIdleTimeout
 			changed = true
 		}

@@ -18,8 +18,8 @@ var (
 	ErrConflict     = errors.New("运行设置已被其他会话更新")
 )
 
-// ProviderBuildConfig 是管理接口使用的 Provider 可编辑输入。
-type ProviderBuildConfig struct {
+// ProviderM365Config 是管理接口使用的 Provider 可编辑输入。
+type ProviderM365Config struct {
 	BaseURL               string
 	FallbackBaseURL       string
 	ClientVersion         string
@@ -30,13 +30,13 @@ type ProviderBuildConfig struct {
 	StreamIdleTimeout     string
 }
 
-// ProviderBuildRecommendation 表示当前网关已完成兼容回归的 Grok Build 协议基线。
-type ProviderBuildRecommendation struct {
+// ProviderM365Recommendation 表示当前网关已完成兼容回归的 Grok Build 协议基线。
+type ProviderM365Recommendation struct {
 	ClientVersion string
 	UserAgent     string
 }
 
-type ProviderWebConfig struct {
+type ProviderM365WebConfig struct {
 	BaseURL                 string
 	StatsigMode             string
 	StatsigManualValue      string
@@ -60,7 +60,7 @@ type ProviderWebConfig struct {
 	ClearanceProvided bool
 }
 
-type ProviderConsoleConfig struct {
+type ProviderM365ConsoleConfig struct {
 	BaseURL           string
 	ChatTimeout       string
 	StreamIdleTimeout string
@@ -154,9 +154,9 @@ type AccountsConfig struct {
 // EditableConfig 聚合管理端允许修改的运行参数。
 type EditableConfig struct {
 	Server            ServerConfig
-	ProviderBuild     ProviderBuildConfig
-	ProviderWeb       ProviderWebConfig
-	ProviderConsole   ProviderConsoleConfig
+	ProviderBuild     ProviderM365Config
+	ProviderWeb       ProviderM365WebConfig
+	ProviderConsole   ProviderM365ConsoleConfig
 	Batch             BatchConfig
 	Media             MediaConfig
 	Frontend          FrontendConfig
@@ -171,7 +171,7 @@ type EditableConfig struct {
 // Snapshot 表示当前运行设置和需要重启才能生效的字段。
 type Snapshot struct {
 	Config                   EditableConfig
-	RecommendedProviderBuild ProviderBuildRecommendation
+	RecommendedProviderBuild ProviderM365Recommendation
 	UpdatedAt                time.Time
 	Revision                 uint64
 	RestartRequired          []string
@@ -354,7 +354,7 @@ func applyDomainConfig(base config.Config, value settingsdomain.Config) config.C
 		base.Provider.Web.StreamIdleTimeout = config.Duration(settingsdomain.DefaultWebStreamIdleTimeout)
 	}
 	// Console 是后续版本新增的完整配置段；旧 JSON 整段缺失时沿用代码默认值。
-	if value.ProviderConsole != (settingsdomain.ProviderConsoleConfig{}) {
+	if value.ProviderConsole != (settingsdomain.ProviderM365ConsoleConfig{}) {
 		base.Provider.Console = config.ConsoleProviderConfig{
 			BaseURL: value.ProviderConsole.BaseURL, ChatTimeout: config.Duration(value.ProviderConsole.ChatTimeout),
 			StreamIdleTimeout: config.Duration(value.ProviderConsole.StreamIdleTimeout),
@@ -440,14 +440,14 @@ func toDomainConfig(value config.Config) settingsdomain.Config {
 	accountIsolatedConnections := value.Routing.AccountIsolatedConnections
 	return settingsdomain.Config{
 		Server: settingsdomain.ServerConfig{MaxConcurrentRequests: value.Server.MaxConcurrentRequests},
-		ProviderBuild: settingsdomain.ProviderBuildConfig{
+		ProviderBuild: settingsdomain.ProviderM365Config{
 			BaseURL: value.Provider.Build.BaseURL, FallbackBaseURL: config.NormalizeBuildFallbackBaseURL(value.Provider.Build.FallbackBaseURL),
 			ClientVersion: value.Provider.Build.ClientVersion, ClientIdentifier: value.Provider.Build.ClientIdentifier,
 			TokenAuth: value.Provider.Build.TokenAuth, UserAgent: value.Provider.Build.UserAgent,
 			ResponseHeaderTimeout: value.Provider.Build.ResponseHeaderTimeout.Value(),
 			StreamIdleTimeout:     value.Provider.Build.StreamIdleTimeout.Value(),
 		},
-		ProviderWeb: settingsdomain.ProviderWebConfig{
+		ProviderWeb: settingsdomain.ProviderM365WebConfig{
 			BaseURL: value.Provider.Web.BaseURL, QuotaTimeout: value.Provider.Web.QuotaTimeout.Value(),
 			StatsigMode: value.Provider.Web.StatsigMode, StatsigManualValue: value.Provider.Web.StatsigManualValue,
 			StatsigSignerURL: value.Provider.Web.StatsigSignerURL,
@@ -459,7 +459,7 @@ func toDomainConfig(value config.Config) settingsdomain.Config {
 			MediaConcurrency: value.Provider.Web.MediaConcurrency, AllowNSFW: value.Provider.Web.AllowNSFW,
 			RecoveryBackoffBase: value.Provider.Web.RecoveryBackoffBase.Value(), RecoveryBackoffMax: value.Provider.Web.RecoveryBackoffMax.Value(),
 		},
-		ProviderConsole: settingsdomain.ProviderConsoleConfig{
+		ProviderConsole: settingsdomain.ProviderM365ConsoleConfig{
 			BaseURL: value.Provider.Console.BaseURL, ChatTimeout: value.Provider.Console.ChatTimeout.Value(),
 			StreamIdleTimeout: value.Provider.Console.StreamIdleTimeout.Value(),
 		},
@@ -517,7 +517,7 @@ func (s *Service) snapshotLocked() Snapshot {
 	}
 	return Snapshot{
 		Config: toEditable(s.cfg),
-		RecommendedProviderBuild: ProviderBuildRecommendation{
+		RecommendedProviderBuild: ProviderM365Recommendation{
 			ClientVersion: config.RecommendedBuildClientVersion,
 			UserAgent:     config.RecommendedBuildUserAgent,
 		},
@@ -672,14 +672,14 @@ func mergeEditable(current config.Config, input EditableConfig) (config.Config, 
 func toEditable(cfg config.Config) EditableConfig {
 	return EditableConfig{
 		Server: ServerConfig{MaxConcurrentRequests: cfg.Server.MaxConcurrentRequests},
-		ProviderBuild: ProviderBuildConfig{
+		ProviderBuild: ProviderM365Config{
 			BaseURL: cfg.Provider.Build.BaseURL, FallbackBaseURL: config.NormalizeBuildFallbackBaseURL(cfg.Provider.Build.FallbackBaseURL),
 			ClientVersion: cfg.Provider.Build.ClientVersion, ClientIdentifier: cfg.Provider.Build.ClientIdentifier,
 			TokenAuth: cfg.Provider.Build.TokenAuth, UserAgent: cfg.Provider.Build.UserAgent,
 			ResponseHeaderTimeout: cfg.Provider.Build.ResponseHeaderTimeout.String(),
 			StreamIdleTimeout:     cfg.Provider.Build.StreamIdleTimeout.String(),
 		},
-		ProviderWeb: ProviderWebConfig{
+		ProviderWeb: ProviderM365WebConfig{
 			BaseURL: cfg.Provider.Web.BaseURL, QuotaTimeout: cfg.Provider.Web.QuotaTimeout.String(),
 			StatsigMode: cfg.Provider.Web.StatsigMode, StatsigManualConfigured: strings.TrimSpace(cfg.Provider.Web.StatsigManualValue) != "",
 			StatsigSignerURL: cfg.Provider.Web.StatsigSignerURL,
@@ -691,7 +691,7 @@ func toEditable(cfg config.Config) EditableConfig {
 			MediaConcurrency: cfg.Provider.Web.MediaConcurrency, AllowNSFW: cfg.Provider.Web.AllowNSFW,
 			RecoveryBackoffBase: cfg.Provider.Web.RecoveryBackoffBase.String(), RecoveryBackoffMax: cfg.Provider.Web.RecoveryBackoffMax.String(),
 		},
-		ProviderConsole: ProviderConsoleConfig{
+		ProviderConsole: ProviderM365ConsoleConfig{
 			BaseURL: cfg.Provider.Console.BaseURL, ChatTimeout: cfg.Provider.Console.ChatTimeout.String(),
 			StreamIdleTimeout: cfg.Provider.Console.StreamIdleTimeout.String(),
 		},

@@ -20,9 +20,9 @@ const (
 // Config 表示可跨重启持久化并支持热加载的网关运行参数。
 type Config struct {
 	Server            ServerConfig
-	ProviderBuild     ProviderBuildConfig
-	ProviderWeb       ProviderWebConfig
-	ProviderConsole   ProviderConsoleConfig
+	ProviderBuild     ProviderM365Config
+	ProviderWeb       ProviderM365WebConfig
+	ProviderConsole   ProviderM365ConsoleConfig
 	Batch             BatchConfig
 	Media             MediaConfig
 	Frontend          FrontendConfig
@@ -42,7 +42,7 @@ type FrontendConfig struct {
 	PublicAPIBaseURL string
 }
 
-type ProviderConsoleConfig struct {
+type ProviderM365ConsoleConfig struct {
 	BaseURL           string
 	ChatTimeout       time.Duration
 	StreamIdleTimeout time.Duration
@@ -55,7 +55,7 @@ type MediaConfig struct {
 	CleanupInterval         time.Duration
 }
 
-type ProviderWebConfig struct {
+type ProviderM365WebConfig struct {
 	BaseURL             string
 	StatsigMode         string
 	StatsigManualValue  string
@@ -84,8 +84,8 @@ type BatchConfig struct {
 	RandomDelay           *time.Duration
 }
 
-// ProviderBuildConfig 定义 Grok Build CLI 上游协议标识。
-type ProviderBuildConfig struct {
+// ProviderM365Config 定义 Grok Build CLI 上游协议标识。
+type ProviderM365Config struct {
 	BaseURL               string
 	FallbackBaseURL       string
 	ClientVersion         string
