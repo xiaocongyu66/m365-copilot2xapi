@@ -228,5 +228,7 @@ type VoiceWebSocketInput struct {
 
 // VoiceWebSocketOutcome is the no-op result for voice WebSocket sessions.
 type VoiceWebSocketOutcome struct {
-	ErrorCode string
+	ErrorCode            string
+	UpstreamFailed       bool
+	AudioDurationSeconds float64
 }
