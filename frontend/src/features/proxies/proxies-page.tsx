@@ -1,10 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -33,6 +31,14 @@ interface ProxyNode {
   activeRequests: number;
 }
 
+interface NodeError {
+  nodeId: string;
+  nodeName: string;
+  error: string;
+  endpoint: string;
+  timestamp: string;
+}
+
 interface FetcherStatus {
   running: boolean;
   lastRun: string;
@@ -45,8 +51,12 @@ interface FetcherStatus {
   };
 }
 
+interface ImportResult {
+  imported: number;
+  skipped: number;
+}
+
 export function ProxiesPage() {
-  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [importOpen, setImportOpen] = useState(false);
@@ -64,7 +74,7 @@ export function ProxiesPage() {
     },
   });
 
-  const { data: errors = [] } = useQuery({
+  const { data: errors = [] } = useQuery<NodeError[]>({
     queryKey: ["proxies", "errors"],
     queryFn: async () => {
       const res = await fetch("/api/admin/v1/proxies/errors");
@@ -92,7 +102,7 @@ export function ProxiesPage() {
         body: JSON.stringify({ text }),
       });
       if (!res.ok) throw new Error("import failed");
-      return res.json();
+      return res.json() as Promise<ImportResult>;
     },
     onSuccess: (data) => {
       toast.success(`导入成功: ${data.imported} 个,跳过 ${data.skipped} 个`);
@@ -166,7 +176,7 @@ export function ProxiesPage() {
         body: JSON.stringify({ url }),
       });
       if (!res.ok) throw new Error("failed");
-      return res.json();
+      return res.json() as Promise<ImportResult>;
     },
     onSuccess: (data) => {
       toast.success(`抓取完成: ${data.imported} 个`);
@@ -211,96 +221,90 @@ export function ProxiesPage() {
 
       {/* 抓取状态 */}
       {fetcherStatus && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">自动抓取</CardTitle>
-            <CardDescription>
-              状态: {fetcherStatus.running ? "运行中" : "已停止"} ·
-              上次: {fetcherStatus.lastRun ? new Date(fetcherStatus.lastRun).toLocaleString() : "未运行"} ·
-              总数 {fetcherStatus.lastResult?.total ?? 0} · 导入 {fetcherStatus.lastResult?.imported ?? 0}
-            </CardDescription>
-          </CardHeader>
-        </Card>
+        <div className="rounded-lg border bg-card p-4">
+          <div className="text-base font-medium">自动抓取</div>
+          <div className="text-sm text-muted-foreground mt-1">
+            状态: {fetcherStatus.running ? "运行中" : "已停止"} ·
+            上次: {fetcherStatus.lastRun ? new Date(fetcherStatus.lastRun).toLocaleString() : "未运行"} ·
+            总数 {fetcherStatus.lastResult?.total ?? 0} · 导入 {fetcherStatus.lastResult?.imported ?? 0}
+          </div>
+        </div>
       )}
 
       {/* 批量操作 */}
       {selectedIds.length > 0 && (
-        <Card>
-          <CardContent className="flex items-center gap-2 py-3">
-            <span className="text-sm">已选 {selectedIds.length} 个</span>
-            <Button size="sm" variant="outline" onClick={() => setEnabledMutation.mutate({ ids: selectedIds, enabled: true })}>启用</Button>
-            <Button size="sm" variant="outline" onClick={() => setEnabledMutation.mutate({ ids: selectedIds, enabled: false })}>禁用</Button>
-            <Button size="sm" variant="outline" onClick={() => clearErrorsMutation.mutate(selectedIds)}>清除报错</Button>
-            <Button size="sm" variant="destructive" onClick={() => deleteMutation.mutate(selectedIds)}>删除</Button>
-          </CardContent>
-        </Card>
+        <div className="rounded-lg border bg-card p-3 flex items-center gap-2">
+          <span className="text-sm">已选 {selectedIds.length} 个</span>
+          <Button size="sm" variant="outline" onClick={() => setEnabledMutation.mutate({ ids: selectedIds, enabled: true })}>启用</Button>
+          <Button size="sm" variant="outline" onClick={() => setEnabledMutation.mutate({ ids: selectedIds, enabled: false })}>禁用</Button>
+          <Button size="sm" variant="outline" onClick={() => clearErrorsMutation.mutate(selectedIds)}>清除报错</Button>
+          <Button size="sm" variant="destructive" onClick={() => deleteMutation.mutate(selectedIds)}>删除</Button>
+        </div>
       )}
 
       {/* 节点列表 */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">节点列表 ({nodes.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-10"></TableHead>
-                <TableHead>名称</TableHead>
-                <TableHead>类型</TableHead>
-                <TableHead>服务器</TableHead>
-                <TableHead>分数</TableHead>
-                <TableHead>状态</TableHead>
-                <TableHead>报错</TableHead>
-                <TableHead>成功</TableHead>
-                <TableHead>活跃</TableHead>
-                <TableHead>最近测活</TableHead>
+      <div className="rounded-lg border bg-card">
+        <div className="p-4 border-b">
+          <div className="text-base font-medium">节点列表 ({nodes.length})</div>
+        </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-10"></TableHead>
+              <TableHead>名称</TableHead>
+              <TableHead>类型</TableHead>
+              <TableHead>服务器</TableHead>
+              <TableHead>分数</TableHead>
+              <TableHead>状态</TableHead>
+              <TableHead>报错</TableHead>
+              <TableHead>成功</TableHead>
+              <TableHead>活跃</TableHead>
+              <TableHead>最近测活</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {nodes.map((node) => (
+              <TableRow key={node.identifier}>
+                <TableCell>
+                  <Checkbox checked={selected.has(node.identifier)} onCheckedChange={() => toggleSelect(node.identifier)} />
+                </TableCell>
+                <TableCell className="font-medium">{node.name}</TableCell>
+                <TableCell>{node.type}</TableCell>
+                <TableCell className="text-xs text-muted-foreground">{node.server}:{node.port}</TableCell>
+                <TableCell>
+                  <span className={node.score >= 50 ? "text-green-600" : node.score >= 0 ? "text-yellow-600" : "text-red-600"}>
+                    {node.score}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  {node.autoDisabled ? (
+                    <span className="text-red-600 text-xs">自动禁用</span>
+                  ) : node.enabled ? (
+                    <span className="text-green-600 text-xs">启用</span>
+                  ) : (
+                    <span className="text-muted-foreground text-xs">禁用</span>
+                  )}
+                </TableCell>
+                <TableCell className="text-xs">{node.errorCount}</TableCell>
+                <TableCell className="text-xs">{node.successCount}</TableCell>
+                <TableCell className="text-xs">{node.activeRequests}</TableCell>
+                <TableCell className="text-xs text-muted-foreground">
+                  {node.lastCheckAt ? new Date(node.lastCheckAt).toLocaleString() : "未测活"}
+                  {node.lastCheckStable ? " ✅" : " ❌"}
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {nodes.map((node) => (
-                <TableRow key={node.identifier}>
-                  <TableCell>
-                    <Checkbox checked={selected.has(node.identifier)} onCheckedChange={() => toggleSelect(node.identifier)} />
-                  </TableCell>
-                  <TableCell className="font-medium">{node.name}</TableCell>
-                  <TableCell>{node.type}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">{node.server}:{node.port}</TableCell>
-                  <TableCell>
-                    <span className={node.score >= 50 ? "text-green-600" : node.score >= 0 ? "text-yellow-600" : "text-red-600"}>
-                      {node.score}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    {node.autoDisabled ? (
-                      <span className="text-red-600 text-xs">自动禁用</span>
-                    ) : node.enabled ? (
-                      <span className="text-green-600 text-xs">启用</span>
-                    ) : (
-                      <span className="text-muted-foreground text-xs">禁用</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-xs">{node.errorCount}</TableCell>
-                  <TableCell className="text-xs">{node.successCount}</TableCell>
-                  <TableCell className="text-xs">{node.activeRequests}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {node.lastCheckAt ? new Date(node.lastCheckAt).toLocaleString() : "未测活"}
-                    {node.lastCheckStable ? " ✅" : " ❌"}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
 
       {/* 请求报错 */}
       {errors.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">最近请求报错 ({errors.length})</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-1 max-h-60 overflow-y-auto">
+        <div className="rounded-lg border bg-card">
+          <div className="p-4 border-b">
+            <div className="text-base font-medium">最近请求报错 ({errors.length})</div>
+          </div>
+          <div className="p-4 space-y-1 max-h-60 overflow-y-auto">
             {errors.map((err, i) => (
               <div key={i} className="text-xs text-muted-foreground border-b pb-1">
                 <span className="font-medium">{err.nodeName}</span>: {err.error}
@@ -308,8 +312,8 @@ export function ProxiesPage() {
                 <span className="ml-2">{new Date(err.timestamp).toLocaleString()}</span>
               </div>
             ))}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* 导入对话框 */}
@@ -351,7 +355,7 @@ export function ProxiesPage() {
               />
             </div>
             <div className="space-y-1">
-              <Label>抓取间隔(分钟,留空只抓一次)</Label>
+              <Label>抓取间隔</Label>
               <Select value={fetchInterval} onValueChange={setFetchInterval}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
