@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"m365-copilot2xapi/backend/internal/transport/http/middleware"
+	"M365Copilot2ApiX/backend/internal/transport/http/middleware"
 )
 
 func testDependencies() Dependencies {

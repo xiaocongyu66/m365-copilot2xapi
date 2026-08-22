@@ -9,12 +9,12 @@ import (
 	"sync"
 	"time"
 
-	accountdomain "m365-copilot2xapi/backend/internal/domain/account"
-	domain "m365-copilot2xapi/backend/internal/domain/egress"
-	modeldomain "m365-copilot2xapi/backend/internal/domain/model"
-	"m365-copilot2xapi/backend/internal/infra/security"
-	"m365-copilot2xapi/backend/internal/pkg/tunnelproxy"
-	"m365-copilot2xapi/backend/internal/repository"
+	accountdomain "M365Copilot2ApiX/backend/internal/domain/account"
+	domain "M365Copilot2ApiX/backend/internal/domain/egress"
+	modeldomain "M365Copilot2ApiX/backend/internal/domain/model"
+	"M365Copilot2ApiX/backend/internal/infra/security"
+	"M365Copilot2ApiX/backend/internal/pkg/tunnelproxy"
+	"M365Copilot2ApiX/backend/internal/repository"
 )
 
 var (

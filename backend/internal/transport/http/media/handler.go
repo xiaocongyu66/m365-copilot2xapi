@@ -7,10 +7,10 @@ import (
 	"strconv"
 	"strings"
 
-	mediaapp "m365-copilot2xapi/backend/internal/application/media"
-	"m365-copilot2xapi/backend/internal/pkg/mediafile"
-	"m365-copilot2xapi/backend/internal/repository"
-	"m365-copilot2xapi/backend/internal/shared/response"
+	mediaapp "M365Copilot2ApiX/backend/internal/application/media"
+	"M365Copilot2ApiX/backend/internal/pkg/mediafile"
+	"M365Copilot2ApiX/backend/internal/repository"
+	"M365Copilot2ApiX/backend/internal/shared/response"
 	"github.com/gin-gonic/gin"
 )
 

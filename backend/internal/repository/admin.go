@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"m365-copilot2xapi/backend/internal/domain/admin"
+	"M365Copilot2ApiX/backend/internal/domain/admin"
 )
 
 // AdminRepository 定义管理员持久化能力。

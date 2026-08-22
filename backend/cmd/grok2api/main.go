@@ -13,7 +13,7 @@ import (
 	"fmt"
 	"os"
 
-	"m365-copilot2xapi/backend/internal/cli"
+	"M365Copilot2ApiX/backend/internal/cli"
 )
 
 func main() {

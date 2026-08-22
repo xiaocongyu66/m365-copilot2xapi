@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"m365-copilot2xapi/backend/internal/domain/account"
+	"M365Copilot2ApiX/backend/internal/domain/account"
 )
 
 // AccountUpdates 表示批量账号更新中允许持久化的字段。

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"m365-copilot2xapi/backend/internal/pkg/perfmetrics"
+	"M365Copilot2ApiX/backend/internal/pkg/perfmetrics"
 )
 
 const (

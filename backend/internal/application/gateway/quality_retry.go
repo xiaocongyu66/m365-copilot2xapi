@@ -8,12 +8,12 @@ import (
 	"strings"
 	"time"
 
-	accountdomain "m365-copilot2xapi/backend/internal/domain/account"
-	"m365-copilot2xapi/backend/internal/domain/audit"
-	inferencedomain "m365-copilot2xapi/backend/internal/domain/inference"
-	modeldomain "m365-copilot2xapi/backend/internal/domain/model"
-	infraegress "m365-copilot2xapi/backend/internal/infra/egress"
-	neterrorpkg "m365-copilot2xapi/backend/internal/pkg/neterror"
+	accountdomain "M365Copilot2ApiX/backend/internal/domain/account"
+	"M365Copilot2ApiX/backend/internal/domain/audit"
+	inferencedomain "M365Copilot2ApiX/backend/internal/domain/inference"
+	modeldomain "M365Copilot2ApiX/backend/internal/domain/model"
+	infraegress "M365Copilot2ApiX/backend/internal/infra/egress"
+	neterrorpkg "M365Copilot2ApiX/backend/internal/pkg/neterror"
 )
 
 const (

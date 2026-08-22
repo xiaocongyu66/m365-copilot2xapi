@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"m365-copilot2xapi/backend/internal/infra/config"
+	"M365Copilot2ApiX/backend/internal/infra/config"
 )
 
 const bootstrapVersion = 1

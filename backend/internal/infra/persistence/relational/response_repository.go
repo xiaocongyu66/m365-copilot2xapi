@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"m365-copilot2xapi/backend/internal/domain/account"
-	inferencedomain "m365-copilot2xapi/backend/internal/domain/inference"
-	"m365-copilot2xapi/backend/internal/repository"
+	"M365Copilot2ApiX/backend/internal/domain/account"
+	inferencedomain "M365Copilot2ApiX/backend/internal/domain/inference"
+	"M365Copilot2ApiX/backend/internal/repository"
 	"gorm.io/gorm"
 )
 

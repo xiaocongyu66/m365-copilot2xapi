@@ -20,13 +20,13 @@ import (
 	"sync/atomic"
 	"time"
 
-	application "m365-copilot2xapi/backend/internal/application/egress"
-	accountdomain "m365-copilot2xapi/backend/internal/domain/account"
-	domain "m365-copilot2xapi/backend/internal/domain/egress"
-	settingsdomain "m365-copilot2xapi/backend/internal/domain/settings"
-	"m365-copilot2xapi/backend/internal/infra/security"
-	neterrorpkg "m365-copilot2xapi/backend/internal/pkg/neterror"
-	"m365-copilot2xapi/backend/internal/repository"
+	application "M365Copilot2ApiX/backend/internal/application/egress"
+	accountdomain "M365Copilot2ApiX/backend/internal/domain/account"
+	domain "M365Copilot2ApiX/backend/internal/domain/egress"
+	settingsdomain "M365Copilot2ApiX/backend/internal/domain/settings"
+	"M365Copilot2ApiX/backend/internal/infra/security"
+	neterrorpkg "M365Copilot2ApiX/backend/internal/pkg/neterror"
+	"M365Copilot2ApiX/backend/internal/repository"
 	"golang.org/x/sync/singleflight"
 )
 

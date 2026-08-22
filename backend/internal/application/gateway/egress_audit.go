@@ -1,11 +1,11 @@
 package gateway
 
 import (
-	accountdomain "m365-copilot2xapi/backend/internal/domain/account"
-	"m365-copilot2xapi/backend/internal/domain/audit"
-	egressdomain "m365-copilot2xapi/backend/internal/domain/egress"
-	"m365-copilot2xapi/backend/internal/domain/media"
-	infraegress "m365-copilot2xapi/backend/internal/infra/egress"
+	accountdomain "M365Copilot2ApiX/backend/internal/domain/account"
+	"M365Copilot2ApiX/backend/internal/domain/audit"
+	egressdomain "M365Copilot2ApiX/backend/internal/domain/egress"
+	"M365Copilot2ApiX/backend/internal/domain/media"
+	infraegress "M365Copilot2ApiX/backend/internal/infra/egress"
 )
 
 func applyAuditEgress(record *audit.Record, trace *infraegress.Trace, provider accountdomain.Provider) {

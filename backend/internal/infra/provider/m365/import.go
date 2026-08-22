@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"strings"
 
-	"m365-copilot2xapi/backend/internal/domain/account"
-	"m365-copilot2xapi/backend/internal/infra/provider"
+	"M365Copilot2ApiX/backend/internal/domain/account"
+	"M365Copilot2ApiX/backend/internal/infra/provider"
 )
 
 // importedAccount is the JSON shape accepted by ParseImportedCredentials.

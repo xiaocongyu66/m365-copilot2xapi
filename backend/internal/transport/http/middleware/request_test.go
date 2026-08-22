@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"m365-copilot2xapi/backend/internal/pkg/perfmetrics"
-	"m365-copilot2xapi/backend/internal/pkg/requestmeta"
+	"M365Copilot2ApiX/backend/internal/pkg/perfmetrics"
+	"M365Copilot2ApiX/backend/internal/pkg/requestmeta"
 	"github.com/gin-gonic/gin"
 )
 

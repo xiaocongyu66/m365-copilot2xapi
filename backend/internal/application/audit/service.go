@@ -14,12 +14,12 @@ import (
 	"sync/atomic"
 	"time"
 
-	auditdomain "m365-copilot2xapi/backend/internal/domain/audit"
-	"m365-copilot2xapi/backend/internal/pkg/batch"
-	"m365-copilot2xapi/backend/internal/pkg/perfmetrics"
-	"m365-copilot2xapi/backend/internal/pkg/requestmeta"
-	"m365-copilot2xapi/backend/internal/pkg/resultcache"
-	"m365-copilot2xapi/backend/internal/repository"
+	auditdomain "M365Copilot2ApiX/backend/internal/domain/audit"
+	"M365Copilot2ApiX/backend/internal/pkg/batch"
+	"M365Copilot2ApiX/backend/internal/pkg/perfmetrics"
+	"M365Copilot2ApiX/backend/internal/pkg/requestmeta"
+	"M365Copilot2ApiX/backend/internal/pkg/resultcache"
+	"M365Copilot2ApiX/backend/internal/repository"
 )
 
 var (

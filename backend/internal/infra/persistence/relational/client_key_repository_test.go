@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	auditdomain "m365-copilot2xapi/backend/internal/domain/audit"
-	clientkeydomain "m365-copilot2xapi/backend/internal/domain/clientkey"
-	"m365-copilot2xapi/backend/internal/repository"
+	auditdomain "M365Copilot2ApiX/backend/internal/domain/audit"
+	clientkeydomain "M365Copilot2ApiX/backend/internal/domain/clientkey"
+	"M365Copilot2ApiX/backend/internal/repository"
 )
 
 func TestClientKeyBillingReservationsEnforceLimitAndExpire(t *testing.T) {

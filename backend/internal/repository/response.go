@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	inferencedomain "m365-copilot2xapi/backend/internal/domain/inference"
+	inferencedomain "M365Copilot2ApiX/backend/internal/domain/inference"
 )
 
 type ResponseCleanupResult struct {

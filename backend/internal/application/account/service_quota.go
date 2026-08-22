@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	accountdomain "m365-copilot2xapi/backend/internal/domain/account"
-	"m365-copilot2xapi/backend/internal/infra/provider"
-	"m365-copilot2xapi/backend/internal/repository"
+	accountdomain "M365Copilot2ApiX/backend/internal/domain/account"
+	"M365Copilot2ApiX/backend/internal/infra/provider"
+	"M365Copilot2ApiX/backend/internal/repository"
 )
 
 func (s *Service) RefreshBilling(ctx context.Context, id uint64) (accountdomain.Billing, error) {

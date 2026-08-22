@@ -5,7 +5,7 @@ import (
 	"io"
 	"time"
 
-	"m365-copilot2xapi/backend/internal/domain/media"
+	"M365Copilot2ApiX/backend/internal/domain/media"
 )
 
 // MediaAssetListQuery 表示管理端媒体资源列表的查询条件。

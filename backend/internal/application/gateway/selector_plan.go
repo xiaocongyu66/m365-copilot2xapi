@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"m365-copilot2xapi/backend/internal/domain/account"
-	"m365-copilot2xapi/backend/internal/repository"
+	"M365Copilot2ApiX/backend/internal/domain/account"
+	"M365Copilot2ApiX/backend/internal/repository"
 )
 
 type candidateScore struct {

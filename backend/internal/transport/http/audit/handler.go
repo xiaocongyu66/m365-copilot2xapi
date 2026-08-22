@@ -8,10 +8,10 @@ import (
 	"time"
 	"unicode/utf8"
 
-	auditapp "m365-copilot2xapi/backend/internal/application/audit"
-	auditdomain "m365-copilot2xapi/backend/internal/domain/audit"
-	"m365-copilot2xapi/backend/internal/repository"
-	"m365-copilot2xapi/backend/internal/shared/response"
+	auditapp "M365Copilot2ApiX/backend/internal/application/audit"
+	auditdomain "M365Copilot2ApiX/backend/internal/domain/audit"
+	"M365Copilot2ApiX/backend/internal/repository"
+	"M365Copilot2ApiX/backend/internal/shared/response"
 	"github.com/gin-gonic/gin"
 )
 

@@ -14,11 +14,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	accountapp "m365-copilot2xapi/backend/internal/application/account"
-	accountsyncapp "m365-copilot2xapi/backend/internal/application/accountsync"
-	accountdomain "m365-copilot2xapi/backend/internal/domain/account"
-	"m365-copilot2xapi/backend/internal/repository"
-	"m365-copilot2xapi/backend/internal/shared/response"
+	accountapp "M365Copilot2ApiX/backend/internal/application/account"
+	accountsyncapp "M365Copilot2ApiX/backend/internal/application/accountsync"
+	accountdomain "M365Copilot2ApiX/backend/internal/domain/account"
+	"M365Copilot2ApiX/backend/internal/repository"
+	"M365Copilot2ApiX/backend/internal/shared/response"
 	"github.com/gin-gonic/gin"
 )
 

@@ -14,8 +14,8 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"m365-copilot2xapi/backend/internal/domain/audit"
-	"m365-copilot2xapi/backend/internal/repository"
+	"M365Copilot2ApiX/backend/internal/domain/audit"
+	"M365Copilot2ApiX/backend/internal/repository"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )

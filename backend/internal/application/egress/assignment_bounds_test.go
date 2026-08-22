@@ -4,8 +4,8 @@ import (
 	"math"
 	"testing"
 
-	accountdomain "m365-copilot2xapi/backend/internal/domain/account"
-	domain "m365-copilot2xapi/backend/internal/domain/egress"
+	accountdomain "M365Copilot2ApiX/backend/internal/domain/account"
+	domain "M365Copilot2ApiX/backend/internal/domain/egress"
 )
 
 func TestNormalizeAndParseAutoAssignShare(t *testing.T) {

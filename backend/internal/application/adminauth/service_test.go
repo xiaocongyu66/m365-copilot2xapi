@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"m365-copilot2xapi/backend/internal/domain/admin"
-	"m365-copilot2xapi/backend/internal/infra/persistence/relational"
-	"m365-copilot2xapi/backend/internal/infra/security"
-	"m365-copilot2xapi/backend/internal/repository"
+	"M365Copilot2ApiX/backend/internal/domain/admin"
+	"M365Copilot2ApiX/backend/internal/infra/persistence/relational"
+	"M365Copilot2ApiX/backend/internal/infra/security"
+	"M365Copilot2ApiX/backend/internal/repository"
 )
 
 func TestRefreshTokenRotationAndLogout(t *testing.T) {

@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"time"
 
-	dashboardapp "m365-copilot2xapi/backend/internal/application/dashboard"
-	dashboarddomain "m365-copilot2xapi/backend/internal/domain/dashboard"
-	"m365-copilot2xapi/backend/internal/shared/response"
+	dashboardapp "M365Copilot2ApiX/backend/internal/application/dashboard"
+	dashboarddomain "M365Copilot2ApiX/backend/internal/domain/dashboard"
+	"M365Copilot2ApiX/backend/internal/shared/response"
 	"github.com/gin-gonic/gin"
 )
 

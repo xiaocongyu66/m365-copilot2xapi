@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	adminapp "m365-copilot2xapi/backend/internal/application/adminauth"
-	admindomain "m365-copilot2xapi/backend/internal/domain/admin"
-	"m365-copilot2xapi/backend/internal/shared/response"
-	"m365-copilot2xapi/backend/internal/transport/http/middleware"
+	adminapp "M365Copilot2ApiX/backend/internal/application/adminauth"
+	admindomain "M365Copilot2ApiX/backend/internal/domain/admin"
+	"M365Copilot2ApiX/backend/internal/shared/response"
+	"M365Copilot2ApiX/backend/internal/transport/http/middleware"
 	"github.com/gin-gonic/gin"
 )
 

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	settingsdomain "m365-copilot2xapi/backend/internal/domain/settings"
+	settingsdomain "M365Copilot2ApiX/backend/internal/domain/settings"
 )
 
 // RuntimeSettingsRepository 定义运行设置的单实例持久化边界。

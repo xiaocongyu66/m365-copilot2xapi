@@ -1,9 +1,9 @@
 package m365
 
 import (
-	"m365-copilot2xapi/backend/internal/domain/account"
-	modeldomain "m365-copilot2xapi/backend/internal/domain/model"
-	"m365-copilot2xapi/backend/internal/infra/provider"
+	"M365Copilot2ApiX/backend/internal/domain/account"
+	modeldomain "M365Copilot2ApiX/backend/internal/domain/model"
+	"M365Copilot2ApiX/backend/internal/infra/provider"
 )
 
 // Definition declares the static capability boundary of the M365 Copilot

@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strings"
 
-	"m365-copilot2xapi/backend/internal/application/adminauth"
-	clientkeyapp "m365-copilot2xapi/backend/internal/application/clientkey"
-	"m365-copilot2xapi/backend/internal/shared/response"
+	"M365Copilot2ApiX/backend/internal/application/adminauth"
+	clientkeyapp "M365Copilot2ApiX/backend/internal/application/clientkey"
+	"M365Copilot2ApiX/backend/internal/shared/response"
 	"github.com/gin-gonic/gin"
 )
 

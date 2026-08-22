@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"m365-copilot2xapi/backend/internal/domain/account"
-	clientkeydomain "m365-copilot2xapi/backend/internal/domain/clientkey"
+	"M365Copilot2ApiX/backend/internal/domain/account"
+	clientkeydomain "M365Copilot2ApiX/backend/internal/domain/clientkey"
 )
 
 // selectionSession 保存一次下游请求的候选快照和计划。账号切换时复用它，

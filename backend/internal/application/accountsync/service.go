@@ -10,10 +10,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	accountapp "m365-copilot2xapi/backend/internal/application/account"
-	accountdomain "m365-copilot2xapi/backend/internal/domain/account"
-	"m365-copilot2xapi/backend/internal/infra/provider"
-	"m365-copilot2xapi/backend/internal/pkg/batch"
+	accountapp "M365Copilot2ApiX/backend/internal/application/account"
+	accountdomain "M365Copilot2ApiX/backend/internal/domain/account"
+	"M365Copilot2ApiX/backend/internal/infra/provider"
+	"M365Copilot2ApiX/backend/internal/pkg/batch"
 	"golang.org/x/sync/singleflight"
 )
 

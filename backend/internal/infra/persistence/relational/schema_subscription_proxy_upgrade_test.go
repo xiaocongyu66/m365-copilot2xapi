@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	egressdomain "m365-copilot2xapi/backend/internal/domain/egress"
+	egressdomain "M365Copilot2ApiX/backend/internal/domain/egress"
 )
 
 type legacyOperationsConfigWithSubscriptionProxy struct {

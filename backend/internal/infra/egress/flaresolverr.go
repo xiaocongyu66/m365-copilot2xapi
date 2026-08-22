@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	application "m365-copilot2xapi/backend/internal/application/egress"
-	"m365-copilot2xapi/backend/internal/pkg/tunnelproxy"
+	application "M365Copilot2ApiX/backend/internal/application/egress"
+	"M365Copilot2ApiX/backend/internal/pkg/tunnelproxy"
 )
 
 const maxFlareSolverrResponseBytes = 2 << 20

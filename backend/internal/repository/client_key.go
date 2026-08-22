@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	"m365-copilot2xapi/backend/internal/domain/clientkey"
+	"M365Copilot2ApiX/backend/internal/domain/clientkey"
 )
 
 // ClientKeyRepository 定义下游 API Key 持久化能力。

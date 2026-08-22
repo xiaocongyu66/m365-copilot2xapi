@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
-	accountdomain "m365-copilot2xapi/backend/internal/domain/account"
-	dashboarddomain "m365-copilot2xapi/backend/internal/domain/dashboard"
-	modeldomain "m365-copilot2xapi/backend/internal/domain/model"
-	"m365-copilot2xapi/backend/internal/repository"
+	accountdomain "M365Copilot2ApiX/backend/internal/domain/account"
+	dashboarddomain "M365Copilot2ApiX/backend/internal/domain/dashboard"
+	modeldomain "M365Copilot2ApiX/backend/internal/domain/model"
+	"M365Copilot2ApiX/backend/internal/repository"
 	"gorm.io/gorm"
 )
 

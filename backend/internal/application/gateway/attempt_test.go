@@ -12,9 +12,9 @@ import (
 	"testing"
 	"time"
 
-	"m365-copilot2xapi/backend/internal/domain/account"
-	"m365-copilot2xapi/backend/internal/domain/audit"
-	"m365-copilot2xapi/backend/internal/infra/provider"
+	"M365Copilot2ApiX/backend/internal/domain/account"
+	"M365Copilot2ApiX/backend/internal/domain/audit"
+	"M365Copilot2ApiX/backend/internal/infra/provider"
 )
 
 func TestFailureAttemptRecorderLimitsAndSanitizesHTTPResponse(t *testing.T) {

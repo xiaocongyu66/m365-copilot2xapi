@@ -9,13 +9,13 @@ import (
 	"sync/atomic"
 	"time"
 
-	accountapp "m365-copilot2xapi/backend/internal/application/account"
-	"m365-copilot2xapi/backend/internal/domain/account"
-	clientkeydomain "m365-copilot2xapi/backend/internal/domain/clientkey"
-	modeldomain "m365-copilot2xapi/backend/internal/domain/model"
-	"m365-copilot2xapi/backend/internal/infra/provider"
-	"m365-copilot2xapi/backend/internal/pkg/batch"
-	"m365-copilot2xapi/backend/internal/repository"
+	accountapp "M365Copilot2ApiX/backend/internal/application/account"
+	"M365Copilot2ApiX/backend/internal/domain/account"
+	clientkeydomain "M365Copilot2ApiX/backend/internal/domain/clientkey"
+	modeldomain "M365Copilot2ApiX/backend/internal/domain/model"
+	"M365Copilot2ApiX/backend/internal/infra/provider"
+	"M365Copilot2ApiX/backend/internal/pkg/batch"
+	"M365Copilot2ApiX/backend/internal/repository"
 	"golang.org/x/sync/singleflight"
 )
 

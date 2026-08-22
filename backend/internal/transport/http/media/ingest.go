@@ -15,10 +15,10 @@ import (
 	"syscall"
 	"time"
 
-	mediaapp "m365-copilot2xapi/backend/internal/application/media"
-	mediadomain "m365-copilot2xapi/backend/internal/domain/media"
-	"m365-copilot2xapi/backend/internal/pkg/netguard"
-	"m365-copilot2xapi/backend/internal/shared/response"
+	mediaapp "M365Copilot2ApiX/backend/internal/application/media"
+	mediadomain "M365Copilot2ApiX/backend/internal/domain/media"
+	"M365Copilot2ApiX/backend/internal/pkg/netguard"
+	"M365Copilot2ApiX/backend/internal/shared/response"
 	"github.com/gin-gonic/gin"
 )
 

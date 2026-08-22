@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"m365-copilot2xapi/backend/internal/domain/audit"
+	"M365Copilot2ApiX/backend/internal/domain/audit"
 )
 
 // AuditRepository 定义请求元数据审计持久化能力。

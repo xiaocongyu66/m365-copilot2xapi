@@ -15,8 +15,8 @@ import (
 	"strings"
 	"time"
 
-	mediadomain "m365-copilot2xapi/backend/internal/domain/media"
-	"m365-copilot2xapi/backend/internal/repository"
+	mediadomain "M365Copilot2ApiX/backend/internal/domain/media"
+	"M365Copilot2ApiX/backend/internal/repository"
 )
 
 const (

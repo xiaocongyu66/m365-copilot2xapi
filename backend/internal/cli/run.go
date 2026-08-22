@@ -9,9 +9,9 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"m365-copilot2xapi/backend/internal/app"
-	"m365-copilot2xapi/backend/internal/infra/config"
-	"m365-copilot2xapi/backend/internal/infra/observability"
+	"M365Copilot2ApiX/backend/internal/app"
+	"M365Copilot2ApiX/backend/internal/infra/config"
+	"M365Copilot2ApiX/backend/internal/infra/observability"
 )
 
 // Run 解析启动参数并运行后端服务。

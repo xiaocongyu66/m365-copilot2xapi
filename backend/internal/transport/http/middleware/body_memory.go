@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"m365-copilot2xapi/backend/internal/pkg/perfmetrics"
+	"M365Copilot2ApiX/backend/internal/pkg/perfmetrics"
 	"github.com/gin-gonic/gin"
 )
 

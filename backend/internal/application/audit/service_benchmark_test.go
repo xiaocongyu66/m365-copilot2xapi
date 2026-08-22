@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	auditdomain "m365-copilot2xapi/backend/internal/domain/audit"
-	"m365-copilot2xapi/backend/internal/infra/persistence/relational"
+	auditdomain "M365Copilot2ApiX/backend/internal/domain/audit"
+	"M365Copilot2ApiX/backend/internal/infra/persistence/relational"
 )
 
 func BenchmarkAuditServiceSQLite(b *testing.B) {

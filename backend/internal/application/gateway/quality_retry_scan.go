@@ -10,7 +10,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"m365-copilot2xapi/backend/internal/domain/audit"
+	"M365Copilot2ApiX/backend/internal/domain/audit"
 )
 
 const (

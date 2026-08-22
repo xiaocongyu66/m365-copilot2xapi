@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	dashboardapp "m365-copilot2xapi/backend/internal/application/dashboard"
-	dashboarddomain "m365-copilot2xapi/backend/internal/domain/dashboard"
-	"m365-copilot2xapi/backend/internal/repository"
+	dashboardapp "M365Copilot2ApiX/backend/internal/application/dashboard"
+	dashboarddomain "M365Copilot2ApiX/backend/internal/domain/dashboard"
+	"M365Copilot2ApiX/backend/internal/repository"
 	"github.com/gin-gonic/gin"
 )
 

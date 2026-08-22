@@ -9,9 +9,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	clientkeyapp "m365-copilot2xapi/backend/internal/application/clientkey"
-	"m365-copilot2xapi/backend/internal/infra/persistence/relational"
-	"m365-copilot2xapi/backend/internal/infra/security"
+	clientkeyapp "M365Copilot2ApiX/backend/internal/application/clientkey"
+	"M365Copilot2ApiX/backend/internal/infra/persistence/relational"
+	"M365Copilot2ApiX/backend/internal/infra/security"
 	"github.com/gin-gonic/gin"
 )
 

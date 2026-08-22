@@ -14,9 +14,9 @@ import (
 	"strings"
 	"time"
 
-	clientkeydomain "m365-copilot2xapi/backend/internal/domain/clientkey"
-	settingsdomain "m365-copilot2xapi/backend/internal/domain/settings"
-	"m365-copilot2xapi/backend/internal/pkg/signerurl"
+	clientkeydomain "M365Copilot2ApiX/backend/internal/domain/clientkey"
+	settingsdomain "M365Copilot2ApiX/backend/internal/domain/settings"
+	"M365Copilot2ApiX/backend/internal/pkg/signerurl"
 	"gopkg.in/yaml.v3"
 )
 

@@ -6,8 +6,8 @@ import (
 	"strings"
 	"sync"
 
-	accountdomain "m365-copilot2xapi/backend/internal/domain/account"
-	domain "m365-copilot2xapi/backend/internal/domain/egress"
+	accountdomain "M365Copilot2ApiX/backend/internal/domain/account"
+	domain "M365Copilot2ApiX/backend/internal/domain/egress"
 )
 
 // Selection is the egress snapshot actually selected for an upstream request. It contains only metadata safe for audit

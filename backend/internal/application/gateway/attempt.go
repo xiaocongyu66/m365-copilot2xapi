@@ -16,10 +16,10 @@ import (
 	"time"
 	"unicode/utf8"
 
-	accountdomain "m365-copilot2xapi/backend/internal/domain/account"
-	"m365-copilot2xapi/backend/internal/domain/audit"
-	"m365-copilot2xapi/backend/internal/infra/provider"
-	neterrorpkg "m365-copilot2xapi/backend/internal/pkg/neterror"
+	accountdomain "M365Copilot2ApiX/backend/internal/domain/account"
+	"M365Copilot2ApiX/backend/internal/domain/audit"
+	"M365Copilot2ApiX/backend/internal/infra/provider"
+	neterrorpkg "M365Copilot2ApiX/backend/internal/pkg/neterror"
 )
 
 type failureAttemptRecorder struct {

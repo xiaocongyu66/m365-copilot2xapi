@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"m365-copilot2xapi/backend/internal/domain/account"
-	"m365-copilot2xapi/backend/internal/infra/provider"
+	"M365Copilot2ApiX/backend/internal/domain/account"
+	"M365Copilot2ApiX/backend/internal/infra/provider"
 )
 
 // staticModels is the built-in model catalog, ported from

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"m365-copilot2xapi/backend/internal/infra/config"
+	"M365Copilot2ApiX/backend/internal/infra/config"
 )
 
 func TestPrepareWritesPrivateScopedBootstrap(t *testing.T) {

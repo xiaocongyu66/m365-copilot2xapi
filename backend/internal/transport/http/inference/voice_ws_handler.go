@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	upstreamws "github.com/bogdanfinn/websocket"
-	"m365-copilot2xapi/backend/internal/application/gateway"
+	"M365Copilot2ApiX/backend/internal/application/gateway"
 	"github.com/gin-gonic/gin"
 	clientws "github.com/gorilla/websocket"
 )

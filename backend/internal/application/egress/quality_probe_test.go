@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	domain "m365-copilot2xapi/backend/internal/domain/egress"
-	"m365-copilot2xapi/backend/internal/repository"
+	domain "M365Copilot2ApiX/backend/internal/domain/egress"
+	"M365Copilot2ApiX/backend/internal/repository"
 )
 
 type qualityProbeRepository struct{ node domain.Node }

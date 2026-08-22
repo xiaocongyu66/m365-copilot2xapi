@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	updatecheckapp "m365-copilot2xapi/backend/internal/application/updatecheck"
+	updatecheckapp "M365Copilot2ApiX/backend/internal/application/updatecheck"
 	"github.com/gin-gonic/gin"
 )
 

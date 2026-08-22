@@ -17,9 +17,9 @@ import (
 	"testing"
 	"time"
 
-	mediaapp "m365-copilot2xapi/backend/internal/application/media"
-	localmedia "m365-copilot2xapi/backend/internal/infra/media"
-	"m365-copilot2xapi/backend/internal/infra/persistence/relational"
+	mediaapp "M365Copilot2ApiX/backend/internal/application/media"
+	localmedia "M365Copilot2ApiX/backend/internal/infra/media"
+	"M365Copilot2ApiX/backend/internal/infra/persistence/relational"
 	"github.com/gin-gonic/gin"
 )
 

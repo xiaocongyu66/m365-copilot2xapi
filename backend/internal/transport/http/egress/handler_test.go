@@ -13,11 +13,11 @@ import (
 	"testing"
 	"time"
 
-	egressapp "m365-copilot2xapi/backend/internal/application/egress"
-	accountdomain "m365-copilot2xapi/backend/internal/domain/account"
-	egressdomain "m365-copilot2xapi/backend/internal/domain/egress"
-	"m365-copilot2xapi/backend/internal/infra/security"
-	"m365-copilot2xapi/backend/internal/repository"
+	egressapp "M365Copilot2ApiX/backend/internal/application/egress"
+	accountdomain "M365Copilot2ApiX/backend/internal/domain/account"
+	egressdomain "M365Copilot2ApiX/backend/internal/domain/egress"
+	"M365Copilot2ApiX/backend/internal/infra/security"
+	"M365Copilot2ApiX/backend/internal/repository"
 	"github.com/gin-gonic/gin"
 )
 

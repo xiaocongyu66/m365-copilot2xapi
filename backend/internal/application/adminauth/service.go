@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"m365-copilot2xapi/backend/internal/domain/admin"
-	"m365-copilot2xapi/backend/internal/infra/security"
-	"m365-copilot2xapi/backend/internal/repository"
+	"M365Copilot2ApiX/backend/internal/domain/admin"
+	"M365Copilot2ApiX/backend/internal/infra/security"
+	"M365Copilot2ApiX/backend/internal/repository"
 )
 
 var (

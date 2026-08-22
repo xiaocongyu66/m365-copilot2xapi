@@ -6,7 +6,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"m365-copilot2xapi/backend/internal/repository"
+	"M365Copilot2ApiX/backend/internal/repository"
 )
 
 const (

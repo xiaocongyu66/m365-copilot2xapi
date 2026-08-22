@@ -10,10 +10,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	clientkeydomain "m365-copilot2xapi/backend/internal/domain/clientkey"
-	"m365-copilot2xapi/backend/internal/infra/security"
-	"m365-copilot2xapi/backend/internal/pkg/perfmetrics"
-	"m365-copilot2xapi/backend/internal/repository"
+	clientkeydomain "M365Copilot2ApiX/backend/internal/domain/clientkey"
+	"M365Copilot2ApiX/backend/internal/infra/security"
+	"M365Copilot2ApiX/backend/internal/pkg/perfmetrics"
+	"M365Copilot2ApiX/backend/internal/repository"
 )
 
 var (

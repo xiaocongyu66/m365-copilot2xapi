@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	clientkeydomain "m365-copilot2xapi/backend/internal/domain/clientkey"
+	clientkeydomain "M365Copilot2ApiX/backend/internal/domain/clientkey"
 )
 
 const (

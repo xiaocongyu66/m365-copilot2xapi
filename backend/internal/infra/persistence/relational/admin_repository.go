@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"m365-copilot2xapi/backend/internal/domain/admin"
-	"m365-copilot2xapi/backend/internal/repository"
+	"M365Copilot2ApiX/backend/internal/domain/admin"
+	"M365Copilot2ApiX/backend/internal/repository"
 	"gorm.io/gorm"
 )
 

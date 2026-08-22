@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	clientkeyapp "m365-copilot2xapi/backend/internal/application/clientkey"
-	clientkeydomain "m365-copilot2xapi/backend/internal/domain/clientkey"
-	"m365-copilot2xapi/backend/internal/repository"
-	"m365-copilot2xapi/backend/internal/shared/response"
+	clientkeyapp "M365Copilot2ApiX/backend/internal/application/clientkey"
+	clientkeydomain "M365Copilot2ApiX/backend/internal/domain/clientkey"
+	"M365Copilot2ApiX/backend/internal/repository"
+	"M365Copilot2ApiX/backend/internal/shared/response"
 	"github.com/gin-gonic/gin"
 )
 

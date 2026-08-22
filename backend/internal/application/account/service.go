@@ -12,12 +12,12 @@ import (
 	"sync"
 	"time"
 
-	accountdomain "m365-copilot2xapi/backend/internal/domain/account"
-	"m365-copilot2xapi/backend/internal/infra/provider"
-	"m365-copilot2xapi/backend/internal/infra/security"
-	"m365-copilot2xapi/backend/internal/pkg/batch"
-	"m365-copilot2xapi/backend/internal/pkg/perfmetrics"
-	"m365-copilot2xapi/backend/internal/repository"
+	accountdomain "M365Copilot2ApiX/backend/internal/domain/account"
+	"M365Copilot2ApiX/backend/internal/infra/provider"
+	"M365Copilot2ApiX/backend/internal/infra/security"
+	"M365Copilot2ApiX/backend/internal/pkg/batch"
+	"M365Copilot2ApiX/backend/internal/pkg/perfmetrics"
+	"M365Copilot2ApiX/backend/internal/repository"
 	"golang.org/x/sync/singleflight"
 )
 

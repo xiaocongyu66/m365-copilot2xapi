@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	application "m365-copilot2xapi/backend/internal/application/egress"
-	neterrorpkg "m365-copilot2xapi/backend/internal/pkg/neterror"
+	application "M365Copilot2ApiX/backend/internal/application/egress"
+	neterrorpkg "M365Copilot2ApiX/backend/internal/pkg/neterror"
 )
 
 func TestBuildClientUsesConfiguredResponseHeaderTimeout(t *testing.T) {

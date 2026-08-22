@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	settingsapp "m365-copilot2xapi/backend/internal/application/settings"
-	"m365-copilot2xapi/backend/internal/shared/response"
+	settingsapp "M365Copilot2ApiX/backend/internal/application/settings"
+	"M365Copilot2ApiX/backend/internal/shared/response"
 	"github.com/gin-gonic/gin"
 )
 

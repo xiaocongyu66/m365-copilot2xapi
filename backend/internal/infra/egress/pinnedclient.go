@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"m365-copilot2xapi/backend/internal/pkg/tunnelproxy"
+	"M365Copilot2ApiX/backend/internal/pkg/tunnelproxy"
 	xproxy "golang.org/x/net/proxy"
 )
 

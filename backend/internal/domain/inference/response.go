@@ -3,7 +3,7 @@ package inference
 import (
 	"time"
 
-	"m365-copilot2xapi/backend/internal/domain/account"
+	"M365Copilot2ApiX/backend/internal/domain/account"
 )
 
 // ResponseOwnership 记录上游 Response 资源所属账号，不保存请求或响应正文。

@@ -3,7 +3,7 @@ package m365
 import (
 	"strings"
 
-	"m365-copilot2xapi/backend/internal/infra/config"
+	"M365Copilot2ApiX/backend/internal/infra/config"
 )
 
 // Office web Copilot first-party client (verified working with ChatHub via browser PKCE).

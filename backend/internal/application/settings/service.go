@@ -8,9 +8,9 @@ import (
 	"sync"
 	"time"
 
-	settingsdomain "m365-copilot2xapi/backend/internal/domain/settings"
-	"m365-copilot2xapi/backend/internal/infra/config"
-	"m365-copilot2xapi/backend/internal/repository"
+	settingsdomain "M365Copilot2ApiX/backend/internal/domain/settings"
+	"M365Copilot2ApiX/backend/internal/infra/config"
+	"M365Copilot2ApiX/backend/internal/repository"
 )
 
 var (

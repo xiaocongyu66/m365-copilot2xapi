@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"strings"
 
-	clientkeydomain "m365-copilot2xapi/backend/internal/domain/clientkey"
-	"m365-copilot2xapi/backend/internal/domain/media"
-	settingsdomain "m365-copilot2xapi/backend/internal/domain/settings"
+	clientkeydomain "M365Copilot2ApiX/backend/internal/domain/clientkey"
+	"M365Copilot2ApiX/backend/internal/domain/media"
+	settingsdomain "M365Copilot2ApiX/backend/internal/domain/settings"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )

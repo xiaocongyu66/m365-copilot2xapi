@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"m365-copilot2xapi/backend/internal/repository"
+	"M365Copilot2ApiX/backend/internal/repository"
 )
 
 // AutoCleanConfig 是账号自动清理策略；由 app 层从运行设置映射，不依赖 infra/config。

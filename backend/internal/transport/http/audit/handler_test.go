@@ -12,9 +12,9 @@ import (
 	"testing"
 	"time"
 
-	auditapp "m365-copilot2xapi/backend/internal/application/audit"
-	auditdomain "m365-copilot2xapi/backend/internal/domain/audit"
-	"m365-copilot2xapi/backend/internal/infra/persistence/relational"
+	auditapp "M365Copilot2ApiX/backend/internal/application/audit"
+	auditdomain "M365Copilot2ApiX/backend/internal/domain/audit"
+	"M365Copilot2ApiX/backend/internal/infra/persistence/relational"
 	"github.com/gin-gonic/gin"
 )
 

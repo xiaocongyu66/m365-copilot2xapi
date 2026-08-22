@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"m365-copilot2xapi/backend/internal/pkg/perfmetrics"
+	"M365Copilot2ApiX/backend/internal/pkg/perfmetrics"
 	redisclient "github.com/redis/go-redis/v9"
 )
 

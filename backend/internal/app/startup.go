@@ -7,12 +7,12 @@ import (
 	"sync"
 	"time"
 
-	accountapp "m365-copilot2xapi/backend/internal/application/account"
-	auditapp "m365-copilot2xapi/backend/internal/application/audit"
-	accountdomain "m365-copilot2xapi/backend/internal/domain/account"
-	"m365-copilot2xapi/backend/internal/infra/provider"
-	"m365-copilot2xapi/backend/internal/repository"
-	httpserver "m365-copilot2xapi/backend/internal/transport/http"
+	accountapp "M365Copilot2ApiX/backend/internal/application/account"
+	auditapp "M365Copilot2ApiX/backend/internal/application/audit"
+	accountdomain "M365Copilot2ApiX/backend/internal/domain/account"
+	"M365Copilot2ApiX/backend/internal/infra/provider"
+	"M365Copilot2ApiX/backend/internal/repository"
+	httpserver "M365Copilot2ApiX/backend/internal/transport/http"
 )
 
 const (

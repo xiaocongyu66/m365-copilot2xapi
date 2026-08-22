@@ -17,10 +17,10 @@ import (
 	"testing"
 	"time"
 
-	mediadomain "m365-copilot2xapi/backend/internal/domain/media"
-	"m365-copilot2xapi/backend/internal/infra/media"
-	"m365-copilot2xapi/backend/internal/infra/persistence/relational"
-	"m365-copilot2xapi/backend/internal/repository"
+	mediadomain "M365Copilot2ApiX/backend/internal/domain/media"
+	"M365Copilot2ApiX/backend/internal/infra/media"
+	"M365Copilot2ApiX/backend/internal/infra/persistence/relational"
+	"M365Copilot2ApiX/backend/internal/repository"
 )
 
 func TestIssueAndReceiveVideoUploadOnce(t *testing.T) {

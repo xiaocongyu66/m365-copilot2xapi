@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	egressapp "m365-copilot2xapi/backend/internal/application/egress"
-	"m365-copilot2xapi/backend/internal/shared/response"
+	egressapp "M365Copilot2ApiX/backend/internal/application/egress"
+	"M365Copilot2ApiX/backend/internal/shared/response"
 	"github.com/gin-gonic/gin"
 )
 

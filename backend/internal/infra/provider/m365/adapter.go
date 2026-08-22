@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
-	"m365-copilot2xapi/backend/internal/domain/account"
-	"m365-copilot2xapi/backend/internal/infra/config"
-	"m365-copilot2xapi/backend/internal/infra/provider"
-	"m365-copilot2xapi/backend/internal/infra/security"
+	"M365Copilot2ApiX/backend/internal/domain/account"
+	"M365Copilot2ApiX/backend/internal/infra/config"
+	"M365Copilot2ApiX/backend/internal/infra/provider"
+	"M365Copilot2ApiX/backend/internal/infra/security"
 )
 
 // Adapter is the M365 Copilot Provider adapter. It implements all required

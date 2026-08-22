@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	accountdomain "m365-copilot2xapi/backend/internal/domain/account"
-	domain "m365-copilot2xapi/backend/internal/domain/egress"
-	"m365-copilot2xapi/backend/internal/repository"
+	accountdomain "M365Copilot2ApiX/backend/internal/domain/account"
+	domain "M365Copilot2ApiX/backend/internal/domain/egress"
+	"M365Copilot2ApiX/backend/internal/repository"
 )
 
 const (

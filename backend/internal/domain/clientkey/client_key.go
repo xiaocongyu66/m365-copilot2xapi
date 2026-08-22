@@ -3,7 +3,7 @@ package clientkey
 import (
 	"time"
 
-	"m365-copilot2xapi/backend/internal/domain/account"
+	"M365Copilot2ApiX/backend/internal/domain/account"
 )
 
 const (

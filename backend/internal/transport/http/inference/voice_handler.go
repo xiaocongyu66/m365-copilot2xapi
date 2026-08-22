@@ -10,9 +10,9 @@ import (
 	"strconv"
 	"strings"
 
-	"m365-copilot2xapi/backend/internal/application/gateway"
-	"m365-copilot2xapi/backend/internal/infra/provider"
-	"m365-copilot2xapi/backend/internal/transport/http/middleware"
+	"M365Copilot2ApiX/backend/internal/application/gateway"
+	"M365Copilot2ApiX/backend/internal/infra/provider"
+	"M365Copilot2ApiX/backend/internal/transport/http/middleware"
 	"github.com/gin-gonic/gin"
 )
 

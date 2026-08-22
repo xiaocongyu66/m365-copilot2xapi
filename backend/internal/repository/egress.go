@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	"m365-copilot2xapi/backend/internal/domain/egress"
+	"M365Copilot2ApiX/backend/internal/domain/egress"
 )
 
 type EgressRepository interface {

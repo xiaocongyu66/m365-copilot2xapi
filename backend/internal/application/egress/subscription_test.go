@@ -13,9 +13,9 @@ import (
 	"testing"
 	"time"
 
-	domain "m365-copilot2xapi/backend/internal/domain/egress"
-	"m365-copilot2xapi/backend/internal/infra/security"
-	"m365-copilot2xapi/backend/internal/pkg/tunnelproxy"
+	domain "M365Copilot2ApiX/backend/internal/domain/egress"
+	"M365Copilot2ApiX/backend/internal/infra/security"
+	"M365Copilot2ApiX/backend/internal/pkg/tunnelproxy"
 )
 
 type subscriptionSyncRepositoryStub struct {

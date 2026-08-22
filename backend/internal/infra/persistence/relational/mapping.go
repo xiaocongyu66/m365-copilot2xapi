@@ -7,11 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"m365-copilot2xapi/backend/internal/domain/account"
-	"m365-copilot2xapi/backend/internal/domain/admin"
-	"m365-copilot2xapi/backend/internal/domain/audit"
-	"m365-copilot2xapi/backend/internal/domain/clientkey"
-	"m365-copilot2xapi/backend/internal/domain/model"
+	"M365Copilot2ApiX/backend/internal/domain/account"
+	"M365Copilot2ApiX/backend/internal/domain/admin"
+	"M365Copilot2ApiX/backend/internal/domain/audit"
+	"M365Copilot2ApiX/backend/internal/domain/clientkey"
+	"M365Copilot2ApiX/backend/internal/domain/model"
 )
 
 func toAdminDomain(value adminModel) admin.Admin {

@@ -6,11 +6,11 @@ import (
 	"io"
 	"net/http"
 
-	"m365-copilot2xapi/backend/internal/domain/account"
-	clientkeydomain "m365-copilot2xapi/backend/internal/domain/clientkey"
-	"m365-copilot2xapi/backend/internal/domain/media"
-	egressapp "m365-copilot2xapi/backend/internal/application/egress"
-	"m365-copilot2xapi/backend/internal/infra/provider"
+	"M365Copilot2ApiX/backend/internal/domain/account"
+	clientkeydomain "M365Copilot2ApiX/backend/internal/domain/clientkey"
+	"M365Copilot2ApiX/backend/internal/domain/media"
+	egressapp "M365Copilot2ApiX/backend/internal/application/egress"
+	"M365Copilot2ApiX/backend/internal/infra/provider"
 
 	"github.com/gorilla/websocket"
 )

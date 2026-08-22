@@ -13,7 +13,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"m365-copilot2xapi/backend/internal/infra/provider"
+	"M365Copilot2ApiX/backend/internal/infra/provider"
 )
 
 // ---------------------------------------------------------------------------

@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strings"
 
-	updatecheckapp "m365-copilot2xapi/backend/internal/application/updatecheck"
-	"m365-copilot2xapi/backend/internal/shared/response"
+	updatecheckapp "M365Copilot2ApiX/backend/internal/application/updatecheck"
+	"M365Copilot2ApiX/backend/internal/shared/response"
 	"github.com/gin-gonic/gin"
 )
 

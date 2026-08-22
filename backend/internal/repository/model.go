@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"m365-copilot2xapi/backend/internal/domain/account"
-	"m365-copilot2xapi/backend/internal/domain/model"
+	"M365Copilot2ApiX/backend/internal/domain/account"
+	"M365Copilot2ApiX/backend/internal/domain/model"
 )
 
 // ModelRepository 定义公开模型路由持久化能力。

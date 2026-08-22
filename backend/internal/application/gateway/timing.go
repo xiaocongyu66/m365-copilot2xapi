@@ -7,8 +7,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	accountdomain "m365-copilot2xapi/backend/internal/domain/account"
-	"m365-copilot2xapi/backend/internal/pkg/perfmetrics"
+	accountdomain "M365Copilot2ApiX/backend/internal/domain/account"
+	"M365Copilot2ApiX/backend/internal/pkg/perfmetrics"
 )
 
 // generationTiming 只记录阶段耗时和有限枚举，不保存请求体、凭据或会话键。

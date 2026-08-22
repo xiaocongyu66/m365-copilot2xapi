@@ -3,7 +3,7 @@ package model
 import (
 	"strings"
 
-	"m365-copilot2xapi/backend/internal/domain/account"
+	"M365Copilot2ApiX/backend/internal/domain/account"
 )
 
 // ReasoningEffort is a client-facing reasoning depth level accepted by Grok models.

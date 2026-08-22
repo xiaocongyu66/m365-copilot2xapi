@@ -12,10 +12,10 @@ import (
 	"testing"
 	"time"
 
-	auditdomain "m365-copilot2xapi/backend/internal/domain/audit"
-	"m365-copilot2xapi/backend/internal/infra/persistence/relational"
-	"m365-copilot2xapi/backend/internal/pkg/requestmeta"
-	"m365-copilot2xapi/backend/internal/repository"
+	auditdomain "M365Copilot2ApiX/backend/internal/domain/audit"
+	"M365Copilot2ApiX/backend/internal/infra/persistence/relational"
+	"M365Copilot2ApiX/backend/internal/pkg/requestmeta"
+	"M365Copilot2ApiX/backend/internal/repository"
 )
 
 func TestServiceCloseFlushesQueuedAudits(t *testing.T) {

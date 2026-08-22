@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	domain "m365-copilot2xapi/backend/internal/domain/egress"
+	domain "M365Copilot2ApiX/backend/internal/domain/egress"
 )
 
 var ErrSubscriptionSync = errors.New("代理订阅同步失败")

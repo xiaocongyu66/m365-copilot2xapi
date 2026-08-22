@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	dashboarddomain "m365-copilot2xapi/backend/internal/domain/dashboard"
-	"m365-copilot2xapi/backend/internal/pkg/resultcache"
-	"m365-copilot2xapi/backend/internal/repository"
+	dashboarddomain "M365Copilot2ApiX/backend/internal/domain/dashboard"
+	"M365Copilot2ApiX/backend/internal/pkg/resultcache"
+	"M365Copilot2ApiX/backend/internal/repository"
 )
 
 var ErrInvalidPeriod = errors.New("Dashboard 时间范围无效")

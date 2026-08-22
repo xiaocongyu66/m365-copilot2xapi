@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	adminapp "m365-copilot2xapi/backend/internal/application/adminauth"
-	"m365-copilot2xapi/backend/internal/infra/persistence/relational"
-	"m365-copilot2xapi/backend/internal/infra/security"
+	adminapp "M365Copilot2ApiX/backend/internal/application/adminauth"
+	"M365Copilot2ApiX/backend/internal/infra/persistence/relational"
+	"M365Copilot2ApiX/backend/internal/infra/security"
 	"github.com/gin-gonic/gin"
 )
 

@@ -15,10 +15,10 @@ import (
 	"sync"
 	"time"
 
-	"m365-copilot2xapi/backend/internal/domain/account"
-	clientkeydomain "m365-copilot2xapi/backend/internal/domain/clientkey"
-	"m365-copilot2xapi/backend/internal/pkg/resultcache"
-	"m365-copilot2xapi/backend/internal/repository"
+	"M365Copilot2ApiX/backend/internal/domain/account"
+	clientkeydomain "M365Copilot2ApiX/backend/internal/domain/clientkey"
+	"M365Copilot2ApiX/backend/internal/pkg/resultcache"
+	"M365Copilot2ApiX/backend/internal/repository"
 	"golang.org/x/sync/singleflight"
 )
 

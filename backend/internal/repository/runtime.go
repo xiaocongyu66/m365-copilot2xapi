@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"m365-copilot2xapi/backend/internal/domain/account"
+	"M365Copilot2ApiX/backend/internal/domain/account"
 )
 
 // AccountConcurrencyKey 返回账号推理租约使用的统一运行态键。

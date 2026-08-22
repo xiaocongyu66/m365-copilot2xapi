@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"m365-copilot2xapi/backend/internal/repository"
+	"M365Copilot2ApiX/backend/internal/repository"
 )
 
 func TestDashboardRepositorySnapshot(t *testing.T) {

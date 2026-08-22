@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	accountdomain "m365-copilot2xapi/backend/internal/domain/account"
+	accountdomain "M365Copilot2ApiX/backend/internal/domain/account"
 )
 
 // CredentialStartupReport 汇总启动阶段的凭据调度与恢复结果。

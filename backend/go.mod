@@ -1,4 +1,4 @@
-module m365-copilot2xapi/backend
+module M365Copilot2ApiX/backend
 
 go 1.26
 
