@@ -2187,16 +2187,6 @@ func (s *Service) RefreshQuota(ctx context.Context, id uint64) ([]accountdomain.
 	if err := s.reconcileQuotaRecoveryWindows(ctx, refreshed.Credential.Provider, id, refreshed.Windows); err != nil {
 		return refreshed.Windows, err
 	}
-	// 身份补全是非关键操作：只在额度落库和恢复任务调度完成后执行，
-	// 并沿用调用方取消语义，不能反向影响额度同步结果。
-	value := refreshed.Credential
-	if (value.Provider == accountdomain.ProviderWeb || value.Provider == accountdomain.ProviderConsole) && ctx.Err() == nil {
-		// SyncAccountIdentity 会自行判断身份是否完整。Web 账号必须具备合法
-		// Gateway UUID，不能因为旧记录里只有 email 就跳过迁移。
-		if identityErr := s.syncAccountIdentityBestEffort(ctx, id); errors.Is(identityErr, provider.ErrUnauthorized) {
-			return refreshed.Windows, identityErr
-		}
-	}
 	return refreshed.Windows, nil
 }
 
@@ -2294,7 +2284,7 @@ func (s *Service) RefreshQuotaMode(ctx context.Context, id uint64, mode string) 
 	if !ok {
 		return accountdomain.QuotaWindow{}, fmt.Errorf("Provider usage 响应缺少 %s 额度", mode)
 	}
-	if len(refreshed.Modes) == 0 && refreshed.Credential.Provider == accountdomain.ProviderConsole {
+	if len(refreshed.Modes) == 0 && refreshed.Credential.Provider == accountdomain.ProviderM365 {
 		// One Console request refreshes all three authoritative windows. Reconcile
 		// every matching recovery event so externally consumed media quota cannot
 		// remain unscheduled merely because a different kind triggered the refresh.
@@ -2912,7 +2902,7 @@ func (s *Service) ListDueWebQuotaWindows(ctx context.Context, now time.Time, lim
 		if getErr != nil {
 			return nil, getErr
 		}
-		if credential.Provider == accountdomain.ProviderWeb {
+		if credential.Provider == accountdomain.ProviderM365 {
 			result = append(result, window)
 		}
 	}
@@ -2946,7 +2936,7 @@ func isWebImagineQuotaMode(mode string) bool {
 }
 
 func quotaWindowControlsRouting(providerValue accountdomain.Provider, mode string) bool {
-	return providerValue != accountdomain.ProviderConsole || isConsoleUsageQuotaMode(mode)
+	return providerValue != accountdomain.ProviderM365 || isConsoleUsageQuotaMode(mode)
 }
 
 // SyncAllBilling 尽力刷新全部启用账号，单个账号失败不阻断其他账号。
@@ -3114,7 +3104,7 @@ func (s *Service) BatchResetQuotaState(ctx context.Context, ids []uint64) (int, 
 	}
 	for start := 0; start < len(values); start += quotaResetChunkSize {
 		end := min(start+quotaResetChunkSize, len(values))
-		count, countErr := s.accounts.CountProviderAccountsByIDs(ctx, accountdomain.ProviderBuild, values[start:end])
+		count, countErr := s.accounts.CountProviderAccountsByIDs(ctx, accountdomain.ProviderM365, values[start:end])
 		if countErr != nil {
 			return 0, countErr
 		}
@@ -3128,7 +3118,7 @@ func (s *Service) BatchResetQuotaState(ctx context.Context, ids []uint64) (int, 
 			return reset, err
 		}
 		end := min(start+quotaResetChunkSize, len(values))
-		if err := s.accounts.ResetQuotaState(ctx, accountdomain.ProviderBuild, values[start:end]); err != nil {
+		if err := s.accounts.ResetQuotaState(ctx, accountdomain.ProviderM365, values[start:end]); err != nil {
 			return reset, err
 		}
 		reset += end - start
@@ -3139,7 +3129,7 @@ func (s *Service) BatchResetQuotaState(ctx context.Context, ids []uint64) (int, 
 // ResetAllBuildQuotaState clears local quota state for every enabled Build
 // account without materializing the complete account ID set in memory.
 func (s *Service) ResetAllBuildQuotaState(ctx context.Context) (int64, error) {
-	return s.accounts.ResetProviderQuotaState(ctx, accountdomain.ProviderBuild, true)
+	return s.accounts.ResetProviderQuotaState(ctx, accountdomain.ProviderM365, true)
 }
 
 // BatchRefreshQuota 使用有限并发同步选中 Web 或 Console 账号的额度窗口。
@@ -3221,24 +3211,13 @@ func (s *Service) credentialFromSeed(seed provider.CredentialSeed) (accountdomai
 	if err != nil {
 		return accountdomain.Credential{}, err
 	}
-	cloudflareEncrypted := ""
-	if strings.TrimSpace(seed.CloudflareCookies) != "" {
-		cookies := egressapp.SanitizeCloudflareCookies(seed.CloudflareCookies)
-		if cookies == "" {
-			return accountdomain.Credential{}, invalidInput("Cloudflare Cookie 中没有有效字段")
-		}
-		cloudflareEncrypted, err = s.cipher.Encrypt(cookies)
-		if err != nil {
-			return accountdomain.Credential{}, err
-		}
-	}
 	sourceKey := seed.SourceKey
 	if sourceKey == "" {
 		sourceKey = "device:" + security.HashToken(seed.AccessToken)
 	}
 	providerValue := seed.Provider
 	if providerValue == "" {
-		providerValue = accountdomain.ProviderBuild
+		providerValue = accountdomain.ProviderM365
 	}
 	authType := seed.AuthType
 	if authType == "" {
@@ -3251,9 +3230,8 @@ func (s *Service) credentialFromSeed(seed provider.CredentialSeed) (accountdomai
 		}
 		authType = definition.Credential.AuthType
 	}
-	value := accountdomain.Credential{Provider: providerValue, AuthType: authType, WebTier: seed.WebTier, Name: seed.Name, Email: seed.Email, UserID: seed.UserID, TeamID: seed.TeamID, SourceKey: sourceKey, OIDCClientID: seed.OIDCClientID, EncryptedAccessToken: accessEncrypted, EncryptedRefreshToken: refreshEncrypted, EncryptedCloudflareCookie: cloudflareEncrypted, ExpiresAt: seed.ExpiresAt, Enabled: true, AuthStatus: accountdomain.AuthStatusActive, Priority: accountdomain.DefaultPriority, MaxConcurrent: accountdomain.DefaultMaxConcurrent, MinimumRemaining: accountdomain.DefaultMinimumRemaining, WebNSFWEnabledAt: seed.WebNSFWEnabledAt, WebTermsAcceptedAt: seed.WebTermsAcceptedAt, WebTermsAcceptedVersion: seed.WebTermsAcceptedVersion, WebBirthDateSetAt: seed.WebBirthDateSetAt}
-	value.BuildBotFlagSource = s.credentialMetadata(value).BuildBotFlagSource
-	if providerValue == accountdomain.ProviderWeb && strings.TrimSpace(seed.AccessToken) != "" {
+	value := accountdomain.Credential{Provider: providerValue, AuthType: authType, Name: seed.Name, Email: seed.Email, UserID: seed.UserID, TeamID: seed.TeamID, SourceKey: sourceKey, OIDCClientID: seed.OIDCClientID, EncryptedAccessToken: accessEncrypted, EncryptedRefreshToken: refreshEncrypted, ExpiresAt: seed.ExpiresAt, Enabled: true, AuthStatus: accountdomain.AuthStatusActive, Priority: accountdomain.DefaultPriority, MaxConcurrent: accountdomain.DefaultMaxConcurrent, MinimumRemaining: accountdomain.DefaultMinimumRemaining}
+	if strings.TrimSpace(seed.AccessToken) != "" {
 		value.EgressIdentity = "sso_" + security.HashToken(seed.AccessToken)[:32]
 	}
 	return value, nil
