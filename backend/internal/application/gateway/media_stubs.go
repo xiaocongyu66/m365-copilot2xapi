@@ -92,7 +92,7 @@ type TTSInput struct {
 	Voice                    string
 	VoiceID                  string
 	Language                 string
-	OutputFormat             string
+	OutputFormat             provider.TTSOutputFormat
 	Format                   provider.TTSOutputFormat
 	Speed                    float64
 	OptimizeStreamingLatency int
@@ -104,7 +104,7 @@ type TTSInput struct {
 }
 
 // TTSResult is the no-op result returned for TTS requests.
-type TTSResult struct{}
+type TTSResult = Result
 
 // GenerateImage always returns ErrMediaNotSupported for M365.
 func (s *Service) GenerateImage(ctx context.Context, input ImageGenerationInput) (*Result, error) {
@@ -132,6 +132,14 @@ func (s *Service) OpenVideoContent(ctx context.Context, requestID string, client
 }
 
 // SynthesizeSpeech always returns ErrMediaNotSupported for M365.
-func (s *Service) SynthesizeSpeech(ctx context.Context, input TTSInput) (TTSResult, error) {
-	return TTSResult{}, ErrMediaNotSupported
+func (s *Service) SynthesizeSpeech(ctx context.Context, input TTSInput) (*Result, error) {
+	return nil, ErrMediaNotSupported
 }
+
+// ListTTSVoices always returns ErrMediaNotSupported for M365.
+func (s *Service) ListTTSVoices(ctx context.Context) ([]VoiceInfo, error) {
+	return nil, ErrMediaNotSupported
+}
+
+// VoiceInfo is a placeholder for TTS voice metadata.
+type VoiceInfo struct{}
