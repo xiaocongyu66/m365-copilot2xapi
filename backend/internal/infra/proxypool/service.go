@@ -85,7 +85,7 @@ func (s *Service) ImportNodes(text string) (imported, skipped int) {
 func (s *Service) ListNodes() []NodeView {
 	proxies := s.store.List()
 	scores := s.score.List()
-	scoreMap := make(map[string]NodeScore, len(scores))
+	scoreMap := make(map[string]NodeScoreSnapshot, len(scores))
 	for _, sc := range scores {
 		scoreMap[sc.Identifier] = sc
 	}

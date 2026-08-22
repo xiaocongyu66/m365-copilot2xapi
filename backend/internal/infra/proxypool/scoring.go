@@ -87,14 +87,49 @@ func (s *ScoreStore) Get(identifier string) *NodeScore {
 	return s.scores[identifier]
 }
 
+// NodeScoreSnapshot 是 NodeScore 的快照(不含锁,用于返回给调用方)
+type NodeScoreSnapshot struct {
+	Identifier     string
+	Name           string
+	Score          int
+	Enabled        bool
+	AutoDisabled   bool
+	ErrorCount     int
+	LastError      string
+	LastErrorAt    time.Time
+	SuccessCount   int
+	LastSuccessAt  time.Time
+	UpSince        time.Time
+	LastCheckAt    time.Time
+	LastCheckStable bool
+	LastCheckBytes int64
+	ActiveRequests int
+}
+
 // List 返回所有节点分数(快照)
-func (s *ScoreStore) List() []NodeScore {
+func (s *ScoreStore) List() []NodeScoreSnapshot {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	result := make([]NodeScore, 0, len(s.scores))
+	result := make([]NodeScoreSnapshot, 0, len(s.scores))
 	for _, ns := range s.scores {
 		ns.mu.RLock()
-		result = append(result, *ns)
+		result = append(result, NodeScoreSnapshot{
+			Identifier:      ns.Identifier,
+			Name:            ns.Name,
+			Score:           ns.Score,
+			Enabled:         ns.Enabled,
+			AutoDisabled:    ns.AutoDisabled,
+			ErrorCount:      ns.ErrorCount,
+			LastError:        ns.LastError,
+			LastErrorAt:     ns.LastErrorAt,
+			SuccessCount:    ns.SuccessCount,
+			LastSuccessAt:   ns.LastSuccessAt,
+			UpSince:         ns.UpSince,
+			LastCheckAt:     ns.LastCheckAt,
+			LastCheckStable: ns.LastCheckStable,
+			LastCheckBytes:  ns.LastCheckBytes,
+			ActiveRequests:  ns.ActiveRequests,
+		})
 		ns.mu.RUnlock()
 	}
 	return result
