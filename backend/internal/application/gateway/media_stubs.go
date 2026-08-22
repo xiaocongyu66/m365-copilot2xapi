@@ -3,6 +3,7 @@ package gateway
 import (
 	"context"
 	"errors"
+	"io"
 	"net/http"
 
 	"m365-copilot2xapi/backend/internal/domain/account"
@@ -86,8 +87,11 @@ type TTSInput struct {
 	RequestID   string
 	ClientKey   clientkeydomain.Key
 	PublicModel string
+	Text        string
 	Input       string
 	Voice       string
+	VoiceID     string
+	Language    string
 	Format      string
 	Method      string
 	Path        string
@@ -118,6 +122,6 @@ func (s *Service) GetVideo(ctx context.Context, requestID string, clientKey clie
 }
 
 // OpenVideoContent always returns ErrMediaNotSupported for M365.
-func (s *Service) OpenVideoContent(ctx context.Context, requestID string, clientKey clientkeydomain.Key) ([]byte, string, int64, error) {
+func (s *Service) OpenVideoContent(ctx context.Context, requestID string, clientKey clientkeydomain.Key) (io.ReadCloser, string, int64, error) {
 	return nil, "", 0, ErrMediaNotSupported
 }
