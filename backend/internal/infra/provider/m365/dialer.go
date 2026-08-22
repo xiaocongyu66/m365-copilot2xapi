@@ -119,7 +119,7 @@ func (t *nodeRoutedTransport) buildNodeTransport(nodeID string) http.RoundTrippe
 				DstPort: C.Port(portNum),
 				NetWork: C.TCP,
 			}
-			return clashProxy.DialContext(ctx, network, metadata)
+			return clashProxy.DialContext(ctx, metadata)
 		},
 		TLSClientConfig:    &tls.Config{InsecureSkipVerify: false},
 		MaxIdleConns:       10,
@@ -195,7 +195,7 @@ func DefaultWebSocketDialer() *websocket.Dialer {
 				DstPort: C.Port(portNum),
 				NetWork: C.TCP,
 			}
-			conn, err := clashProxy.DialContext(ctx, network, metadata)
+			conn, err := clashProxy.DialContext(ctx, metadata)
 			if err != nil {
 				svc.RecordRequestError(nodeID, nodeID, addr, err.Error())
 				return nil, err
