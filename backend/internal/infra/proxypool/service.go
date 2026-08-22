@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/log"
+	"M365Copilot2ApiX/backend/internal/infra/proxypool/proxy"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/store"
 )
 
@@ -218,10 +219,11 @@ func (s *Service) GetProxyURL(identifier string) string {
 }
 
 // buildProxyURL 根据节点类型构造 HTTP/SOCKS 代理 URL
-func buildProxyURL(p interface{ TypeName() string; BaseInfo() interface{} }) string {
+func buildProxyURL(p proxy.Proxy) string {
 	// 简化:大多数代理类型用 socks5 或 http 代理
 	// 实际需要根据协议类型构造(clash adapter 会处理)
 	// 这里返回空让调用方用 clash adapter
+	_ = p
 	return ""
 }
 
