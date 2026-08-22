@@ -1388,3 +1388,11 @@ func FirstNonEmptyFailure(values ...string) string {
 	}
 	return ""
 }
+
+
+// TierOrder returns an empty tier order for all providers. M365 accounts have
+// no tier hierarchy; this stub satisfies selector callers that still expect
+// the historical TierOrder interface.
+func (r *Registry) TierOrder(provider account.Provider, upstreamModel string) []string {
+	return nil
+}

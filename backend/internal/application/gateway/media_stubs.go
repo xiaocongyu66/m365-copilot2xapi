@@ -9,6 +9,7 @@ import (
 	"m365-copilot2xapi/backend/internal/domain/account"
 	clientkeydomain "m365-copilot2xapi/backend/internal/domain/clientkey"
 	"m365-copilot2xapi/backend/internal/domain/media"
+	egressapp "m365-copilot2xapi/backend/internal/application/egress"
 	"m365-copilot2xapi/backend/internal/infra/provider"
 
 	"github.com/gorilla/websocket"
@@ -224,6 +225,11 @@ type VoiceWebSocketInput struct {
 	Method      string
 	Path        string
 	Headers     http.Header
+}
+
+// ProbeEgressQuality always returns ErrMediaNotSupported for M365.
+func (s *Service) ProbeEgressQuality(ctx context.Context, nodeID uint64, input egressapp.QualityProbeInput) (egressapp.QualityProbeResult, error) {
+	return egressapp.QualityProbeResult{}, ErrMediaNotSupported
 }
 
 // VoiceWebSocketOutcome is the no-op result for voice WebSocket sessions.
