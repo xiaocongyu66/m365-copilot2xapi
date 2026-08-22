@@ -181,7 +181,7 @@ func (s *Service) refreshQuota(ctx context.Context, id uint64) (quotaRefreshResu
 		}
 		snapshot.Windows = preserveActiveQuotaWindows(existing[id], snapshot.Windows, s.now())
 	}
-	if err := s.accounts.SaveQuotaWindows(ctx, id, snapshot.SyncedAt, snapshot.Windows); err != nil {
+	if err := s.accounts.ReplaceQuotaWindowGroup(ctx, id, snapshot.SyncedAt, nil, snapshot.Windows); err != nil {
 		return quotaRefreshResult{}, err
 	}
 	return quotaRefreshResult{Credential: value, Windows: snapshot.Windows}, nil
@@ -232,7 +232,7 @@ func (s *Service) RefreshQuotaMode(ctx context.Context, id uint64, mode string) 
 	key := quotaSyncKey(id, mode)
 	result, err, _ := s.quotaSyncs.Do(key, func() (any, error) {
 		if isWebImagineQuotaMode(mode) {
-			return s.refreshQuotaGroup(ctx, id, accountdomain.QuotaGroupWebImagine)
+			return s.refreshQuotaGroup(ctx, id, "")
 		}
 		return s.refreshQuotaMode(ctx, id, mode)
 	})
@@ -275,7 +275,7 @@ func (s *Service) ProbeQuotaMode(ctx context.Context, id uint64, mode string) (a
 	key := quotaSyncKey(id, mode)
 	result, err, _ := s.quotaSyncs.Do(key, func() (any, error) {
 		if isWebImagineQuotaMode(mode) {
-			return s.refreshQuotaGroup(ctx, id, accountdomain.QuotaGroupWebImagine)
+			return s.refreshQuotaGroup(ctx, id, "")
 		}
 		return s.refreshQuotaMode(ctx, id, mode)
 	})
@@ -341,7 +341,7 @@ func (s *Service) refreshQuotaMode(ctx context.Context, id uint64, mode string) 
 	if syncedAt.IsZero() {
 		syncedAt = s.now()
 	}
-	if err := s.accounts.SaveQuotaWindows(ctx, id, syncedAt, windows); err != nil {
+	if err := s.accounts.ReplaceQuotaWindowGroup(ctx, id, syncedAt, nil, windows); err != nil {
 		return quotaRefreshResult{}, err
 	}
 	return quotaRefreshResult{Credential: value, Windows: windows}, nil
@@ -352,8 +352,8 @@ func quotaSyncKey(accountID uint64, mode string) string {
 	if isConsoleUsageQuotaMode(mode) {
 		return "all:" + strconv.FormatUint(accountID, 10)
 	}
-	if isWebImagineQuotaMode(mode) || mode == accountdomain.QuotaGroupWebImagine {
-		return accountdomain.QuotaGroupWebImagine + ":" + strconv.FormatUint(accountID, 10)
+	if isWebImagineQuotaMode(mode) || mode == "" {
+		return "" + ":" + strconv.FormatUint(accountID, 10)
 	}
 	return mode + ":" + strconv.FormatUint(accountID, 10)
 }

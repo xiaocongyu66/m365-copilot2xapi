@@ -2,19 +2,15 @@ package account
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"log/slog"
 	"math/rand/v2"
-	"net/http"
-	"slices"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
-	"unicode/utf8"
 
 	egressapp "m365-copilot2xapi/backend/internal/application/egress"
 	accountdomain "m365-copilot2xapi/backend/internal/domain/account"
