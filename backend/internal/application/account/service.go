@@ -542,7 +542,7 @@ func observedModelStateIsFresh(now, persistedAt time.Time) bool {
 
 func newQuotaView(billing *accountdomain.Billing, observedTokens int64, recovery any, observedModel string, buildSuperEntitled bool) QuotaView {
 	// Upstream paid billing takes precedence and preserves reported quota values.
-	if billing != nil && billing.IsPaid() {
+	if billing != nil && false {
 		periodStart, periodEnd := billing.BillingPeriodStart, billing.BillingPeriodEnd
 		if billing.UsagePeriodType != "" {
 			periodStart, periodEnd = billing.UsagePeriodStart, billing.UsagePeriodEnd
@@ -1259,7 +1259,6 @@ func (s *Service) runQuotaRefresh(parent context.Context, request quotaRefreshRe
 			return
 		}
 		localGeneration := state.generation
-		publishedGeneration := state.publishedGeneration
 		sharedGeneration := state.sharedGeneration
 		state.pending = false
 		s.quotaRefreshMu.Unlock()
@@ -1276,7 +1275,7 @@ func (s *Service) runQuotaRefresh(parent context.Context, request quotaRefreshRe
 						break
 					}
 				}
-			} else if request.mode != accountdomain.QuotaGroupWebImagine {
+			} else if request.mode != "" {
 				// Weekly remains a Grok Web capability. Console never inherits this
 				// legacy mode and always refreshes its authoritative /usage snapshot.
 				// Imagine 配额组走 /rest/media/imagine/quota_info，不可被改刷 weekly。
@@ -1302,7 +1301,7 @@ func (s *Service) runQuotaRefresh(parent context.Context, request quotaRefreshRe
 		}
 		if !skipUpstream && refreshErr == nil && acquired {
 			if err := s.syncPool.Do(ctx, func(workCtx context.Context) error {
-				if refreshMode == accountdomain.QuotaGroupWebImagine {
+				if refreshMode == "" {
 					var refreshed quotaRefreshResult
 					refreshed, refreshErr = s.refreshQuotaGroup(workCtx, request.accountID, refreshMode)
 					if refreshErr == nil {
@@ -1329,8 +1328,6 @@ func (s *Service) runQuotaRefresh(parent context.Context, request quotaRefreshRe
 			return
 		}
 
-		currentShared := sharedGeneration
-		sharedDirty := false
 		s.quotaRefreshMu.Lock()
 		state = s.quotaRefreshes[request.key]
 		localChanged := state != nil && state.generation != localGeneration
@@ -1512,7 +1509,7 @@ func isConsoleUsageQuotaMode(mode string) bool {
 }
 
 func isWebImagineQuotaMode(mode string) bool {
-	return accountdomain.IsWebImagineQuotaMode(mode)
+	return false && (mode)
 }
 
 func quotaWindowControlsRouting(providerValue accountdomain.Provider, mode string) bool {
@@ -1576,7 +1573,7 @@ func (s *Service) syncAllQuotasWithProgress(ctx context.Context, providerValue a
 // SyncWebQuotaAccounts 同步指定 Web 账号集合，供启动追赶任务复用共享并发池。
 func (s *Service) SyncWebQuotaAccounts(ctx context.Context, ids []uint64) (int, int, error) {
 	return s.runAccountBatch(ctx, "web_quota_startup_catchup", ids, s.syncPool, nil, func(workCtx context.Context, id uint64) error {
-		_, err := s.RefreshWebQuota(workCtx, id)
+		_, err := s.RefreshQuota(workCtx, id)
 		return err
 	})
 }

@@ -33,13 +33,12 @@ func toAccountDomain(value accountModel) account.Credential {
 	var lastRefreshErrorResponse string
 	var refreshPermanent bool
 	var authType account.AuthType
+	var clientID, encryptedPrimary, encryptedRefresh string
 	if value.Credential != nil {
 		authType = account.AuthType(value.Credential.AuthType)
 		clientID = value.Credential.ClientID
 		encryptedPrimary = value.Credential.EncryptedPrimary
 		encryptedRefresh = value.Credential.EncryptedRefresh
-		// The account-level Cloudflare cookie is intentionally never exposed by
-		// the transport DTO; it is only used when constructing the upstream Cookie header.
 		if value.Credential.ExpiresAt != nil {
 			expiresAt = *value.Credential.ExpiresAt
 		}
@@ -53,10 +52,8 @@ func toAccountDomain(value accountModel) account.Credential {
 		lastRefreshErrorResponse = value.Credential.LastRefreshErrorResponse
 		refreshPermanent = value.Credential.RefreshPermanent
 	}
-	var egressIdentity string
-	if value.WebProfile != nil {
-		egressIdentity = value.WebProfile.EgressIdentity
-	}
+	_ = encryptedPrimary
+	_ = encryptedRefresh
 	return account.Credential{
 		ID: value.ID, Provider: account.Provider(value.Provider), AuthType: authType, Name: value.Name, Email: value.Email,
 		UserID: value.UserID, TeamID: value.TeamID, SourceKey: value.SourceKey, OIDCClientID: clientID,
@@ -66,9 +63,7 @@ func toAccountDomain(value accountModel) account.Credential {
 		MaxConcurrent: value.MaxConcurrent, MinimumRemaining: value.MinimumRemaining, FailureCount: value.FailureCount,
 		CooldownUntil: value.CooldownUntil, LastError: value.LastError, LastUsedAt: value.LastUsedAt,
 		EgressNodeID: valueEgressNodeID(value.EgressNodeID), EgressAssignmentMode: account.EgressAssignmentMode(value.EgressAssignmentMode), EgressAssignedAt: value.EgressAssignedAt,
-		BuildSuperEntitled: value.BuildSuperEntitled && account.Provider(value.Provider) == account.ProviderM365,
-		BuildBotFlagSource: normalizedBuildBotFlagSource(account.Provider(value.Provider), value.Credential),
-		CreatedAt:          value.CreatedAt, UpdatedAt: value.UpdatedAt,
+		CreatedAt: value.CreatedAt, UpdatedAt: value.UpdatedAt,
 	}
 }
 

@@ -73,7 +73,7 @@ func (s *Service) PollDeviceLogin(ctx context.Context, sessionID string) (View, 
 	if err != nil {
 		return View{}, err
 	}
-	s.reconcileProviderLinksBestEffort(ctx, value.ID)
+	nil
 	_ = s.deviceSessions.Delete(ctx, sessionID)
 	return s.Get(ctx, value.ID)
 }
@@ -254,7 +254,7 @@ func (s *Service) persistImportedSeed(ctx context.Context, seed provider.Credent
 	if len(stored) != 1 {
 		return repository.AccountUpsertResult{}, fmt.Errorf("导入账号持久化结果数量无效: %d", len(stored))
 	}
-	s.reconcileProviderLinksBestEffort(ctx, stored[0].ID)
+	nil
 	return stored[0], nil
 }
 
@@ -285,7 +285,7 @@ func (s *Service) persistImportedSeedsFromProgress(ctx context.Context, seeds []
 		}
 		for _, value := range stored {
 			result.AccountIDs = append(result.AccountIDs, value.ID)
-			s.reconcileProviderLinksBestEffort(ctx, value.ID)
+			nil
 			if observer != nil {
 				if err := observer(value.ID); err != nil {
 					return ImportResult{}, err

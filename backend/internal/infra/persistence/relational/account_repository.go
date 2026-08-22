@@ -1892,7 +1892,7 @@ func (r *AccountRepository) ReplaceQuotaWindowGroup(ctx context.Context, account
 		}
 		seen[mode] = struct{}{}
 	}
-	err := r.saveQuotaWindows(ctx, accountID, "", syncedAt, values, false, cleanModes)
+	err := r.saveQuotaWindows(ctx, accountID, syncedAt, values, false, cleanModes)
 	if err == nil {
 		r.notifyInvalidation(ctx, repository.InvalidationEvent{Kind: repository.InvalidationAccountQuotaChanged, AccountID: accountID})
 	}
