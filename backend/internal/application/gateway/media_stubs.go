@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"m365-copilot2xapi/backend/internal/domain/account"
+	clientkeydomain "m365-copilot2xapi/backend/internal/domain/clientkey"
 )
 
 // ErrMediaNotSupported indicates that M365 Copilot does not support media
@@ -16,7 +17,7 @@ var ErrMediaNotSupported = errors.New("M365 Copilot does not support media gener
 // ImageGenerationInput mirrors the historical image generation request shape.
 type ImageGenerationInput struct {
 	RequestID      string
-	ClientKey      uint64
+	ClientKey      clientkeydomain.Key
 	PublicModel    string
 	Prompt         string
 	Count          int
@@ -35,7 +36,7 @@ type ImageGenerationInput struct {
 // ImageEditInput mirrors the historical image edit request shape.
 type ImageEditInput struct {
 	RequestID      string
-	ClientKey      uint64
+	ClientKey      clientkeydomain.Key
 	PublicModel    string
 	Prompt         string
 	ImageURLs      []string
@@ -52,13 +53,10 @@ type ImageEditInput struct {
 	Headers        http.Header
 }
 
-// ImageResult is the no-op result returned for image requests.
-type ImageResult struct{}
-
 // VideoInput mirrors the historical video generation request shape.
 type VideoInput struct {
 	RequestID   string
-	ClientKey   uint64
+	ClientKey   clientkeydomain.Key
 	PublicModel string
 	Prompt      string
 	Duration    int
@@ -79,7 +77,7 @@ type VideoResult struct{}
 // TTSInput mirrors the historical text-to-speech request shape.
 type TTSInput struct {
 	RequestID   string
-	ClientKey   uint64
+	ClientKey   clientkeydomain.Key
 	PublicModel string
 	Input       string
 	Voice       string
@@ -93,13 +91,13 @@ type TTSInput struct {
 type TTSResult struct{}
 
 // GenerateImage always returns ErrMediaNotSupported for M365.
-func (s *Service) GenerateImage(ctx context.Context, input ImageGenerationInput) (ImageResult, error) {
-	return ImageResult{}, ErrMediaNotSupported
+func (s *Service) GenerateImage(ctx context.Context, input ImageGenerationInput) (*Result, error) {
+	return nil, ErrMediaNotSupported
 }
 
 // EditImage always returns ErrMediaNotSupported for M365.
-func (s *Service) EditImage(ctx context.Context, input ImageEditInput) (ImageResult, error) {
-	return ImageResult{}, ErrMediaNotSupported
+func (s *Service) EditImage(ctx context.Context, input ImageEditInput) (*Result, error) {
+	return nil, ErrMediaNotSupported
 }
 
 // CreateVideo always returns ErrMediaNotSupported for M365.
@@ -108,11 +106,11 @@ func (s *Service) CreateVideo(ctx context.Context, input VideoInput) (VideoResul
 }
 
 // GetVideo always returns ErrMediaNotSupported for M365.
-func (s *Service) GetVideo(ctx context.Context, requestID string, clientKey uint64) (VideoResult, error) {
+func (s *Service) GetVideo(ctx context.Context, requestID string, clientKey clientkeydomain.Key) (VideoResult, error) {
 	return VideoResult{}, ErrMediaNotSupported
 }
 
 // OpenVideoContent always returns ErrMediaNotSupported for M365.
-func (s *Service) OpenVideoContent(ctx context.Context, requestID string, clientKey uint64) ([]byte, string, int64, error) {
+func (s *Service) OpenVideoContent(ctx context.Context, requestID string, clientKey clientkeydomain.Key) ([]byte, string, int64, error) {
 	return nil, "", 0, ErrMediaNotSupported
 }
