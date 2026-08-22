@@ -2279,8 +2279,7 @@ function downloadAccountExport(blob: Blob, provider: AccountProvider, suffix: st
 
 function scopeSupportsAccountProvider(scope: EgressScope, provider: AccountProvider): boolean {
   if (provider === "m365_copilot") return scope === "m365_copilot";
-  if (provider === "m365_copilot") return scope === "m365_copilot";
-  return scope === "m365_copilot" || scope === "m365_copilot";
+  return scope === "m365_copilot" || scope === "m365_copilot_asset";
 }
 
 function accountProviderPrimaryEgressScope(provider: AccountProvider): EgressScope {

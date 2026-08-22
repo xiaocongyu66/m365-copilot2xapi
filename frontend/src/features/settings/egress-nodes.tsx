@@ -200,9 +200,7 @@ export function EgressNodes({ title, clearanceMode }: { title: string; clearance
 
   function scopeLabel(scope: EgressScope) {
     if (scope === "m365_copilot") return t("settings.egress.scopeBuild");
-    if (scope === "m365_copilot") return t("console.name");
     if (scope === "m365_copilot_asset") return t("settings.egress.scopeWebAsset");
-    if (scope === "m365_copilot_asset") return t("settings.egress.scopeConsoleAsset");
     return t("settings.egress.scopeWeb");
   }
 

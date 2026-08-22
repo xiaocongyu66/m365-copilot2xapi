@@ -53,16 +53,13 @@ const egressProbeBatchSize = 32;
 const fallbackScopes: EgressScope[] = ["m365_copilot", "m365_copilot", "m365_copilot", "m365_copilot_asset", "m365_copilot_asset"];
 const fallbackDescriptionKeys: Record<EgressScope, string> = {
   m365_copilot: "settings.egress.fallbackBuildHelp",
-  m365_copilot: "settings.egress.fallbackWebHelp",
-  m365_copilot: "settings.egress.fallbackConsoleHelp",
   m365_copilot_asset: "settings.egress.fallbackWebAssetHelp",
-  m365_copilot_asset: "settings.egress.fallbackConsoleAssetHelp",
 };
 
 function defaultFallbacks(): Record<EgressScope, EgressFallbackConfigDTO> {
   return {
-    m365_copilot: { mode: "none" }, m365_copilot: { mode: "none" },
-    m365_copilot: { mode: "none" }, m365_copilot_asset: { mode: "none" }, m365_copilot_asset: { mode: "none" },
+    m365_copilot: { mode: "none" },
+    m365_copilot_asset: { mode: "none" },
   };
 }
 

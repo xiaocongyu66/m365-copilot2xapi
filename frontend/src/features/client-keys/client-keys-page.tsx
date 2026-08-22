@@ -103,7 +103,7 @@ export function ClientKeysPage() {
   const billingUnlimited = useWatch({ control: form.control, name: "billingUnlimited" });
   const modelProviderScope = providerScope.filter((value): value is Exclude<ProviderScopeValue, "all"> => value !== "all");
   const modelTierScope = tierScope.filter((value): value is Exclude<TierScopeValue, "all"> => value !== "all");
-  const providerScopeSummary = providerScope.includes("all") ? t("keys.allProviders") : modelProviderScope.map((value) => ({ m365_copilot: "Build", m365_copilot: "Web", m365_copilot: "Console" })[value]).join(" · ");
+  const providerScopeSummary = providerScope.includes("all") ? t("keys.allProviders") : modelProviderScope.map((value) => ({ m365_copilot: "M365" })[value]).join(" · ");
   const tierScopeSummary = tierScope.includes("all") ? t("keys.allTiers") : modelTierScope.map((value) => value === "free" ? "Free" : "Super").join(" · ");
   const modelScopeSummary = modelScopeMode === "all" ? t("keys.allModels") : t("keys.selectedModels", { count: selectedModels.length });
 
@@ -729,7 +729,7 @@ function ScopeDropdown({ allLabel, ariaLabel, summary, value, onChange, options,
 
 function AccountScopeSummary({ providerScope, tierScope }: { providerScope: ProviderScopeValue[]; tierScope: TierScopeValue[] }) {
   const { t } = useTranslation();
-  const providerLabels: Record<ProviderScopeValue, string> = { all: t("keys.allProviders"), m365_copilot: "Build", m365_copilot: "Web", m365_copilot: "Console" };
+  const providerLabels: Record<ProviderScopeValue, string> = { all: t("keys.allProviders"), m365_copilot: "M365" };
   const tierLabels: Record<TierScopeValue, string> = { all: t("keys.allTiers"), free: "Free", super: "Super" };
   return (
     <span className="inline-flex max-w-full flex-col items-start gap-0.5 text-left text-[10px] leading-4">
