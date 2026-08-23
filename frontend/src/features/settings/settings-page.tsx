@@ -80,9 +80,7 @@ export function SettingsPage() {
       {snapshot ? (
         <Tabs defaultValue="build" className="flex min-w-0 flex-col gap-7 lg:flex-row lg:items-start">
           <TabsList className="flex h-auto w-full max-w-full shrink-0 justify-start gap-1 overflow-x-auto overscroll-x-contain rounded-none bg-transparent p-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden [&>span]:rounded-md [&>span]:bg-muted/70 [&>span]:shadow-none lg:sticky lg:top-[148px] lg:w-56 lg:flex-col lg:items-stretch lg:overflow-visible">
-            <TabsTrigger className="h-9 w-auto shrink-0 justify-start rounded-md px-3 text-xs data-[state=active]:font-medium lg:w-full" value="build">{t("models.providerM365Build")}</TabsTrigger>
-            <TabsTrigger className="h-9 w-auto shrink-0 justify-start rounded-md px-3 text-xs data-[state=active]:font-medium lg:w-full" value="web">{t("settings.web.title")}</TabsTrigger>
-            <TabsTrigger className="h-9 w-auto shrink-0 justify-start rounded-md px-3 text-xs data-[state=active]:font-medium lg:w-full" value="console">{t("console.name")}</TabsTrigger>
+            <TabsTrigger className="h-9 w-auto shrink-0 justify-start rounded-md px-3 text-xs data-[state=active]:font-medium lg:w-full" value="build">{t("models.providerM365")}</TabsTrigger>
             <TabsTrigger className="h-9 w-auto shrink-0 justify-start rounded-md px-3 text-xs data-[state=active]:font-medium lg:w-full" value="delivery">{t("settings.groups.delivery")}</TabsTrigger>
             <TabsTrigger className="h-9 w-auto shrink-0 justify-start rounded-md px-3 text-xs data-[state=active]:font-medium lg:w-full" value="policies">{t("settings.groups.policies")}</TabsTrigger>
             <TabsTrigger className="h-9 w-auto shrink-0 justify-start rounded-md px-3 text-xs data-[state=active]:font-medium lg:w-full" value="audit">{t("settings.audit.tabTitle")}</TabsTrigger>
@@ -93,7 +91,7 @@ export function SettingsPage() {
           <div className="min-w-0 flex-1">
           <SettingsPane value="build">
           <SettingsSection
-            title={t("models.providerM365Build")}
+            title={t("models.providerM365")}
             action={recommendedBuild && !recommendedBuildApplied ? (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -118,51 +116,6 @@ export function SettingsPage() {
           </SettingsSection>
           </SettingsPane>
 
-          <SettingsPane value="web">
-          <SettingsSection title={t("settings.web.title")}>
-            <div className="space-y-0">
-              <SettingsField controlId="web-base-url" className="sm:col-span-2" label={t("settings.web.baseURL")} description={t("settings.web.baseURLHelp")} error={form.formState.errors.providerWeb?.baseURL?.message}><Input id="web-base-url" {...form.register("providerWeb.baseURL")} /></SettingsField>
-              <SettingsField controlId="web-statsig-mode" className="sm:col-span-2" label={t("settings.web.statsigMode")} description={t("settings.web.statsigModeHelp")} error={form.formState.errors.providerWeb?.statsigMode?.message}>
-                <Controller control={form.control} name="providerWeb.statsigMode" render={({ field }) => (
-                  <Tabs value={field.value} onValueChange={field.onChange}>
-                    <TabsList id="web-statsig-mode" className="grid w-full grid-cols-2 bg-muted/55">
-                      <TabsTrigger value="manual" className="font-normal">{t("settings.web.statsigManual")}</TabsTrigger>
-                      <TabsTrigger value="url" className="font-normal">{t("settings.web.statsigURL")}</TabsTrigger>
-                    </TabsList>
-                  </Tabs>
-                )} />
-              </SettingsField>
-              {statsigMode === "manual" ? (
-                <SettingsField controlId="web-statsig-manual" className="sm:col-span-2" label={t("settings.web.statsigValue")} description={t("settings.web.statsigValueHelp")} badge={statsigManualConfigured ? t("settings.web.statsigConfigured") : undefined} error={form.formState.errors.providerWeb?.statsigManualValue?.message}>
-                  <Input id="web-statsig-manual" type="password" autoComplete="off" placeholder={statsigManualConfigured ? t("settings.web.statsigKeepConfigured") : t("settings.web.statsigValuePlaceholder")} {...form.register("providerWeb.statsigManualValue")} />
-                </SettingsField>
-              ) : (
-                <SettingsField controlId="web-statsig-url" className="sm:col-span-2" label={t("settings.web.statsigSignerURL")} description={t("settings.web.statsigSignerURLHelp")} error={form.formState.errors.providerWeb?.statsigSignerURL?.message}>
-                  <Input id="web-statsig-url" type="url" placeholder="http://m365-signer:8788/sign" {...form.register("providerWeb.statsigSignerURL")} />
-                </SettingsField>
-              )}
-              <SettingsField controlId="web-quota-timeout" label={t("settings.web.quotaTimeout")} description={t("settings.web.quotaTimeoutHelp")} error={form.formState.errors.providerWeb?.quotaTimeout?.message}><Controller control={form.control} name="providerWeb.quotaTimeout" render={({ field }) => <DurationInput id="web-quota-timeout" value={field.value} onChange={field.onChange} />} /></SettingsField>
-              <SettingsField controlId="web-chat-timeout" label={t("settings.web.chatTimeout")} description={t("settings.web.chatTimeoutHelp")} error={form.formState.errors.providerWeb?.chatTimeout?.message}><Controller control={form.control} name="providerWeb.chatTimeout" render={({ field }) => <DurationInput id="web-chat-timeout" value={field.value} onChange={field.onChange} />} /></SettingsField>
-              <SettingsField controlId="web-stream-idle-timeout" label={t("settings.web.streamIdleTimeout")} description={t("settings.web.streamIdleTimeoutHelp")} error={form.formState.errors.providerWeb?.streamIdleTimeout?.message}><Controller control={form.control} name="providerWeb.streamIdleTimeout" render={({ field }) => <DurationInput id="web-stream-idle-timeout" value={field.value} onChange={field.onChange} />} /></SettingsField>
-              <SettingsField controlId="web-image-timeout" label={t("settings.web.imageTimeout")} description={t("settings.web.imageTimeoutHelp")} error={form.formState.errors.providerWeb?.imageTimeout?.message}><Controller control={form.control} name="providerWeb.imageTimeout" render={({ field }) => <DurationInput id="web-image-timeout" value={field.value} onChange={field.onChange} />} /></SettingsField>
-              <SettingsField controlId="web-video-timeout" label={t("settings.web.videoTimeout")} description={t("settings.web.videoTimeoutHelp")} error={form.formState.errors.providerWeb?.videoTimeout?.message}><Controller control={form.control} name="providerWeb.videoTimeout" render={({ field }) => <DurationInput id="web-video-timeout" value={field.value} onChange={field.onChange} />} /></SettingsField>
-              <SettingsField controlId="web-media-concurrency" label={t("settings.web.mediaConcurrency")} description={t("settings.web.mediaConcurrencyHelp")} badge={t("settings.restartRequired")} error={form.formState.errors.providerWeb?.mediaConcurrency?.message}><Input id="web-media-concurrency" type="number" min={1} max={64} {...form.register("providerWeb.mediaConcurrency", { valueAsNumber: true })} /></SettingsField>
-              <SettingsField controlId="web-recovery-base" label={t("settings.web.recoveryBackoffBase")} description={t("settings.web.recoveryBackoffBaseHelp")} error={form.formState.errors.providerWeb?.recoveryBackoffBase?.message}><Controller control={form.control} name="providerWeb.recoveryBackoffBase" render={({ field }) => <DurationInput id="web-recovery-base" value={field.value} onChange={field.onChange} />} /></SettingsField>
-              <SettingsField controlId="web-recovery-max" label={t("settings.web.recoveryBackoffMax")} description={t("settings.web.recoveryBackoffMaxHelp")} error={form.formState.errors.providerWeb?.recoveryBackoffMax?.message}><Controller control={form.control} name="providerWeb.recoveryBackoffMax" render={({ field }) => <DurationInput id="web-recovery-max" value={field.value} onChange={field.onChange} />} /></SettingsField>
-              <SettingsField controlId="web-nsfw" label={t("settings.web.allowNSFW")} description={t("settings.web.allowNSFWHelp")}><Controller control={form.control} name="providerWeb.allowNSFW" render={({ field }) => <div className="flex h-8 items-center"><Switch id="web-nsfw" checked={field.value} onCheckedChange={field.onChange} /></div>} /></SettingsField>
-            </div>
-          </SettingsSection>
-          </SettingsPane>
-
-          <SettingsPane value="console">
-          <SettingsSection title={t("console.name")}>
-            <div className="space-y-0">
-              <SettingsField controlId="console-base-url" className="sm:col-span-2" label={t("console.baseURL")} description={t("settings.console.baseURLHelp")} error={form.formState.errors.providerConsole?.baseURL?.message}><Input id="console-base-url" type="url" {...form.register("providerConsole.baseURL")} /></SettingsField>
-              <SettingsField controlId="console-chat-timeout" label={t("console.chatTimeout")} description={t("settings.console.chatTimeoutHelp")} error={form.formState.errors.providerConsole?.chatTimeout?.message}><Controller control={form.control} name="providerConsole.chatTimeout" render={({ field }) => <DurationInput id="console-chat-timeout" value={field.value} onChange={field.onChange} />} /></SettingsField>
-              <SettingsField controlId="console-stream-idle-timeout" label={t("settings.console.streamIdleTimeout")} description={t("settings.console.streamIdleTimeoutHelp")} error={form.formState.errors.providerConsole?.streamIdleTimeout?.message}><Controller control={form.control} name="providerConsole.streamIdleTimeout" render={({ field }) => <DurationInput id="console-stream-idle-timeout" value={field.value} onChange={field.onChange} />} /></SettingsField>
-            </div>
-          </SettingsSection>
-          </SettingsPane>
 
           <SettingsPane value="delivery">
           <SettingsSection title={t("settings.media.title")}>

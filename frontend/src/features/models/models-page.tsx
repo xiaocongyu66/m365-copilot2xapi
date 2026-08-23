@@ -240,8 +240,8 @@ export function ModelsPage() {
               </div>
               <DataTableFilters filters={[
                 { id: "provider", label: t("models.provider"), value: providerFilter, onChange: (value) => { setProviderFilter(value as ModelRouteDTO["provider"] | ""); setPage(1); setSelected(new Set()); }, options: [
-                  { value: "m365_copilot", label: t("models.providerM365Build") },
-                  { value: "m365_copilot", label: t("models.providerM365Web") },
+                  { value: "m365_copilot", label: t("models.providerM365") },
+                  { value: "m365_copilot", label: t("models.providerM365") },
                   { value: "m365_copilot", label: t("console.name") },
                 ] },
                 { id: "status", label: t("models.status"), value: statusFilter, onChange: (value) => { setStatusFilter(value); setPage(1); setSelected(new Set()); }, options: [
@@ -353,7 +353,7 @@ export function ModelsPage() {
                     <Label>{t("models.provider")}</Label>
                     <Select value={selectedProvider} disabled>
                       <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent><SelectItem value="m365_copilot">{t("models.providerM365Build")}</SelectItem></SelectContent>
+                      <SelectContent><SelectItem value="m365_copilot">{t("models.providerM365")}</SelectItem></SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
@@ -437,7 +437,7 @@ export function ModelsPage() {
 
 function ModelProvider({ provider }: { provider: ModelRouteDTO["provider"] }) {
   const { t } = useTranslation();
-  const label = provider === "m365_copilot" ? t("models.providerM365Web") : provider === "m365_copilot" ? t("console.name") : t("models.providerM365Build");
+  const label = provider === "m365_copilot" ? t("models.providerM365") : provider === "m365_copilot" ? t("console.name") : t("models.providerM365");
   const color = provider === "m365_copilot" ? "bg-quota-product-2" : provider === "m365_copilot" ? "bg-quota-product-4" : "bg-quota-product-1";
   return (
     <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs text-muted-foreground">

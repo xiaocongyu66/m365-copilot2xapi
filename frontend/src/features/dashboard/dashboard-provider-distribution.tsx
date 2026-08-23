@@ -132,9 +132,7 @@ function buildProviderStripes<T extends { requests: number }>(providers: T[], to
 }
 
 function providerLabel(provider: ProviderKey, t: TFunction): string {
-  if (provider === "m365_copilot") return t("models.providerM365Build");
-  if (provider === "m365_copilot") return t("models.providerM365Web");
-  return t("console.name");
+  return t("models.providerM365");
 }
 
 function clampTooltipX(value: number): number {
