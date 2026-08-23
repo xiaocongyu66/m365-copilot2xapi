@@ -3,12 +3,14 @@ package proxypool
 import (
 	"context"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/geoip"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/healthcheck"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/log"
+	"M365Copilot2ApiX/backend/internal/infra/proxypool/proxy"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/store"
 )
 
@@ -27,7 +29,8 @@ type AccountImporter interface {
 
 type Service struct {
 	mu       sync.RWMutex
-	store    *store.Store
+	store    *store.Store          // 正常代理池(排除 CN)
+	registerStore *store.Store     // 注册专用池(CN/HK/MO/TW)
 	score    *ScoreStore
 	balancer *Balancer
 	fetcher  *Fetcher
@@ -53,14 +56,19 @@ type NodeError struct {
 
 func NewService() *Service {
 	s := &Service{
-		store: store.NewWithFile("data/proxies.txt"),
+		store:          store.NewWithFile("data/proxies.txt"),
+		registerStore:  store.NewWithFile("data/register_proxies.txt"),
 	}
 	s.score = NewScoreStore()
 	s.score.SetStatePath("data/proxies_state.json")
 	s.balancer = NewBalancer(s.score)
+	// 注入主代理池/注册专用池的 identifier 提供函数
+	s.balancer.SetNormalIDs(func() []string { return s.store.IDs() })
+	s.balancer.SetRegisterIDs(func() []string { return s.registerStore.IDs() })
 	s.fetcher = NewFetcher(s.store, s.score)
 	s.fetcher.SetStatePath("data/fetcher_config.json")
 	s.checker = NewChecker(s.store, s.score)
+	s.checker.SetRegisterStore(s.registerStore)
 	s.registrar = NewRegistrar(s)
 	return s
 }
@@ -85,29 +93,76 @@ func (s *Service) Balancer() *Balancer { return s.balancer }
 // Fetcher 返回抓取器
 func (s *Service) Fetcher() *Fetcher { return s.fetcher }
 
+// RegisterStore 返回注册专用代理池(CN/HK/MO/TW)
+func (s *Service) RegisterStore() *store.Store { return s.registerStore }
+
 // Checker 返回测活器
 func (s *Service) Checker() *Checker { return s.checker }
 
 // CheckOne 对单个节点做两层测试(TCP/UDP + 微软可达)
 func (s *Service) CheckOne(identifier string) {
+	// 节点可能在主 store 或 register store
 	p, ok := s.store.Get(identifier)
 	if !ok {
-		return
+		p, ok = s.registerStore.Get(identifier)
+		if !ok {
+			return
+		}
 	}
-	// 用 healthcheck 的 m365CheckOne 测试
 	result := healthcheck.M365CheckOnePublic(p)
 	s.score.RecordCheckFull(identifier, result.Stable, result.Bytes, int64(result.Latency), result.PurityScore, result.IPType, result.ExitIP, result.ISP, result.CountryCode)
+	// 按国家分流:CN 移到 register store,非 CN 移到主 store
+	s.routeByCountry(p, result.CountryCode)
 }
 
 // CheckOneSync 同步测试单个节点,返回完整结果(给 API 用)
 func (s *Service) CheckOneSync(identifier string) (healthcheck.M365CheckResult, bool) {
 	p, ok := s.store.Get(identifier)
 	if !ok {
-		return healthcheck.M365CheckResult{}, false
+		p, ok = s.registerStore.Get(identifier)
+		if !ok {
+			return healthcheck.M365CheckResult{}, false
+		}
 	}
 	result := healthcheck.M365CheckOnePublic(p)
 	s.score.RecordCheckFull(identifier, result.Stable, result.Bytes, int64(result.Latency), result.PurityScore, result.IPType, result.ExitIP, result.ISP, result.CountryCode)
+	s.routeByCountry(p, result.CountryCode)
 	return result, true
+}
+
+// routeByCountry 按国家把节点路由到正确的 store:
+//   - CN → register store(只用于注册)
+//   - 非 CN(含 HK/MO/TW) → 主 store(用于正常 M365 请求)
+// HK/MO/TW 节点同时在两个 store 里(注册和正常请求都能用)。
+func (s *Service) routeByCountry(p proxy.Proxy, country string) {
+	if p == nil {
+		return
+	}
+	id := p.Identifier()
+	upper := strings.ToUpper(strings.TrimSpace(country))
+	isCN := upper == "CN" || upper == "CHINA"
+	isRegisterEligible := isCN || upper == "HK" || upper == "MO" || upper == "TW" ||
+		upper == "HONG KONG" || upper == "HONGKONG" || upper == "MACAO" || upper == "MACAU" || upper == "TAIWAN"
+
+	if isCN {
+		// CN 节点只放 register store,从主 store 删除
+		if _, exists := s.store.Get(id); exists {
+			s.store.Delete(id)
+		}
+		if _, exists := s.registerStore.Get(id); !exists {
+			s.registerStore.Add(p)
+		}
+	} else if isRegisterEligible {
+		// HK/MO/TW 两边都放(注册和正常请求都能用)
+		if _, exists := s.registerStore.Get(id); !exists {
+			s.registerStore.Add(p)
+		}
+	} else {
+		// 非 CN/HK/MO/TW 只放主 store,从 register store 删除
+		if _, exists := s.registerStore.Get(id); exists {
+			s.registerStore.Delete(id)
+		}
+	}
 }
 
 // Start 启动抓取器和测活器
@@ -136,9 +191,20 @@ func (s *Service) ImportNodes(text string) (imported, skipped int) {
 	return s.store.ImportFromText(text)
 }
 
-// ListNodes 列出所有节点(带分数)
+// ListNodes 列出所有节点(主池 + 注册专用池,带分数)
 func (s *Service) ListNodes() []NodeView {
 	proxies := s.store.List()
+	// 合并注册专用池的节点(CN/HK/MO/TW),用 seen 去重
+	seen := make(map[string]bool, len(proxies))
+	for _, p := range proxies {
+		seen[p.Identifier()] = true
+	}
+	for _, p := range s.registerStore.List() {
+		if !seen[p.Identifier()] {
+			proxies = append(proxies, p)
+			seen[p.Identifier()] = true
+		}
+	}
 	scores := s.score.List()
 	scoreMap := make(map[string]NodeScoreSnapshot, len(scores))
 	for _, sc := range scores {
@@ -216,10 +282,11 @@ func (s *Service) ClearErrors(identifiers []string) {
 	}
 }
 
-// DeleteNodes 批量删除节点
+// DeleteNodes 批量删除节点(两个 store 都删)
 func (s *Service) DeleteNodes(identifiers []string) {
 	for _, id := range identifiers {
 		s.store.Delete(id)
+		s.registerStore.Delete(id)
 	}
 }
 

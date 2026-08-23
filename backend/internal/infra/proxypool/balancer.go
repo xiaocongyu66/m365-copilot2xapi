@@ -14,33 +14,41 @@ import (
 // 如果某节点当前活跃请求多,适当降低权重(避免过载)。
 
 type Balancer struct {
-	store   *ScoreStore
-	counter int64 // 用于加权轮询的计数器(atomic 操作)
+	store        *ScoreStore
+	normalIDs    func() []string // 返回主代理池的 identifier 列表
+	registerIDs  func() []string // 返回注册专用池的 identifier 列表
+	counter      int64          // 用于加权轮询的计数器(atomic 操作)
 }
 
 func NewBalancer(store *ScoreStore) *Balancer {
 	return &Balancer{store: store}
 }
 
+// SetNormalIDs 注入主代理池 identifier 提供函数。
+func (b *Balancer) SetNormalIDs(fn func() []string) { b.normalIDs = fn }
+
+// SetRegisterIDs 注入注册专用池 identifier 提供函数。
+func (b *Balancer) SetRegisterIDs(fn func() []string) { b.registerIDs = fn }
+
 // 中国地区代码(注册 M365 时只允许这些地区的代理)
 var allowedRegisterCountries = map[string]bool{"CN": true, "HK": true, "MO": true, "TW": true}
 
-// PickNode 为一个新请求选择一个节点(排除中国代理)。
+// PickNode 为一个新请求选择一个节点(从主代理池,排除中国代理)。
 // M365 请求不走中国代理(直连即可),但注册时可以走中国代理。
 func (b *Balancer) PickNode() (identifier string, release func()) {
 	return b.pickNodeWithFilter(func(country string) bool {
 		// 排除中国代理(M365 请求不走中国代理)
 		return !isChineseProxy(country)
-	})
+	}, b.normalIDs)
 }
 
-// PickNodeForRegister 为 M365 注册选择一个节点(只选 CN/HK/MO/TW 地区)。
+// PickNodeForRegister 为 M365 注册选择一个节点(从注册专用池,只选 CN/HK/MO/TW)。
 // 注册网站 GeoIP 限制只允许这些地区。
 func (b *Balancer) PickNodeForRegister() (identifier string, release func()) {
 	return b.pickNodeWithFilter(func(country string) bool {
 		// 只选 CN/HK/MO/TW
 		return isAllowedRegisterCountry(country)
-	})
+	}, b.registerIDs)
 }
 
 func isChineseProxy(country string) bool {
@@ -53,15 +61,22 @@ func isAllowedRegisterCountry(country string) bool {
 	return allowedRegisterCountries[c] || c == "CHINA" || c == "HONG KONG" || c == "HONGKONG" || c == "MACAO" || c == "MACAU" || c == "TAIWAN"
 }
 
-// pickNodeWithFilter 按过滤条件选择节点
-func (b *Balancer) pickNodeWithFilter(countryFilter func(country string) bool) (identifier string, release func()) {
-	allNodes := b.store.UsableNodes()
-	if len(allNodes) == 0 {
+// pickNodeWithFilter 按过滤条件从指定 identifier 池选择节点
+func (b *Balancer) pickNodeWithFilter(countryFilter func(country string) bool, idProvider func() []string) (identifier string, release func()) {
+	if idProvider == nil {
 		return "", nil
 	}
-	// 按国家过滤
-	nodes := make([]*NodeScore, 0, len(allNodes))
-	for _, ns := range allNodes {
+	ids := idProvider()
+	if len(ids) == 0 {
+		return "", nil
+	}
+	// 按 identifier 从 ScoreStore 取节点,再按国家过滤
+	nodes := make([]*NodeScore, 0, len(ids))
+	for _, id := range ids {
+		ns := b.store.Get(id)
+		if ns == nil {
+			continue
+		}
 		if countryFilter(ns.Country) {
 			nodes = append(nodes, ns)
 		}

@@ -146,11 +146,33 @@ func (s *Store) Delete(identifier string) bool {
 	return true
 }
 
+// Add 添加单个节点(已存在则覆盖),并持久化。
+func (s *Store) Add(p proxy.Proxy) {
+	if p == nil {
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.proxies[p.Identifier()] = p
+	s.save()
+}
+
 // Count 返回节点总数
 func (s *Store) Count() int {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return len(s.proxies)
+}
+
+// IDs 返回所有节点的 identifier 列表。
+func (s *Store) IDs() []string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	ids := make([]string, 0, len(s.proxies))
+	for id := range s.proxies {
+		ids = append(ids, id)
+	}
+	return ids
 }
 
 func splitLines(text string) []string {

@@ -17,14 +17,20 @@ import (
 //   - 多个代理同时测试
 //   - 测活结果更新到 ScoreStore(打分)
 type Checker struct {
-	store   *store.Store
-	score   *ScoreStore
-	cancel  context.CancelFunc
-	running bool
+	store         *store.Store
+	registerStore *store.Store
+	score         *ScoreStore
+	cancel        context.CancelFunc
+	running       bool
 }
 
 func NewChecker(s *store.Store, score *ScoreStore) *Checker {
 	return &Checker{store: s, score: score}
+}
+
+// SetRegisterStore 注入注册专用池(测活时也测这个池)
+func (c *Checker) SetRegisterStore(s *store.Store) {
+	c.registerStore = s
 }
 
 // Start 启动定时测活循环(每分钟一次)
@@ -50,9 +56,22 @@ func (c *Checker) Stop() {
 	c.running = false
 }
 
-// RunOnce 立即执行一次测活
+// RunOnce 立即执行一次测活(主池 + 注册专用池)
 func (c *Checker) RunOnce() {
 	proxies := c.store.List()
+	// 合并注册专用池的节点,去重
+	if c.registerStore != nil {
+		seen := make(map[string]bool, len(proxies))
+		for _, p := range proxies {
+			seen[p.Identifier()] = true
+		}
+		for _, p := range c.registerStore.List() {
+			if !seen[p.Identifier()] {
+				proxies = append(proxies, p)
+				seen[p.Identifier()] = true
+			}
+		}
+	}
 	if len(proxies) == 0 {
 		return
 	}
