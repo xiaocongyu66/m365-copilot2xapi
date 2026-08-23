@@ -231,8 +231,8 @@ func (f *Fetcher) RunOnce() FetchResult {
 	f.lastResult = result
 	f.mu.Unlock()
 
-	// 给新导入的节点注册分数
-	for _, p := range usable {
+	// 给新导入的节点注册分数 + 查询 GeoIP(流式导入的节点在这里统一注册)
+	for _, p := range allProxies {
 		ns := f.score.Register(p.Identifier(), p.BaseInfo().Name)
 		// 查询国家信息(空或 🌐 或 ZZ 才查)
 		country := p.BaseInfo().Country
