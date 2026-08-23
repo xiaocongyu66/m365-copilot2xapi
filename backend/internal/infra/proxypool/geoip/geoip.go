@@ -1,6 +1,7 @@
 package geoip
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/http"
@@ -237,10 +238,10 @@ func (g *GeoIPDB) RunAutoUpdate(ctx context.Context, interval time.Duration) {
 				fmt.Printf("[GeoIP] auto-update failed: %v\n", err)
 				continue
 			}
-			if err := g.loadLocal(); err == nil {
+			if g.loadLocal() {
 				fmt.Printf("[GeoIP] auto-update succeeded, database reloaded\n")
 			} else {
-				fmt.Printf("[GeoIP] auto-update reload failed: %v\n", err)
+				fmt.Println("[GeoIP] auto-update reload failed")
 			}
 		}
 	}
