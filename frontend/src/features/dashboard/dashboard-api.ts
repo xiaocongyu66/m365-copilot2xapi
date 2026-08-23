@@ -28,9 +28,6 @@ export type DashboardDTO = {
   resources: {
     activeAccounts: number;
     totalAccounts: number;
-    buildAccounts: number;
-    webAccounts: number;
-    consoleAccounts: number;
     enabledModels: number;
     totalModels: number;
 	activeClientKeys: number;
@@ -62,7 +59,7 @@ const decodeDashboard = createObjectDecoder<DashboardDTO>("dashboard", {
   generatedAt: isString,
   range: hasShape({ start: isString, end: isString }),
   resources: hasShape({
-    activeAccounts: isNumber, totalAccounts: isNumber, buildAccounts: isNumber, webAccounts: isNumber, consoleAccounts: isNumber, enabledModels: isNumber, totalModels: isNumber,
+    activeAccounts: isNumber, totalAccounts: isNumber, enabledModels: isNumber, totalModels: isNumber,
 		activeClientKeys: isNumber, totalClientKeys: isNumber,
   }),
   usage: dashboardUsage,

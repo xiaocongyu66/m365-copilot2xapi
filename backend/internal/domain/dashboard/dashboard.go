@@ -4,9 +4,6 @@ package dashboard
 type Resources struct {
 	ActiveAccounts   int64
 	TotalAccounts    int64
-	BuildAccounts    int64
-	WebAccounts      int64
-	ConsoleAccounts  int64
 	EnabledModels    int64
 	TotalModels      int64
 	ActiveClientKeys int64
