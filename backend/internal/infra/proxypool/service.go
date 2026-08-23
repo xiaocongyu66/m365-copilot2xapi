@@ -211,10 +211,12 @@ func (s *Service) Reload() {
 // 用于修复之前用服务器地址查国家导致的不准记录,让测活后重新填充准确的出口 IP 国家。
 func (s *Service) ResetCountries() int {
 	count := 0
-	// 清 ScoreStore 的 Country
-	for _, ns := range s.score.List() {
-		s.score.SetCountry(ns.Identifier, "")
-		count++
+	// 清 ScoreStore 的 Country(通过 NodeScore.SetCountry)
+	for _, snap := range s.score.List() {
+		if ns := s.score.Get(snap.Identifier); ns != nil {
+			ns.SetCountry("")
+			count++
+		}
 	}
 	// 清 proxy.Base 的 Country(主池 + 注册池)
 	for _, p := range s.store.List() {
