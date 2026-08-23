@@ -225,8 +225,10 @@ func (r *Registrar) registerOne(ctx context.Context) {
 	result.ProxyUsed = nodeID
 
 	// 3. 自动求解 Turnstile(用注册代理出口 IP,避免 CF 检测 IP 不一致)
-	proxyURL := r.svc.GetProxyURL(nodeID)
-	token, err := turnstile.SolveTurnstile(turnstileSiteKey, proxyURL, registerPageURL)
+	// Turnstile token 不绑定 IP(非 pre-clearance 模式),不走代理求解更稳定
+	// (代理 IP 可能被 Cloudflare 标记为机器人,导致 challenge 不通过)
+	// 注册请求本身仍然走代理(满足 4 国 IP 限制)
+	token, err := turnstile.SolveTurnstile(turnstileSiteKey, "", registerPageURL)
 	if err != nil {
 		result.Error = fmt.Sprintf("Turnstile 求解失败: %v", err)
 		r.recordResult(result)
