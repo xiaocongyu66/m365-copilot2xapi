@@ -256,18 +256,18 @@ func (s *Service) PickNodeForRequest() (string, func()) {
 	return s.balancer.PickNode()
 }
 
-// GetProxyURL 获取节点的代理 URL(供 HTTP 客户端使用)
-// 如果没有可用节点,返回空字符串(走原始 IP)
+// GetProxyURL 获取节点的标准代理 URL(供 playwright/minirelay 使用)。
+// 返回节点 Link() 方法生成的标准 URL(socks5:// / http:// / vless:// 等)。
+// 没有可用节点返回空字符串(走原始 IP)。
 func (s *Service) GetProxyURL(identifier string) string {
 	if identifier == "" {
 		return ""
 	}
-	_, ok := s.store.Get(identifier)
+	p, ok := s.store.Get(identifier)
 	if !ok {
 		return ""
 	}
-	// 构造代理 URL(根据节点类型)——M365 走 clash adapter,这里返回空
-	return ""
+	return p.Link()
 }
 
 // HTTPClientWithNode 返回使用指定节点的 HTTP 客户端

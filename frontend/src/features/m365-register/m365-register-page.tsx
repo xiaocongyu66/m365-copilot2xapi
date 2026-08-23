@@ -49,6 +49,8 @@ export function M365RegisterPage() {
   const queryClient = useQueryClient();
   const [targetCount, setTargetCount] = useState("0");
   const [concurrency, setConcurrency] = useState("1");
+  const [recordPage, setRecordPage] = useState(1);
+  const recordPageSize = 50;
 
   // 注册状态(每 3 秒刷新)
   const { data: status } = useQuery<RegistrarStatus>({
@@ -238,39 +240,53 @@ export function M365RegisterPage() {
       )}
 
       {/* 注册结果列表 */}
-      {results.length > 0 && (
-        <div className="rounded-lg border bg-card">
-          <div className="p-3 border-b">
-            <div className="text-sm font-medium">注册记录 ({results.length})</div>
-          </div>
-          <div className="max-h-[50vh] overflow-y-auto">
-            {results.slice().reverse().map((r, i) => (
-              <div key={i} className="border-b px-3 py-2 last:border-0">
-                <div className="flex items-center gap-2">
-                  <span className={`text-[10px] ${r.success ? "text-green-500" : "text-red-500"}`}>
-                    {r.success ? "✅" : "❌"}
-                  </span>
-                  {r.success ? (
-                    <span className="text-xs font-medium truncate">{r.account.upn}</span>
-                  ) : (
-                    <span className="text-xs text-red-500 truncate">{r.error}</span>
-                  )}
-                  {r.proxyUsed && (
-                    <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">
-                      代理: {r.proxyUsed.substring(0, 20)}
+      {results.length > 0 && (() => {
+        const reversed = results.slice().reverse();
+        const totalPages = Math.max(1, Math.ceil(reversed.length / recordPageSize));
+        const currentPage = Math.min(recordPage, totalPages);
+        const startIdx = (currentPage - 1) * recordPageSize;
+        const pageItems = reversed.slice(startIdx, startIdx + recordPageSize);
+        return (
+          <div className="rounded-lg border bg-card">
+            <div className="p-3 border-b flex items-center justify-between">
+              <div className="text-sm font-medium">注册记录 ({results.length})</div>
+              {totalPages > 1 && (
+                <div className="flex items-center gap-1">
+                  <Button size="sm" variant="outline" className="h-6 px-2 text-[10px]" disabled={currentPage <= 1} onClick={() => setRecordPage(currentPage - 1)}>上一页</Button>
+                  <span className="text-[10px] text-muted-foreground">{currentPage}/{totalPages}</span>
+                  <Button size="sm" variant="outline" className="h-6 px-2 text-[10px]" disabled={currentPage >= totalPages} onClick={() => setRecordPage(currentPage + 1)}>下一页</Button>
+                </div>
+              )}
+            </div>
+            <div className="max-h-[50vh] overflow-y-auto">
+              {pageItems.map((r, i) => (
+                <div key={startIdx + i} className="border-b px-3 py-2 last:border-0">
+                  <div className="flex items-center gap-2">
+                    <span className={`text-[10px] ${r.success ? "text-green-500" : "text-red-500"}`}>
+                      {r.success ? "✅" : "❌"}
                     </span>
+                    {r.success ? (
+                      <span className="text-xs font-medium truncate">{r.account.upn}</span>
+                    ) : (
+                      <span className="text-xs text-red-500 truncate">{r.error}</span>
+                    )}
+                    {r.proxyUsed && (
+                      <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">
+                        代理: {r.proxyUsed.substring(0, 20)}
+                      </span>
+                    )}
+                  </div>
+                  {r.success && r.refreshToken && (
+                    <div className="mt-1 text-[10px] text-muted-foreground">
+                      Token: {r.refreshToken.substring(0, 30)}... · 密码: {r.account.password}
+                    </div>
                   )}
                 </div>
-                {r.success && r.refreshToken && (
-                  <div className="mt-1 text-[10px] text-muted-foreground">
-                    Token: {r.refreshToken.substring(0, 30)}... · 密码: {r.account.password}
-                  </div>
-                )}
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

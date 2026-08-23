@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/log"
+	"M365Copilot2ApiX/backend/internal/infra/proxypool/turnstile"
 )
 
 // Registrar 全自动 M365 账号注册器
@@ -31,6 +32,7 @@ const (
 	e3Domain        = "office.bo.edu.kg"
 	turnstileSiteKey = "0x4AAAAAACIQH0jzb6zLNH8t"
 	registerURL     = "https://office.965007.xyz/api/register"
+	registerPageURL = "https://office.965007.xyz/"
 )
 
 // RegisteredAccount 注册成功后的账号信息
@@ -222,9 +224,9 @@ func (r *Registrar) registerOne(ctx context.Context) {
 	}
 	result.ProxyUsed = nodeID
 
-	// 3. 自动求解 Turnstile
-	solver := SolveTurnstile(turnstileSiteKey, "")
-	token, err := solver.Solve()
+	// 3. 自动求解 Turnstile(用注册代理出口 IP,避免 CF 检测 IP 不一致)
+	proxyURL := r.svc.GetProxyURL(nodeID)
+	token, err := turnstile.SolveTurnstile(turnstileSiteKey, proxyURL, registerPageURL)
 	if err != nil {
 		result.Error = fmt.Sprintf("Turnstile 求解失败: %v", err)
 		r.recordResult(result)

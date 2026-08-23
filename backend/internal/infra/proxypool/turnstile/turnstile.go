@@ -1,125 +1,53 @@
-package proxypool
+// Package turnstile 提供 Cloudflare Turnstile token 求解能力。
+// 支持两种模式:
+//   - 外部 API solver(设置 TURNSTILE_API_URL 时启用)
+//   - 内置 playwright + CloakBrowser 浏览器 solver(默认)
+//
+// 浏览器 solver 策略:加载真实页面 → 注入 turnstile api.js → 渲染 widget →
+// 轮询获取 token(期间点击 checkbox + 伪造 screen 坐标过反检测)。
+package turnstile
 
 import (
 	"fmt"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"runtime"
 	"strings"
-	"sync"
 	"time"
 
 	playwright "github.com/mxschmitt/playwright-go"
 )
 
-// TurnstileSolver 移植自 grok-register_for-go
-// 用 playwright-go 控制浏览器,支持 browser pool 复用
-
-const SignupURL = "https://office.965007.xyz/"
-
-type browserPool struct {
-	mu      sync.Mutex
-	entries map[string]*browserEntry
-	pw      *playwright.Playwright
-	pwOnce  sync.Once
-	pwErr   error
-}
-
-type browserEntry struct {
-	browser  playwright.Browser
-	proxy    string
-	lastUsed time.Time
-}
-
-var sharedBrowserPool = &browserPool{
-	entries: make(map[string]*browserEntry),
-}
-
-func CloseAllBrowsers() {
-	sharedBrowserPool.mu.Lock()
-	defer sharedBrowserPool.mu.Unlock()
-	for _, entry := range sharedBrowserPool.entries {
-		entry.browser.Close()
-	}
-	sharedBrowserPool.entries = make(map[string]*browserEntry)
-	if sharedBrowserPool.pw != nil {
-		sharedBrowserPool.pw.Stop()
-		sharedBrowserPool.pw = nil
-	}
-}
-
-func (p *browserPool) getBrowser(proxy, chromePath string) (playwright.Browser, error) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	if entry, ok := p.entries[proxy]; ok {
-		if entry.browser.IsConnected() {
-			entry.lastUsed = time.Now()
-			return entry.browser, nil
+// SolveTurnstile 求解 Cloudflare Turnstile token。
+// siteKey 是目标站点的 Turnstile sitekey。
+// proxy 是浏览器要走的代理 URL(socks5/http,可带认证,可为空)。
+// 设置环境变量 TURNSTILE_API_URL 时优先用外部 API solver,
+// 失败后若 TURNSTILE_BROWSER_FALLBACK=1 则回退到浏览器 solver。
+func SolveTurnstile(siteKey, proxy, targetURL string) (string, error) {
+	if apiURL := strings.TrimSpace(envFirst("TURNSTILE_API_URL")); apiURL != "" {
+		tok, err := solveTurnstileViaAPI(siteKey, targetURL)
+		if err == nil {
+			return tok, nil
 		}
-		entry.browser.Close()
-		delete(p.entries, proxy)
+		fmt.Printf("[ts] API solver failed: %v\n", err)
+		if !envBool("TURNSTILE_BROWSER_FALLBACK", false) {
+			return "", fmt.Errorf("turnstile api: %w (browser fallback disabled)", err)
+		}
+		fmt.Println("[ts] falling back to browser solver")
 	}
-
-	if err := p.ensurePlaywright(); err != nil {
-		return nil, fmt.Errorf("playwright: %w", err)
-	}
-
-	chromeIsHeadlessShell := strings.Contains(chromePath, "headless_shell")
-	useHeadless := chromeIsHeadlessShell
-
-	launchArgs := []string{
-		"--no-sandbox",
-		"--disable-dev-shm-usage",
-		"--disable-blink-features=AutomationControlled",
-		"--ignore-certificate-errors",
-	}
-	if !useHeadless {
-		launchArgs = append(launchArgs, "--window-position=-32000,-32000", "--window-size=800,600")
-	}
-
-	var proxyOpts *playwright.Proxy
-	if proxy != "" {
-		proxyOpts = &playwright.Proxy{Server: proxy}
-	}
-
-	browser, err := p.pw.Chromium.Launch(playwright.BrowserTypeLaunchOptions{
-		Headless:       playwright.Bool(useHeadless),
-		ExecutablePath: playwright.String(chromePath),
-		Args:           launchArgs,
-		Proxy:          proxyOpts,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("launch: %w", err)
-	}
-
-	p.entries[proxy] = &browserEntry{
-		browser:  browser,
-		proxy:    proxy,
-		lastUsed: time.Now(),
-	}
-	fmt.Printf("[bpool] launched browser for proxy=%s headless=%v (total=%d)\n", proxy, useHeadless, len(p.entries))
-	return browser, nil
+	return solveTurnstileBrowser(siteKey, proxy, targetURL)
 }
 
-func (p *browserPool) ensurePlaywright() error {
-	p.pwOnce.Do(func() {
-		p.pw, p.pwErr = playwright.Run()
-	})
-	return p.pwErr
-}
-
-// SolveTurnstile 用 playwright 浏览器求解 Cloudflare Turnstile token
-func SolveTurnstile(siteKey, proxy string) (string, error) {
+// solveTurnstileBrowser 用 playwright + CloakBrowser 获取 Turnstile token。
+func solveTurnstileBrowser(siteKey, proxy, targetURL string) (string, error) {
 	chromePath := findChromePath()
 	if chromePath == "" {
 		return "", fmt.Errorf("chrome/chromium not found")
 	}
 
+	// Chrome 不支持带认证的 socks5 代理,需要先转成无认证的本地中继
+	browserProxy := maybeRelayProxy(proxy)
+
 	ensureXvfb()
 
-	browser, err := sharedBrowserPool.getBrowser(proxy, chromePath)
+	browser, err := sharedBrowserPool.getBrowser(browserProxy, chromePath)
 	if err != nil {
 		return "", err
 	}
@@ -140,9 +68,12 @@ func SolveTurnstile(siteKey, proxy string) (string, error) {
 	defer page.Close()
 	page.SetViewportSize(800, 600)
 
-	_, err = page.Goto(SignupURL, playwright.PageGotoOptions{
+	if targetURL == "" {
+		targetURL = "https://office.965007.xyz/"
+	}
+	_, err = page.Goto(targetURL, playwright.PageGotoOptions{
 		WaitUntil: playwright.WaitUntilStateDomcontentloaded,
-		Timeout:   playwright.Float(45000),
+		Timeout:  playwright.Float(45000),
 	})
 	if err != nil {
 		return "", fmt.Errorf("navigate: %w", err)
@@ -150,7 +81,7 @@ func SolveTurnstile(siteKey, proxy string) (string, error) {
 
 	time.Sleep(3 * time.Second)
 
-	// 注入 Turnstile JS
+	// 注入 turnstile api.js(如果页面没有)
 	page.Evaluate(`() => {
 		if (typeof turnstile === 'undefined') {
 			var s = document.createElement('script');
@@ -160,7 +91,7 @@ func SolveTurnstile(siteKey, proxy string) (string, error) {
 		}
 	}`)
 
-	// 等待 turnstile 加载
+	// 等待 turnstile 全局对象就绪(最多 30 秒)
 	ready := false
 	for i := 0; i < 60; i++ {
 		v, _ := page.Evaluate("() => typeof turnstile !== 'undefined' ? 'yes' : 'no'")
@@ -171,12 +102,12 @@ func SolveTurnstile(siteKey, proxy string) (string, error) {
 		time.Sleep(500 * time.Millisecond)
 	}
 	if !ready {
-		return "", fmt.Errorf("turnstile api.js failed to load after 30s")
+		return "", fmt.Errorf("turnstile: api.js failed to load after 30s")
 	}
 	fmt.Println("[ts] turnstile API ready")
 
-	// 渲染 Turnstile widget
-	page.Evaluate(fmt.Sprintf(`() => {
+	// 渲染 turnstile widget
+	renderResult, err := page.Evaluate(fmt.Sprintf(`() => {
 		if (typeof turnstile === 'undefined') return 'no-turnstile';
 		var existing = document.getElementById('cf-ts');
 		if (existing) return 'already';
@@ -195,12 +126,17 @@ func SolveTurnstile(siteKey, proxy string) (string, error) {
 			return 'rendered';
 		} catch(e) { window.__ts_err = e.message; return 'error:' + e.message; }
 	}`, siteKey))
+	if err != nil {
+		fmt.Printf("[ts] render eval err: %v\n", err)
+	} else {
+		fmt.Printf("[ts] render result: %v\n", renderResult)
+	}
 
-	// 重置 widget
+	// 重置 widget 清除陈旧状态
 	page.Evaluate(`() => { try { if (window.turnstile && typeof turnstile.reset === 'function') turnstile.reset(); } catch(e) {} }`)
 	time.Sleep(1 * time.Second)
 
-	// 轮询获取 token(最多 50 秒)
+	// 轮询获取 token(最多 50 秒,期间持续点击 checkbox)
 	for i := 0; i < 50; i++ {
 		tokenVal, _ := page.Evaluate(`() => {
 			try {
@@ -218,7 +154,7 @@ func SolveTurnstile(siteKey, proxy string) (string, error) {
 			return t, nil
 		}
 
-		// 检查错误
+		// 检查致命错误(110200/300010/300030/300031/600010 是可重试错误,不中断)
 		errVal, _ := page.Evaluate("() => window.__ts_err || ''")
 		if e, ok := errVal.(string); ok && e != "" {
 			if !strings.Contains(e, "110200") && !strings.Contains(e, "300010") &&
@@ -228,11 +164,12 @@ func SolveTurnstile(siteKey, proxy string) (string, error) {
 			}
 		}
 
-		// 点击 checkbox
 		clickTurnstileCheckbox(page)
 
 		if i%10 == 0 {
-			fmt.Printf("[ts-poll %d] waiting...\n", i)
+			widget, _ := page.Evaluate("() => { var w=document.getElementById('cf-ts'); return w ? w.innerHTML.substring(0,80) : 'none'; }")
+			ts, _ := page.Evaluate("() => typeof turnstile !== 'undefined' ? 'yes' : 'no'")
+			fmt.Printf("[ts-poll %d] ts=%v widget=%v\n", i, ts, widget)
 		}
 		time.Sleep(1 * time.Second)
 	}
@@ -240,9 +177,12 @@ func SolveTurnstile(siteKey, proxy string) (string, error) {
 	return "", fmt.Errorf("turnstile: timeout")
 }
 
+// clickTurnstileCheckbox 伪造 screen 坐标并点击 Turnstile challenge iframe 内的 checkbox。
 func clickTurnstileCheckbox(page playwright.Page) {
+	// 主页面伪造 screenX/screenY 规避 headless 检测
 	page.Evaluate(`() => {
 		try {
+			window.dtp = 1;
 			function getRandomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
 			var sx = getRandomInt(800, 1200);
 			var sy = getRandomInt(400, 700);
@@ -289,60 +229,7 @@ func clickTurnstileCheckbox(page playwright.Page) {
 		frame.Evaluate(clickScript)
 	}
 
+	// 兜底:点击 widget checkbox 位置(widget 在 top:10,left:10,300x70,checkbox 约 x=40,y=45)
 	mouse := page.Mouse()
 	mouse.Click(40, 45)
-}
-
-func ensureXvfb() {
-	if runtime.GOOS != "linux" {
-		return
-	}
-	if os.Getenv("DISPLAY") == "" {
-		os.Setenv("DISPLAY", ":2")
-	}
-	cmd := exec.Command("xdpyinfo", "-display", ":2")
-	if err := cmd.Run(); err == nil {
-		return
-	}
-	tmpDir := os.TempDir()
-	os.Remove(filepath.Join(tmpDir, ".X2-lock"))
-	os.Remove(filepath.Join(tmpDir, ".X11-unix", "X2"))
-	exec.Command("setsid", "Xvfb", ":2", "-screen", "0", "1280x720x24").Start()
-	time.Sleep(2 * time.Second)
-}
-
-func findChromePath() string {
-	for _, key := range []string{"SOLVER_CHROME_PATH", "CHROME_BIN", "CHROME_PATH"} {
-		if p := os.Getenv(key); p != "" {
-			if _, err := os.Stat(p); err == nil {
-				return p
-			}
-		}
-	}
-	home, _ := os.UserHomeDir()
-
-	cloakDir := filepath.Join(home, ".cloakbrowser")
-	if entries, err := os.ReadDir(cloakDir); err == nil {
-		for _, e := range entries {
-			if strings.Contains(strings.ToLower(e.Name()), "chrom") {
-				for _, p := range []string{
-					filepath.Join(cloakDir, e.Name(), "chrome"),
-					filepath.Join(cloakDir, e.Name(), "chrome.exe"),
-				} {
-					if _, err := os.Stat(p); err == nil {
-						return p
-					}
-				}
-			}
-		}
-	}
-
-	if runtime.GOOS == "linux" {
-		for _, name := range []string{"chromium", "chromium-browser", "google-chrome", "google-chrome-stable", "chrome"} {
-			if p, err := exec.LookPath(name); err == nil {
-				return p
-			}
-		}
-	}
-	return ""
 }
