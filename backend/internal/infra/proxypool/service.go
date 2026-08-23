@@ -2,7 +2,10 @@ package proxypool
 
 import (
 	"context"
+	"fmt"
+	"net"
 	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -10,6 +13,7 @@ import (
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/geoip"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/healthcheck"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/log"
+	"M365Copilot2ApiX/backend/internal/infra/proxypool/minirelay"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/proxy"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/store"
 )
@@ -455,14 +459,80 @@ func (s *Service) GetProxyURL(identifier string) string {
 	return p.Link()
 }
 
-// HTTPClientWithNode 返回使用指定节点的 HTTP 客户端
-// 节点通过 clash adapter 代理 HTTP 请求
+// httpRelayManager 管理为 HTTP 客户端创建的本地代理中继(按节点缓存)。
+// 因为 ss/vless/vmess/trojan 等协议 Go 标准库不支持,需要 minirelay 转成本地 socks5。
+type httpRelayManager struct {
+	mu      sync.Mutex
+	relays  map[string]*httpRelayEntry
+	startPort int
+}
+type httpRelayEntry struct {
+	localURL string
+	relay    *minirelay.Relay
+}
+var httpRelay = &httpRelayManager{relays: make(map[string]*httpRelayEntry), startPort: 19300}
+
+// HTTPClientWithNode 返回使用指定节点的 HTTP 客户端。
+// 通过 minirelay 把节点转成本地 socks5(Chrome 和 Go 标准库都支持 socks5)。
 func (s *Service) HTTPClientWithNode(identifier string) *http.Client {
 	if identifier == "" {
 		return http.DefaultClient
 	}
-	// TODO: 用 go-curlcffi 创建带代理的客户端
-	return http.DefaultClient
+	p, ok := s.store.Get(identifier)
+	if !ok {
+		if p2, ok2 := s.registerStore.Get(identifier); ok2 {
+			p = p2
+		} else {
+			return http.DefaultClient
+		}
+	}
+	upstreamURL := p.Link()
+	if upstreamURL == "" {
+		return http.DefaultClient
+	}
+	localURL := getOrCreateHTTPRelay(upstreamURL)
+	if localURL == "" {
+		return http.DefaultClient
+	}
+	// 解析 socks5://127.0.0.1:port
+	proxyURL, err := url.Parse(localURL)
+	if err != nil {
+		return http.DefaultClient
+	}
+	return &http.Client{
+		Transport: &http.Transport{Proxy: http.ProxyURL(proxyURL)},
+		Timeout:   60 * time.Second,
+	}
+}
+
+// getOrCreateHTTPRelay 为上游代理 URL 创建或复用本地 minirelay 中继。
+func getOrCreateHTTPRelay(upstreamURL string) string {
+	httpRelay.mu.Lock()
+	defer httpRelay.mu.Unlock()
+	if existing, ok := httpRelay.relays[upstreamURL]; ok && existing.relay != nil {
+		return existing.localURL
+	}
+	// 分配端口
+	port := httpRelay.startPort
+	for p := httpRelay.startPort; p < httpRelay.startPort+500; p++ {
+		ln, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", p))
+		if err == nil {
+			ln.Close()
+			port = p
+			break
+		}
+	}
+	listen := fmt.Sprintf("127.0.0.1:%d", port)
+	relay, err := minirelay.New(listen, upstreamURL)
+	if err != nil {
+		return ""
+	}
+	if err := relay.Start(); err != nil {
+		return ""
+	}
+	localURL := fmt.Sprintf("socks5://%s", listen)
+	httpRelay.relays[upstreamURL] = &httpRelayEntry{localURL: localURL, relay: relay}
+	return localURL
 }
 
 func init() {
