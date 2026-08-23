@@ -55,12 +55,9 @@ type RegisterResult struct {
 
 // RegistrarConfig 注册器配置
 type RegistrarConfig struct {
-	Enabled      bool   `json:"enabled"`
-	TargetCount  int    `json:"targetCount"`  // 注册目标数量(0 = 一直注册)
-	Concurrency  int    `json:"concurrency"`  // 并发注册数(默认 1)
-	Username     string `json:"username"`      // 邮箱前缀(留空=随机生成)
-	Password     string `json:"password"`     // 密码(留空=随机生成)
-	DisplayName  string `json:"displayName"`   // 显示名(留空=随机生成)
+	Enabled       bool           `json:"enabled"`
+	TargetCount   int            `json:"targetCount"`   // 注册目标数量(0 = 一直注册)
+	Concurrency   int            `json:"concurrency"`   // 并发注册数(默认 1)
 }
 
 // Registrar 注册器
@@ -243,21 +240,10 @@ func (r *Registrar) registerOne(ctx context.Context) {
 		return
 	}
 
-	// 4. 账号信息(用户指定优先,留空则随机生成)
-	r.mu.Lock()
-	username := r.config.Username
-	password := r.config.Password
-	displayName := r.config.DisplayName
-	r.mu.Unlock()
-	if username == "" {
-		username = randomUsername()
-	}
-	if password == "" {
-		password = randomPassword()
-	}
-	if displayName == "" {
-		displayName = randomDisplayName()
-	}
+	// 4. 随机生成账号信息
+	username := randomUsername()
+	password := randomPassword()
+	displayName := randomDisplayName()
 
 	// 5. 提交注册
 	acc, err := r.submitRegister(ctx, nodeID, username, password, displayName, token)
@@ -381,7 +367,6 @@ func (r *Registrar) submitRegister(ctx context.Context, proxyNodeID, username, p
 	}
 	defer resp.Body.Close()
 	respBody, _ := io.ReadAll(resp.Body)
-	log.Infof("[register] status=%d body=%s", resp.StatusCode, string(respBody[:min(200, len(respBody))]))
 
 	var result struct {
 		OK      bool              `json:"ok"`
@@ -389,7 +374,7 @@ func (r *Registrar) submitRegister(ctx context.Context, proxyNodeID, username, p
 		Data    *RegisteredAccount `json:"data"`
 	}
 	if err := json.Unmarshal(respBody, &result); err != nil {
-		return nil, fmt.Errorf("解析注册响应失败: %w (body: %s)", err, string(respBody[:min(100, len(respBody))]))
+		return nil, fmt.Errorf("解析注册响应失败: %w", err)
 	}
 	if !result.OK {
 		return nil, fmt.Errorf("注册失败: %s", result.Message)
@@ -491,11 +476,4 @@ func randomDisplayName() string {
 	nouns := []string{"Fox", "Eagle", "Wolf", "Tiger", "Bear", "Hawk", "Lion", "Cat"}
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	return adjectives[r.Intn(len(adjectives))] + nouns[r.Intn(len(nouns))] + fmt.Sprintf("%d", r.Intn(100))
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }
