@@ -352,7 +352,7 @@ func (s *Service) ExportProviderCredentials(ctx context.Context, providerValue a
 // the maximum account ID captured by the first request.
 func (s *Service) ExportProviderCredentialsCursor(ctx context.Context, providerValue accountdomain.Provider, afterID, snapshotMaxID uint64, limit int) (ExportPageResult, error) {
 	if limit < 1 || limit > maxCredentialExportAccounts {
-		return ExportPageResult{}, invalidInput("单批导出数量必须在 1 到 10000 之间")
+		return ExportPageResult{}, invalidInput("单批导出数量必须在 1 到 100000 之间")
 	}
 	if afterID > 0 && snapshotMaxID == 0 {
 		return ExportPageResult{}, invalidInput("继续导出时必须提供快照上界")
@@ -422,7 +422,7 @@ func (s *Service) exportProviderCredentials(ctx context.Context, providerValue a
 		return ExportResult{}, err
 	}
 	if enforceTotalLimit && total > maxCredentialExportAccounts {
-		return ExportResult{}, fmt.Errorf("%w: 单次最多导出 10000 个账号", ErrExportLimit)
+		return ExportResult{}, fmt.Errorf("%w: 单次最多导出 100000 个账号", ErrExportLimit)
 	}
 	if err := validateCredentialExportCount(expectedCount, total, len(values)); err != nil {
 		return ExportResult{}, err
