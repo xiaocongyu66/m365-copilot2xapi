@@ -199,7 +199,12 @@ func (f *Fetcher) RunOnce() FetchResult {
 	// 入库前三层测试:TCP/UDP 连通 → 微软可达 → 5MB 持续下载
 	// 只有通过的节点才入库,死节点直接丢弃
 	log.Infof("fetcher: 3-layer test on %d new proxies (TCP/UDP → Microsoft → 5MB)...", len(allProxies))
-	usable := healthcheck.M365CheckUsable(allProxies)
+	usable := healthcheck.M365CheckUsableWithProgress(allProxies, func(done, total, usable int64) {
+		f.mu.Lock()
+		f.progressDone = done
+		f.progressUsable = usable
+		f.mu.Unlock()
+	})
 	result.Skipped = result.Total - len(usable)
 	log.Infof("fetcher: 3-layer done: total=%d usable=%d dropped=%d", len(allProxies), len(usable), result.Skipped)
 

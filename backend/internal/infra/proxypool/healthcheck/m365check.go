@@ -53,7 +53,7 @@ type M365CheckResult struct {
 //   - 第 2 层:微软可达性测试(能访问 login.microsoftonline.com)
 //   - 第 3 层:持续 10MB 下载稳定性测试(持续发包,不断流)
 // 只有通过三层测试的代理才算可用。多个代理同时测试。
-func M365CheckAll(proxies []proxy.Proxy) []M365CheckResult {
+func M365CheckAllWithProgress(proxies []proxy.Proxy, onProgress func(done, total, usable int64)) []M365CheckResult {
 	if len(proxies) == 0 {
 		return nil
 	}
@@ -69,8 +69,8 @@ func M365CheckAll(proxies []proxy.Proxy) []M365CheckResult {
 	pool := newSimplePool(numWorker)
 	var wg sync.WaitGroup
 
-	// 进度追踪
 	completed := int64(0)
+	passed := int64(0)
 	total := int64(len(proxies))
 	for i, p := range proxies {
 		wg.Add(1)
@@ -80,6 +80,12 @@ func M365CheckAll(proxies []proxy.Proxy) []M365CheckResult {
 			defer wg.Done()
 			results[idx] = m365CheckOne(pp)
 			done := atomic.AddInt64(&completed, 1)
+			if results[idx].Accessible && results[idx].Stable {
+				atomic.AddInt64(&passed, 1)
+			}
+			if onProgress != nil {
+				onProgress(done, total, atomic.LoadInt64(&passed))
+			}
 			if done%100 == 0 || done == total {
 				log.Infof("M365 check progress: %d/%d (%.0f%%)", done, total, float64(done)/float64(total)*100)
 			}
@@ -89,9 +95,26 @@ func M365CheckAll(proxies []proxy.Proxy) []M365CheckResult {
 	return results
 }
 
+// M365CheckAll 对所有代理执行三层测活(无进度回调)
+func M365CheckAll(proxies []proxy.Proxy) []M365CheckResult {
+	return M365CheckAllWithProgress(proxies, nil)
+}
+
 // M365CheckUsable 返回通过 M365 测活的代理列表(可达 + 稳定)
 func M365CheckUsable(proxies []proxy.Proxy) proxy.ProxyList {
 	results := M365CheckAll(proxies)
+	usable := make(proxy.ProxyList, 0, len(results))
+	for _, r := range results {
+		if r.Accessible && r.Stable {
+			usable = append(usable, r.Proxy)
+		}
+	}
+	return usable
+}
+
+// M365CheckUsableWithProgress 带进度回调的可用代理筛选
+func M365CheckUsableWithProgress(proxies []proxy.Proxy, onProgress func(done, total, usable int64)) proxy.ProxyList {
+	results := M365CheckAllWithProgress(proxies, onProgress)
 	usable := make(proxy.ProxyList, 0, len(results))
 	for _, r := range results {
 		if r.Accessible && r.Stable {
