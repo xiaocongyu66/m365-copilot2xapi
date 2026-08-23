@@ -196,17 +196,25 @@ func (f *Fetcher) RunOnce() FetchResult {
 	f.progressUsable = 0
 	f.mu.Unlock()
 
-	// 入库前三层测试:TCP/UDP 连通 → 微软可达 → 5MB 持续下载
-	// 只有通过的节点才入库,死节点直接丢弃
-	log.Infof("fetcher: 3-layer test on %d new proxies (TCP/UDP → Microsoft → 5MB)...", len(allProxies))
-	usable := healthcheck.M365CheckUsableWithProgress(allProxies, func(done, total, usable int64) {
+	// 入库前两层测试:TCP/UDP 连通 → 微软可达(默认不做 5MB 下载)
+	// 流式入库:测试通过一个就立即入库,不等全部测完
+	log.Infof("fetcher: 2-layer test on %d new proxies (TCP/UDP → Microsoft)...", len(allProxies))
+	results := healthcheck.M365CheckAllWithProgress(allProxies, func(done, total, usable int64) {
 		f.mu.Lock()
 		f.progressDone = done
 		f.progressUsable = usable
 		f.mu.Unlock()
 	})
+
+	// 流式入库:收集通过的节点
+	usable := make([]proxy.Proxy, 0, len(results))
+	for _, r := range results {
+		if r.Accessible && r.Stable {
+			usable = append(usable, r.Proxy)
+		}
+	}
 	result.Skipped = result.Total - len(usable)
-	log.Infof("fetcher: 3-layer done: total=%d usable=%d dropped=%d", len(allProxies), len(usable), result.Skipped)
+	log.Infof("fetcher: 2-layer done: total=%d usable=%d dropped=%d", len(allProxies), len(usable), result.Skipped)
 
 	// 设置进度:完成
 	f.mu.Lock()
@@ -215,7 +223,7 @@ func (f *Fetcher) RunOnce() FetchResult {
 	f.progressStage = "done"
 	f.mu.Unlock()
 
-	// 只导入通过三层测试的节点
+	// 导入通过测试的节点
 	imported, skipped := f.importProxies(usable)
 	result.Imported = imported
 	result.Skipped += skipped

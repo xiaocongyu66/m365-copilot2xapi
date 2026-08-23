@@ -124,28 +124,31 @@ func M365CheckUsableWithProgress(proxies []proxy.Proxy, onProgress func(done, to
 	return usable
 }
 
-// m365CheckOne 对单个代理执行三层测活:
-//   - 第 1 层:快速 TCP 连通性(失败直接返回,不浪费后续测试)
+// m365CheckOne 对单个代理执行两层测活(默认):
+//   - 第 1 层:快速 TCP/UDP 连通性(失败直接返回)
 //   - 第 2 层:微软可达性
-//   - 第 3 层:持续 10MB 下载稳定性
+// 第 3 层(5MB 持续下载)默认关闭,需要 enableDownload=true
 func m365CheckOne(p proxy.Proxy) M365CheckResult {
+	return m365CheckOneOpt(p, false)
+}
+
+func m365CheckOneOpt(p proxy.Proxy, enableDownload bool) M365CheckResult {
 	result := M365CheckResult{Proxy: p}
 
-	// 第 1 层:快速 TCP 连通性测试
+	// 第 1 层:快速 TCP/UDP 连通性测试
 	base := p.BaseInfo()
 	if base.Server == "" || base.Port == 0 {
 		result.Error = "missing server/port"
 		return result
 	}
 	tcpAddr := fmt.Sprintf("%s:%d", base.Server, base.Port)
-	// hysteria2 用 UDP,其他用 TCP
 	network := "tcp"
 	if p.TypeName() == "hysteria2" {
 		network = "udp"
 	}
 	conn, err := netDialTimeout(network, tcpAddr, 3*time.Second)
 	if err != nil {
-		result.Error = fmt.Sprintf("layer1 tcp: %v", err)
+		result.Error = fmt.Sprintf("layer1: %v", err)
 		return result
 	}
 	conn.Close()
@@ -154,21 +157,26 @@ func m365CheckOne(p proxy.Proxy) M365CheckResult {
 	accessible, accessErr := m365AccessibleTest(p)
 	result.Accessible = accessible
 	if !accessible {
-		result.Error = fmt.Sprintf("layer2 accessible: %v", accessErr)
+		result.Error = fmt.Sprintf("layer2: %v", accessErr)
 		return result
 	}
 
-	// 第 3 层:持续 10MB 下载稳定性测试
-	bytes, duration, stable, stableErr := m365ContinuousDownload(p)
-	result.Bytes = bytes
-	result.Duration = duration
-	result.Stable = stable
-	if !stable {
-		errMsg := "layer3 continuous download unstable"
-		if stableErr != nil {
-			errMsg = fmt.Sprintf("layer3 continuous: %v", stableErr)
+	// 第 3 层(可选):持续 5MB 下载稳定性测试
+	if enableDownload {
+		bytes, duration, stable, stableErr := m365ContinuousDownload(p)
+		result.Bytes = bytes
+		result.Duration = duration
+		result.Stable = stable
+		if !stable {
+			errMsg := "layer3 continuous download unstable"
+			if stableErr != nil {
+				errMsg = fmt.Sprintf("layer3 continuous: %v", stableErr)
+			}
+			result.Error = errMsg
 		}
-		result.Error = errMsg
+	} else {
+		// 默认不做 5MB 测试,可达即算稳定
+		result.Stable = true
 	}
 	return result
 }
