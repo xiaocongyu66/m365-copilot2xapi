@@ -43,7 +43,7 @@ type NodeError struct {
 
 func NewService() *Service {
 	s := &Service{
-		store: store.New(),
+		store: store.NewWithFile("data/proxies.txt"),
 	}
 	s.score = NewScoreStore()
 	s.balancer = NewBalancer(s.score)

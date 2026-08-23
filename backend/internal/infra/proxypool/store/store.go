@@ -1,8 +1,12 @@
 package store
 
 import (
+	"os"
+	"path/filepath"
+	"strings"
 	"sync"
 
+	"M365Copilot2ApiX/backend/internal/infra/proxypool/log"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/proxy"
 )
 
@@ -12,18 +16,72 @@ import (
 //   - 启用/禁用节点
 //   - 删除节点
 //   - 按标识查找
+//   - 持久化到文件(启动时加载,变更时保存)
 
 type Store struct {
 	mu      sync.RWMutex
 	proxies map[string]proxy.Proxy // key: Identifier
+	filePath string                // 持久化文件路径
 }
 
+// New 创建内存 Store(不持久化)
 func New() *Store {
 	return &Store{proxies: make(map[string]proxy.Proxy)}
 }
 
+// NewWithFile 创建带文件持久化的 Store,启动时自动加载
+func NewWithFile(path string) *Store {
+	s := &Store{proxies: make(map[string]proxy.Proxy), filePath: path}
+	s.load()
+	return s
+}
+
+// load 从文件加载节点
+func (s *Store) load() {
+	if s.filePath == "" {
+		return
+	}
+	data, err := os.ReadFile(s.filePath)
+	if err != nil {
+		return // 文件不存在或读取失败,正常启动(空 store)
+	}
+	text := string(data)
+	lines := strings.Split(text, "\n")
+	loaded := 0
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		p, err := proxy.ParseProxyFromLink(line)
+		if err != nil || p == nil {
+			continue
+		}
+		s.proxies[p.Identifier()] = p
+		loaded++
+	}
+	log.Infof("store: loaded %d proxies from %s", loaded, s.filePath)
+}
+
+// save 保存所有节点到文件
+func (s *Store) save() {
+	if s.filePath == "" {
+		return
+	}
+	var b strings.Builder
+	for _, p := range s.proxies {
+		link := p.Link()
+		if link != "" {
+			b.WriteString(link)
+			b.WriteString("\n")
+		}
+	}
+	dir := filepath.Dir(s.filePath)
+	os.MkdirAll(dir, 0755)
+	os.WriteFile(s.filePath, []byte(b.String()), 0644)
+}
+
 // ImportFromText 从文本导入节点(一行一个),返回成功导入的数量和跳过的数量。
-// 支持的格式:ss:// vmess:// vless:// trojan:// hysteria2:// http:// socks5:// 等
 func (s *Store) ImportFromText(text string) (imported, skipped int) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -46,6 +104,7 @@ func (s *Store) ImportFromText(text string) (imported, skipped int) {
 		s.proxies[id] = p
 		imported++
 	}
+	s.save()
 	return
 }
 
@@ -76,6 +135,7 @@ func (s *Store) Delete(identifier string) bool {
 		return false
 	}
 	delete(s.proxies, identifier)
+	s.save()
 	return true
 }
 
@@ -86,40 +146,14 @@ func (s *Store) Count() int {
 	return len(s.proxies)
 }
 
-// splitLines 分行(兼容 \n 和 \r\n)
 func splitLines(text string) []string {
-	var lines []string
-	current := ""
-	for _, ch := range text {
-		if ch == '\n' {
-			lines = append(lines, current)
-			current = ""
-		} else if ch == '\r' {
-			continue
-		} else {
-			current += string(ch)
-		}
-	}
-	if current != "" {
-		lines = append(lines, current)
-	}
-	return lines
+	return strings.Split(text, "\n")
 }
 
 func trimSpace(s string) string {
-	start, end := 0, len(s)
-	for start < end && (s[start] == ' ' || s[start] == '\t') {
-		start++
-	}
-	for end > start && (s[end-1] == ' ' || s[end-1] == '\t') {
-		end--
-	}
-	return s[start:end]
+	return strings.TrimSpace(s)
 }
 
 func hasPrefix(s, prefix string) bool {
-	if len(s) < len(prefix) {
-		return false
-	}
-	return s[:len(prefix)] == prefix
+	return strings.HasPrefix(s, prefix)
 }
