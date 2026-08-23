@@ -31,8 +31,9 @@ func (h *Handler) Register(router *gin.RouterGroup) {
 	router.POST("/proxies/fetch", h.fetchNow)
 	router.GET("/proxies/fetcher/status", h.fetcherStatus)
 	router.GET("/proxies/fetcher/config", h.getFetcherConfig)
-	router.POST("/proxies/register", h.registerAccount)
-	router.GET("/proxies/export", h.exportAccounts)
+	router.POST("/proxies/register/start", h.registrarStart)
+	router.POST("/proxies/register/stop", h.registrarStop)
+	router.GET("/proxies/register/status", h.registrarStatus)
 	router.POST("/proxies/fetcher/config", h.updateFetcherConfig)
 }
 
@@ -186,32 +187,42 @@ func sourceURLs(sources []proxypool.FetchSource) []string {
 
 // ===== M365 账号注册 =====
 
-// registerAccount 注册一个新的 Office 365 E3 账号
-func (h *Handler) registerAccount(c *gin.Context) {
+// ===== M365 自动注册管理 =====
+
+// registrarStart 启动自动注册
+func (h *Handler) registrarStart(c *gin.Context) {
 	var req struct {
-		TurnstileToken string `json:"turnstileToken"`
+		TargetCount int `json:"targetCount"` // 注册目标数量(0=一直注册)
+		Concurrency int `json:"concurrency"` // 并发数(默认1)
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.Error(c, http.StatusBadRequest, "invalidRequest", "请求参数无效")
-		
+		return
 	}
-	if req.TurnstileToken == "" {
-		// turnstileToken 为空时自动求解
-		
-	}
-	// 异步注册(注册可能需要几十秒)
-	registrar := proxypool.NewRegistrar(h.svc)
-	result, err := registrar.Register(c.Request.Context(), req.TurnstileToken)
-	if err != nil {
-		response.Error(c, http.StatusBadGateway, "registerFailed", err.Error())
-		
-	}
-	response.Success(c, http.StatusOK, result)
+	h.svc.Registrar().Start(proxypool.RegistrarConfig{
+		Enabled:     true,
+		TargetCount: req.TargetCount,
+		Concurrency: req.Concurrency,
+	})
+	response.Success(c, http.StatusOK, gin.H{"status": "started"})
 }
 
-// exportAccounts 导出已注册的账号(refresh token 格式,一行一个)
-func (h *Handler) exportAccounts(c *gin.Context) {
-	// TODO: 从账号池导出已注册的 M365 账号
-	// 暂时返回空(需要和 M365 Provider 的账号池对接)
-	response.Success(c, http.StatusOK, gin.H{"tokens": []string{}})
+// registrarStop 停止自动注册
+func (h *Handler) registrarStop(c *gin.Context) {
+	h.svc.Registrar().Stop()
+	response.Success(c, http.StatusOK, gin.H{"status": "stopped"})
+}
+
+// registrarStatus 返回注册状态和统计
+func (h *Handler) registrarStatus(c *gin.Context) {
+	total, succeeded, failed, results := h.svc.Registrar().Stats()
+	response.Success(c, http.StatusOK, gin.H{
+		"running":     h.svc.Registrar().IsRunning(),
+		"config":      h.svc.Registrar().Config(),
+		"total":       total,
+		"succeeded":   succeeded,
+		"failed":      failed,
+		"results":     results,
+		"usedProxies": h.svc.Registrar().UsedProxies(),
+	})
 }

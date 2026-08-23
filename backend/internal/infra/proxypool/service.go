@@ -24,6 +24,7 @@ type Service struct {
 	balancer *Balancer
 	fetcher  *Fetcher
 	checker  *Checker
+	registrar *Registrar
 
 	// 报错缓冲(供前端轮询读取)
 	errorMu     sync.Mutex
@@ -47,11 +48,15 @@ func NewService() *Service {
 	s.balancer = NewBalancer(s.score)
 	s.fetcher = NewFetcher(s.store, s.score)
 	s.checker = NewChecker(s.store, s.score)
+	s.registrar = NewRegistrar(s)
 	return s
 }
 
 // Store 返回节点存储
 func (s *Service) Store() *store.Store { return s.store }
+
+// Registrar 返回注册器
+func (s *Service) Registrar() *Registrar { return s.registrar }
 
 // Score 返回分数存储
 func (s *Service) Score() *ScoreStore { return s.score }
