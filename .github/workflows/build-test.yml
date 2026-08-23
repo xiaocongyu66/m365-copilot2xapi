@@ -98,7 +98,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: frontend-dist
-          path: backend/frontend_dist
+          path: backend/internal/transport/http/frontend_dist
 
       - name: Tidy go modules
         working-directory: backend
@@ -151,7 +151,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: frontend-dist
-          path: backend/frontend_dist
+          path: backend/internal/transport/http/frontend_dist
 
       - name: Tidy go modules
         working-directory: backend

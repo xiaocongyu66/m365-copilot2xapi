@@ -50,4 +50,4 @@ __pycache__/
 /.tmp/
 /tmp/
 /Dockerfile.local
-/backend/frontend_dist/
+/backend/internal/transport/http/frontend_dist/
