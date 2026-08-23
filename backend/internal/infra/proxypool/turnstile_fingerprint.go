@@ -67,59 +67,6 @@ func buildAllFingerprints() []*Fingerprint {
 	}
 }
 
-// PickFingerprintForAccount selects a fingerprint based on account config or global pool
-func PickFingerprintForAccount(acc Account, globalCfg GlobalFingerprintConfig) *Fingerprint {
-	fpMu.Lock()
-	defer fpMu.Unlock()
-
-	var refs []FingerprintRef
-
-	// If account has its own fingerprint config enabled, use it
-	if acc.Fingerprint.Enabled && len(acc.Fingerprint.Refs) > 0 {
-		refs = acc.Fingerprint.Refs
-		log.Printf("[指纹] 账号 %s 使用独立指纹配置 (%d 个)", acc.Name, len(refs))
-	} else if globalCfg.Enabled && len(globalCfg.Refs) > 0 {
-		refs = globalCfg.Refs
-	} else {
-		refs = defaultFingerprintRefs()
-	}
-
-	// Calculate total weight
-	totalWeight := 0
-	for _, ref := range refs {
-		if ref.Weight < 0 {
-			ref.Weight = 0
-		}
-		totalWeight += ref.Weight
-	}
-	if totalWeight == 0 {
-		totalWeight = 100
-	}
-
-	// Weighted random selection
-	r := fpRng.Intn(totalWeight)
-	cumulative := 0
-
-	for _, ref := range refs {
-		cumulative += ref.Weight
-		if r < cumulative {
-			if fp, ok := fingerprintRegistry[ref.ID]; ok {
-				// Return a copy with the current weight
-				result := *fp
-				result.Weight = ref.Weight
-				log.Printf("[指纹] 选中: %s (权重 %d/%d = %.1f%%)",
-					fp.ID, ref.Weight, totalWeight, float64(ref.Weight)/float64(totalWeight)*100)
-				return &result
-			}
-		}
-	}
-
-	// Fallback: return first available
-	for _, fp := range fingerprintRegistry {
-		return fp
-	}
-	return nil
-}
 
 // GetFingerprintByID returns a fingerprint by ID
 func GetFingerprintByID(id string) *Fingerprint {
@@ -223,13 +170,6 @@ if(navigator.userAgentData){Object.defineProperty(navigator,'userAgentData',{get
 	)
 }
 
-func defaultFingerprintRefs() []FingerprintRef {
-	return []FingerprintRef{
-		{ID: "win-chrome-131", Weight: 35},
-		{ID: "mac-chrome-131", Weight: 25},
-		{ID: "win-edge-130", Weight: 40},
-	}
-}
 
 // --- Fingerprint generators ---
 
@@ -380,40 +320,4 @@ func genWinFirefox130() *Fingerprint {
 		CanvasNoise:         fmt.Sprintf("win-ff-%d", r.Intn(999999)),
 		AudioNoise:          0.0001 + r.Float64()*0.0001,
 	}
-}
-
-// RerollWeights randomly redistributes weights for a given set of refs
-func RerollWeights(refs []FingerprintRef) []FingerprintRef {
-	if len(refs) == 0 {
-		return defaultFingerprintRefs()
-	}
-	if len(refs) == 1 {
-		refs[0].Weight = 100
-		return refs
-	}
-
-	r := fpRng
-	// Generate random weights that sum to 100
-	weights := make([]int, len(refs))
-	remaining := 100
-	for i := 0; i < len(refs)-1; i++ {
-		maxVal := remaining - (len(refs)-i-1)*10
-		if maxVal < 10 {
-			maxVal = 10
-		}
-		weights[i] = r.Intn(maxVal-9) + 10
-		remaining -= weights[i]
-	}
-	weights[len(refs)-1] = remaining
-
-	// Shuffle weight assignments
-	r.Shuffle(len(weights), func(i, j int) {
-		weights[i], weights[j] = weights[j], weights[i]
-	})
-
-	for i := range refs {
-		refs[i].Weight = weights[i]
-	}
-
-	return refs
 }
