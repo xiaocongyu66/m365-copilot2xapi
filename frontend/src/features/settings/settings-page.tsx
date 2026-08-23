@@ -38,10 +38,8 @@ export function SettingsPage() {
 
   const snapshot = settingsQuery.data;
   const loading = settingsQuery.isPending;
-  const statsigMode = form.watch("providerWeb.statsigMode");
   const draftClearanceMode = form.watch("providerWeb.clearanceMode");
   const activeClearanceMode = snapshot?.config.providerWeb.clearanceMode ?? draftClearanceMode;
-  const statsigManualConfigured = form.watch("providerWeb.statsigManualConfigured");
   const buildClientVersion = form.watch("providerBuild.clientVersion");
   const buildUserAgent = form.watch("providerBuild.userAgent");
   const recommendedBuild = snapshot?.recommendedProviderBuild;

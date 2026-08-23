@@ -131,7 +131,7 @@ function buildProviderStripes<T extends { requests: number }>(providers: T[], to
   });
 }
 
-function providerLabel(provider: ProviderKey, t: TFunction): string {
+function providerLabel(_provider: ProviderKey, t: TFunction): string {
   return t("models.providerM365");
 }
 
