@@ -223,7 +223,7 @@ func (r *Registrar) registerOne(ctx context.Context) {
 	result.ProxyUsed = nodeID
 
 	// 3. 自动求解 Turnstile
-	solver := NewTurnstileSolver("https://office.965007.xyz", turnstileSiteKey, nil)
+	solver := SolveTurnstile(turnstileSiteKey, "")
 	token, err := solver.Solve()
 	if err != nil {
 		result.Error = fmt.Sprintf("Turnstile 求解失败: %v", err)
