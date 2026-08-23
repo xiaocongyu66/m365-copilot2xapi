@@ -60,27 +60,35 @@ func (c *Checker) RunOnce() {
 	// 确保 GeoIP 数据库已初始化(首次使用会自动下载)
 	geoDB := geoip.Get()
 
-	// 为所有节点查询 GeoIP 并设置国家代码到 NodeScore
+	// 为所有节点查询 GeoIP 并设置国家代码
 	for _, p := range proxies {
 		ns := c.score.Register(p.Identifier(), p.BaseInfo().Name)
-		// 始终用 GeoIP 查询 IsoCode 并设置到 NodeScore(balancer 用 IsoCode 过滤)
 		if geoDB.IsAvailable() {
 			server := p.BaseInfo().Server
 			countryCode := geoDB.LookupCountry(server)
 			if countryCode != "" {
 				ns.SetCountry(countryCode)
-				// 同时更新 proxy 的 country(用 IsoCode 替换全名)
 				p.SetCountry(countryCode)
 			}
 		}
 	}
 
-	// 执行 M365 测活(可达性 + 持续 10MB 下载)
-	results := healthcheck.M365CheckAll(proxies)
+	// 已入库节点用简单测试:只测 TCP/UDP 连通性(快速)
+	// 新节点入库前已经过了三层测试(fetcher 里),这里只需快速验证是否还活着
+	log.Infof("proxy check: simple TCP/UDP test on %d nodes...", len(proxies))
+	usable := healthcheck.TCPConnectTestAll(proxies)
 
-	// 更新分数
-	for _, r := range results {
-		c.score.RecordCheckResult(r.Proxy.Identifier(), r.Stable, r.Bytes)
+	// 更新分数:连通的 +5,不通的 -20(自动禁用)
+	usableSet := make(map[string]bool, len(usable))
+	for _, p := range usable {
+		usableSet[p.Identifier()] = true
+	}
+	for _, p := range proxies {
+		if usableSet[p.Identifier()] {
+			c.score.RecordCheckResult(p.Identifier(), true, 0)
+		} else {
+			c.score.RecordCheckResult(p.Identifier(), false, 0)
+		}
 	}
 
 	log.Infof("proxy check done: total=%d usable=%d", len(results), countUsable(results))

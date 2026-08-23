@@ -8,6 +8,7 @@ import (
 
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/geoip"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/getter"
+	"M365Copilot2ApiX/backend/internal/infra/proxypool/healthcheck"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/log"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/proxy"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/store"
@@ -162,19 +163,37 @@ func (f *Fetcher) RunOnce() FetchResult {
 	}
 	result.Total = len(allProxies)
 
-	// 导入到 store
-	imported, skipped := f.importProxies(allProxies)
+	// 查询 GeoIP 国家
+	geoDB := geoip.Get()
+	for _, p := range allProxies {
+		if geoDB.IsAvailable() {
+			server := p.BaseInfo().Server
+			countryCode := geoDB.LookupCountry(server)
+			if countryCode != "" {
+				p.SetCountry(countryCode)
+			}
+		}
+	}
+
+	// 入库前三层测试:TCP/UDP 连通 → 微软可达 → 10MB 持续下载
+	// 只有通过的节点才入库,死节点直接丢弃
+	log.Infof("fetcher: 3-layer test on %d new proxies (TCP/UDP → Microsoft → 10MB)...", len(allProxies))
+	usable := healthcheck.M365CheckUsable(allProxies)
+	result.Skipped = result.Total - len(usable)
+	log.Infof("fetcher: 3-layer done: total=%d usable=%d dropped=%d", len(allProxies), len(usable), result.Skipped)
+
+	// 只导入通过三层测试的节点
+	imported, skipped := f.importProxies(usable)
 	result.Imported = imported
-	result.Skipped = skipped
+	result.Skipped += skipped
 
 	f.mu.Lock()
 	f.lastRun = time.Now()
 	f.lastResult = result
 	f.mu.Unlock()
 
-	// 给新导入的节点注册分数 + 查询 GeoIP 国家
-	geoDB := geoip.Get()
-	for _, p := range allProxies {
+	// 给新导入的节点注册分数
+	for _, p := range usable {
 		ns := f.score.Register(p.Identifier(), p.BaseInfo().Name)
 		// 查询国家信息(空或 🌐 或 ZZ 才查)
 		country := p.BaseInfo().Country
