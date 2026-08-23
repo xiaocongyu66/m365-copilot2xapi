@@ -14,7 +14,7 @@ import { apiRequest } from "@/shared/api/client";
 // ===== 类型 =====
 interface ProxyNode {
   identifier: string; name: string; type: string; server: string; port: number;
-  score: number; enabled: boolean; autoDisabled: boolean;
+  country: string; score: number; enabled: boolean; autoDisabled: boolean;
   errorCount: number; lastError: string; successCount: number;
   lastCheckAt: string; lastCheckStable: boolean; activeRequests: number;
 }
@@ -205,6 +205,7 @@ export function ProxiesPage() {
                   </div>
                   <div className="mt-0.5 flex items-center gap-2 text-[10px] text-muted-foreground">
                     <span className="truncate">{node.server}:{node.port}</span>
+                    {node.country && <span className="shrink-0">{node.country}</span>}
                     <span className={node.autoDisabled ? "text-red-500" : node.enabled ? "text-green-500" : "text-muted-foreground"}>
                       {node.autoDisabled ? "禁用" : node.enabled ? "启用" : "禁用"}
                     </span>
