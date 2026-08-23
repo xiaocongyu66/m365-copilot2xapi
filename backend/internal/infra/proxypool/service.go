@@ -1,6 +1,7 @@
 package proxypool
 
 import (
+	"context"
 	"net/http"
 	"sync"
 	"time"

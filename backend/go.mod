@@ -171,7 +171,3 @@ require (
 	github.com/sagernet/smux v1.5.34-mod.2 // indirect
 	github.com/sagernet/ws v0.0.0-20231204124109-acfe8907c854 // indirect
 )
-
-// sagernet/quic-go 需要 qpack v0.5.x API(DecodeFull),
-// 但 grok2api 其他依赖拉了 v0.6.0,锁定到 v0.5.1 避免冲突
-replace github.com/quic-go/qpack => github.com/quic-go/qpack v0.5.1
