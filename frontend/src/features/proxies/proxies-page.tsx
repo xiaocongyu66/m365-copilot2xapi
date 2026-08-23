@@ -8,7 +8,6 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { apiRequest } from "@/shared/api/client";
 
@@ -146,22 +145,22 @@ export function ProxiesPage() {
   const disabledCount = nodes.length - enabledCount;
 
   return (
-    <div className="space-y-6">
-      {/* 标题 + 操作按钮 */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">代理节点池</h1>
-          <p className="text-sm text-muted-foreground">
-            共 {nodes.length} 个节点 · 启用 {enabledCount} · 禁用 {disabledCount}
-            {fetcherStatus?.running ? " · 自动抓取运行中" : ""}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => setConfigOpen(true)}>抓取配置</Button>
-          <Button variant="outline" size="sm" onClick={() => checkNowMutation.mutate()} disabled={checkNowMutation.isPending}>立即测活</Button>
-          <Button variant="outline" size="sm" onClick={() => setFetchOpen(true)}>抓取节点</Button>
-          <Button size="sm" onClick={() => setImportOpen(true)}>导入节点</Button>
-        </div>
+    <div className="space-y-4">
+      {/* 标题 */}
+      <div>
+        <h1 className="text-xl font-semibold">代理节点池</h1>
+        <p className="mt-1 text-xs text-muted-foreground">
+          共 {nodes.length} 个 · 启用 {enabledCount} · 禁用 {disabledCount}
+          {fetcherStatus?.running ? " · 抓取中" : ""}
+        </p>
+      </div>
+
+      {/* 操作按钮 - 手机端换行 */}
+      <div className="flex flex-wrap gap-2">
+        <Button variant="outline" size="sm" onClick={() => setConfigOpen(true)}>抓取配置</Button>
+        <Button variant="outline" size="sm" onClick={() => checkNowMutation.mutate()} disabled={checkNowMutation.isPending}>立即测活</Button>
+        <Button variant="outline" size="sm" onClick={() => setFetchOpen(true)}>抓取节点</Button>
+        <Button size="sm" onClick={() => setImportOpen(true)}>导入节点</Button>
       </div>
 
       {/* 抓取状态 */}
@@ -187,46 +186,38 @@ export function ProxiesPage() {
         </div>
       )}
 
-      {/* 节点列表 */}
+      {/* 节点列表 - 手机端卡片式 */}
       <div className="rounded-lg border bg-card">
-        <div className="p-4 border-b"><div className="text-base font-medium">节点列表 ({nodes.length})</div></div>
+        <div className="p-3 border-b"><div className="text-sm font-medium">节点列表 ({nodes.length})</div></div>
         {isLoading ? (
           <div className="p-8 text-center text-sm text-muted-foreground">加载中...</div>
         ) : nodes.length === 0 ? (
           <div className="p-8 text-center text-sm text-muted-foreground">暂无节点,点击"抓取节点"或"导入节点"添加</div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-10"></TableHead>
-                <TableHead>名称</TableHead>
-                <TableHead>类型</TableHead>
-                <TableHead>服务器</TableHead>
-                <TableHead>分数</TableHead>
-                <TableHead>状态</TableHead>
-                <TableHead>报错</TableHead>
-                <TableHead>成功</TableHead>
-                <TableHead>活跃</TableHead>
-                <TableHead>测活</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {nodes.slice(0, 200).map((node) => (
-                <TableRow key={node.identifier}>
-                  <TableCell><Checkbox checked={selected.has(node.identifier)} onCheckedChange={() => toggleSelect(node.identifier)} /></TableCell>
-                  <TableCell className="font-medium truncate max-w-32">{node.name}</TableCell>
-                  <TableCell className="text-xs">{node.type}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">{node.server}:{node.port}</TableCell>
-                  <TableCell><span className={node.score >= 50 ? "text-green-600" : node.score >= 0 ? "text-yellow-600" : "text-red-600"}>{node.score}</span></TableCell>
-                  <TableCell>{node.autoDisabled ? <span className="text-red-600 text-xs">自动禁用</span> : node.enabled ? <span className="text-green-600 text-xs">启用</span> : <span className="text-muted-foreground text-xs">禁用</span>}</TableCell>
-                  <TableCell className="text-xs">{node.errorCount}</TableCell>
-                  <TableCell className="text-xs">{node.successCount}</TableCell>
-                  <TableCell className="text-xs">{node.activeRequests}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">{node.lastCheckAt ? new Date(node.lastCheckAt).toLocaleString() : "未测"}{node.lastCheckStable ? " ✅" : " ❌"}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <div className="max-h-[60vh] overflow-y-auto">
+            {nodes.slice(0, 100).map((node) => (
+              <div key={node.identifier} className="flex items-center gap-2 border-b px-3 py-2 last:border-0">
+                <Checkbox checked={selected.has(node.identifier)} onCheckedChange={() => toggleSelect(node.identifier)} />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="truncate text-xs font-medium">{node.name}</span>
+                    <span className="shrink-0 rounded bg-muted px-1 text-[10px]">{node.type}</span>
+                  </div>
+                  <div className="mt-0.5 flex items-center gap-2 text-[10px] text-muted-foreground">
+                    <span className="truncate">{node.server}:{node.port}</span>
+                    <span className={node.autoDisabled ? "text-red-500" : node.enabled ? "text-green-500" : "text-muted-foreground"}>
+                      {node.autoDisabled ? "禁用" : node.enabled ? "启用" : "禁用"}
+                    </span>
+                  </div>
+                </div>
+                <div className="shrink-0 text-right">
+                  <div className={`text-sm font-medium ${node.score >= 50 ? "text-green-600" : node.score >= 0 ? "text-yellow-600" : "text-red-600"}`}>{node.score}</div>
+                  <div className="text-[10px] text-muted-foreground">{node.lastCheckStable ? "✅" : "❌"}</div>
+                </div>
+              </div>
+            ))}
+            {nodes.length > 100 && <div className="p-2 text-center text-[10px] text-muted-foreground">显示前 100 条,共 {nodes.length} 个</div>}
+          </div>
         )}
         {nodes.length > 200 && <div className="p-2 text-center text-xs text-muted-foreground">显示前 200 条,共 {nodes.length} 个节点</div>}
       </div>
@@ -267,7 +258,7 @@ export function ProxiesPage() {
 
       {/* 抓取配置对话框 */}
       <Dialog open={configOpen} onOpenChange={setConfigOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>抓取配置</DialogTitle><DialogDescription>管理自动抓取:启用/禁用、间隔、内置源</DialogDescription></DialogHeader>
           <FetcherConfigForm config={fetcherConfig} onSave={(cfg) => updateConfigMutation.mutate(cfg)} saving={updateConfigMutation.isPending} />
         </DialogContent>
