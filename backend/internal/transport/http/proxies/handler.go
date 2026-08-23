@@ -30,6 +30,7 @@ func (h *Handler) Register(router *gin.RouterGroup) {
 	router.GET("/proxies/errors", h.recentErrors)
 	router.POST("/proxies/fetch", h.fetchNow)
 	router.GET("/proxies/fetcher/status", h.fetcherStatus)
+	router.GET("/proxies/fetcher/progress", h.fetcherProgress)
 	router.GET("/proxies/fetcher/config", h.getFetcherConfig)
 	router.POST("/proxies/register/start", h.registrarStart)
 	router.POST("/proxies/register/stop", h.registrarStop)
@@ -224,5 +225,17 @@ func (h *Handler) registrarStatus(c *gin.Context) {
 		"failed":      failed,
 		"results":     results,
 		"usedProxies": h.svc.Registrar().UsedProxies(),
+	})
+}
+
+// fetcherProgress 返回当前抓取进度
+func (h *Handler) fetcherProgress(c *gin.Context) {
+	stage, total, done, usable := h.svc.Fetcher().Progress()
+	response.Success(c, http.StatusOK, gin.H{
+		"stage":   stage,
+		"total":   total,
+		"done":    done,
+		"usable":  usable,
+		"percent": func() float64 { if total == 0 { return 0 }; return float64(done) / float64(total) * 100 }(),
 	})
 }

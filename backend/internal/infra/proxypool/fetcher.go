@@ -71,6 +71,11 @@ type Fetcher struct {
 	running  bool
 	lastRun  time.Time
 	lastResult FetchResult
+	// 抓取进度
+	progressTotal    int64 // 本次抓取总数
+	progressDone     int64 // 已完成测试数
+	progressUsable   int64 // 通过测试数
+	progressStage    string // 当前阶段: "fetching"/"testing"/"done"
 }
 
 // FetchResult 是单次抓取的结果
@@ -152,6 +157,14 @@ func (f *Fetcher) RunOnce() FetchResult {
 		return result
 	}
 
+	// 设置进度:正在抓取
+	f.mu.Lock()
+	f.progressStage = "fetching"
+	f.progressTotal = 0
+	f.progressDone = 0
+	f.progressUsable = 0
+	f.mu.Unlock()
+
 	allProxies := make([]proxy.Proxy, 0)
 	for _, src := range cfg.Sources {
 		proxies, err := fetchFromSource(src.URL)
@@ -175,12 +188,27 @@ func (f *Fetcher) RunOnce() FetchResult {
 		}
 	}
 
-	// 入库前三层测试:TCP/UDP 连通 → 微软可达 → 10MB 持续下载
+	// 设置进度:正在测试
+	f.mu.Lock()
+	f.progressStage = "testing"
+	f.progressTotal = int64(len(allProxies))
+	f.progressDone = 0
+	f.progressUsable = 0
+	f.mu.Unlock()
+
+	// 入库前三层测试:TCP/UDP 连通 → 微软可达 → 5MB 持续下载
 	// 只有通过的节点才入库,死节点直接丢弃
-	log.Infof("fetcher: 3-layer test on %d new proxies (TCP/UDP → Microsoft → 10MB)...", len(allProxies))
+	log.Infof("fetcher: 3-layer test on %d new proxies (TCP/UDP → Microsoft → 5MB)...", len(allProxies))
 	usable := healthcheck.M365CheckUsable(allProxies)
 	result.Skipped = result.Total - len(usable)
 	log.Infof("fetcher: 3-layer done: total=%d usable=%d dropped=%d", len(allProxies), len(usable), result.Skipped)
+
+	// 设置进度:完成
+	f.mu.Lock()
+	f.progressDone = int64(len(allProxies))
+	f.progressUsable = int64(len(usable))
+	f.progressStage = "done"
+	f.mu.Unlock()
 
 	// 只导入通过三层测试的节点
 	imported, skipped := f.importProxies(usable)
@@ -249,6 +277,13 @@ func (f *Fetcher) Status() (running bool, lastRun time.Time, lastResult FetchRes
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 	return f.running, f.lastRun, f.lastResult
+}
+
+// Progress 返回当前抓取进度
+func (f *Fetcher) Progress() (stage string, total, done, usable int64) {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+	return f.progressStage, f.progressTotal, f.progressDone, f.progressUsable
 }
 
 // RunOnceWithSource 立即从指定 URL 抓取一次(不入配置源列表,只抓一次)

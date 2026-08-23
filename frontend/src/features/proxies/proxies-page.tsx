@@ -80,6 +80,13 @@ export function ProxiesPage() {
     refetchInterval: 5000,
   });
 
+  // 抓取进度(每 2 秒刷新)
+  const { data: progress } = useQuery<{ stage: string; total: number; done: number; usable: number; percent: number }>({
+    queryKey: ["proxies", "fetcher-progress"],
+    queryFn: () => apiGet<{ stage: string; total: number; done: number; usable: number; percent: number }>("/api/admin/v1/proxies/fetcher/progress"),
+    refetchInterval: 2000,
+  });
+
   // 抓取配置
   const { data: fetcherConfig } = useQuery<FetcherConfig>({
     queryKey: ["proxies", "fetcher-config"],
@@ -177,6 +184,25 @@ export function ProxiesPage() {
             上次: {fetcherStatus.lastRun ? new Date(fetcherStatus.lastRun).toLocaleString() : "未运行"} ·
             总计 {fetcherStatus.lastResult?.total ?? 0} · 导入 {fetcherStatus.lastResult?.imported ?? 0}
           </div>
+          {/* 抓取进度条 */}
+          {progress && progress.stage !== "done" && progress.stage !== "" && (
+            <div className="mt-2 space-y-1">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-medium">
+                  {progress.stage === "fetching" ? "📡 正在抓取..." : progress.stage === "testing" ? "🔬 三层测试中..." : progress.stage}
+                </span>
+                <span className="text-muted-foreground">
+                  {progress.done}/{progress.total} · 通过 {progress.usable} · {progress.percent.toFixed(0)}%
+                </span>
+              </div>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full bg-primary transition-all duration-500"
+                  style={{ width: `${progress.percent}%` }}
+                />
+              </div>
+            </div>
+          )}
         </div>
       )}
 

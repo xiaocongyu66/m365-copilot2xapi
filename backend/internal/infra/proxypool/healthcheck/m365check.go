@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/log"
@@ -29,8 +30,8 @@ const (
 	m365AccessibleURL = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize"
 	// m365ContinuousDownloadURL 持续下载测试用的微软 CDN 文件(Windows 更新大文件,稳定可用)
 	m365ContinuousDownloadURL = "https://download.microsoft.com/download/1/4/9/149D5352-159B-4C70-8104-6BD2D965F0B7/MicrosoftEdgeEnterpriseX64.msi"
-	// m365ContinuousTestBytes 持续测试下载字节数(10MB)
-	m365ContinuousTestBytes = 10 * 1024 * 1024
+	// m365ContinuousTestBytes 持续测试下载字节数(5MB)
+	m365ContinuousTestBytes = 5 * 1024 * 1024
 	// m365ContinuousTestDuration 持续测试最短时长(10秒,期间不能断流)
 	m365ContinuousTestDuration = 10 * time.Second
 	// m365AccessibleTimeout 可达性测试超时
@@ -58,16 +59,19 @@ func M365CheckAll(proxies []proxy.Proxy) []M365CheckResult {
 	}
 	numWorker := SpeedConn
 	if numWorker <= 0 {
-		numWorker = 50
-	}
-	if numWorker > 200 {
 		numWorker = 200
+	}
+	if numWorker > 500 {
+		numWorker = 500
 	}
 
 	results := make([]M365CheckResult, len(proxies))
 	pool := newSimplePool(numWorker)
 	var wg sync.WaitGroup
 
+	// 进度追踪
+	completed := int64(0)
+	total := int64(len(proxies))
 	for i, p := range proxies {
 		wg.Add(1)
 		idx, pp := i, p
@@ -75,6 +79,10 @@ func M365CheckAll(proxies []proxy.Proxy) []M365CheckResult {
 			defer pool.jobDone()
 			defer wg.Done()
 			results[idx] = m365CheckOne(pp)
+			done := atomic.AddInt64(&completed, 1)
+			if done%100 == 0 || done == total {
+				log.Infof("M365 check progress: %d/%d (%.0f%%)", done, total, float64(done)/float64(total)*100)
+			}
 		})
 	}
 	wg.Wait()
