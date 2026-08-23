@@ -47,9 +47,9 @@ export function AccountNameCell({ account }: { account: AccountDTO }) {
       <div className="flex min-w-0 items-center gap-1.5">
         <Tooltip>
           <TooltipTrigger asChild>
-            <span className="min-w-0 truncate text-xs font-medium">{account.name}</span>
+            <span className="min-w-0 truncate text-xs font-medium">{account.email || account.name}</span>
           </TooltipTrigger>
-          <TooltipContent>{account.name}</TooltipContent>
+          <TooltipContent>{account.email || account.name}</TooltipContent>
         </Tooltip>
       </div>
       <div className="flex min-h-4 w-fit min-w-0 items-center">
