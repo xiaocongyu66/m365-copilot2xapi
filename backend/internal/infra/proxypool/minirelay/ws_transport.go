@@ -39,7 +39,7 @@ func dialWSTransport(ctx context.Context, u *url.URL, host, port string) (net.Co
 	if sec := q.Get("security"); sec == "tls" || sec == "reality" {
 		tlsOpts := parseTLSOptions(u)
 		if tlsOpts != nil {
-			tc, err := tls.NewClient(ctx, net.JoinHostPort(host, port), *tlsOpts)
+			tc, err := tls.NewClient(ctx, nopLogger{}, net.JoinHostPort(host, port), *tlsOpts)
 			if err != nil {
 				return nil, fmt.Errorf("ws tls: %w", err)
 			}

@@ -75,7 +75,7 @@ func doTLSHandshake(ctx context.Context, conn net.Conn, serverAddr string, u *ur
 		return conn, nil
 	}
 
-	tlsConfig, err := tls.NewClient(ctx, serverAddr, *tlsOpts)
+	tlsConfig, err := tls.NewClient(ctx, nopLogger{}, serverAddr, *tlsOpts)
 	if err != nil {
 		return nil, fmt.Errorf("tls config: %w", err)
 	}
