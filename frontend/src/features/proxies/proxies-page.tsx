@@ -34,6 +34,7 @@ function countryFlag(code: string): string {
 }
 
 const BUILTIN_SOURCES = [
+  "https://cdnjsd.congyu.dpdns.org/gh/xiaocongyu66/proxypool@main/output/clash.yml",
   "https://cdn.jsdelivr.net/gh/proxifly/free-proxy-list@main/proxies/all/data.txt",
   "https://raw.githubusercontent.com/proxifly/free-proxy-list/main/proxies/all/data.txt",
   "https://cdn.jsdelivr.net/gh/proxifly/free-proxy-list@main/proxies/protocols/http/data.txt#scheme=http",

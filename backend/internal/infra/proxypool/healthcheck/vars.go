@@ -10,4 +10,4 @@ var SpeedTimeout = time.Second * 10
 var SpeedExist = false
 
 var DelayConn = 500
-var SpeedConn = 5
+var SpeedConn = 128

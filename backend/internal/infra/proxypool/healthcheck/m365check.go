@@ -62,10 +62,10 @@ func M365CheckAndImport(proxies []proxy.Proxy, onProgress func(done, total, usab
 	}
 	numWorker := SpeedConn
 	if numWorker <= 0 {
-		numWorker = 200
+		numWorker = 128
 	}
-	if numWorker > 500 {
-		numWorker = 500
+	if numWorker > 1000 {
+		numWorker = 1000
 	}
 
 	pool := newSimplePool(numWorker)
@@ -84,7 +84,6 @@ func M365CheckAndImport(proxies []proxy.Proxy, onProgress func(done, total, usab
 			done := atomic.AddInt64(&completed, 1)
 			if r.Accessible && r.Stable {
 				atomic.AddInt64(&passed, 1)
-				// 通过测试,立刻入库!
 				if onImport != nil {
 					onImport(r.Proxy)
 				}
@@ -106,10 +105,10 @@ func M365CheckAllWithProgress(proxies []proxy.Proxy, onProgress func(done, total
 	}
 	numWorker := SpeedConn
 	if numWorker <= 0 {
-		numWorker = 200
+		numWorker = 128
 	}
-	if numWorker > 500 {
-		numWorker = 500
+	if numWorker > 1000 {
+		numWorker = 1000
 	}
 
 	results := make([]M365CheckResult, len(proxies))
