@@ -249,8 +249,11 @@ func sourceURLs(sources []proxypool.FetchSource) []string {
 // registrarStart 启动自动注册
 func (h *Handler) registrarStart(c *gin.Context) {
 	var req struct {
-		TargetCount int `json:"targetCount"` // 注册目标数量(0=一直注册)
-		Concurrency int `json:"concurrency"` // 并发数(默认1)
+		TargetCount int    `json:"targetCount"` // 注册目标数量(0=一直注册)
+		Concurrency int    `json:"concurrency"` // 并发数(默认1)
+		Username    string `json:"username"`    // 邮箱前缀(留空=随机)
+		Password    string `json:"password"`    // 密码(留空=随机)
+		DisplayName string `json:"displayName"` // 显示名(留空=随机)
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.Error(c, http.StatusBadRequest, "invalidRequest", "请求参数无效")
@@ -260,6 +263,9 @@ func (h *Handler) registrarStart(c *gin.Context) {
 		Enabled:     true,
 		TargetCount: req.TargetCount,
 		Concurrency: req.Concurrency,
+		Username:    req.Username,
+		Password:    req.Password,
+		DisplayName: req.DisplayName,
 	})
 	response.Success(c, http.StatusOK, gin.H{"status": "started"})
 }
