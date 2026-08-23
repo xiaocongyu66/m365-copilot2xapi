@@ -103,7 +103,7 @@ func ParseProxyFromLink(link string) (p Proxy, err error) {
 	if err != nil || p == nil {
 		return nil, errors.New("link parse failed")
 	}
-	country := geoip.Get().LookupCountryName(p.BaseInfo().Server)
+	country := geoip.Get().LookupCountry(p.BaseInfo().Server)
 	if country == "" {
 		country = "🌐"
 	}
