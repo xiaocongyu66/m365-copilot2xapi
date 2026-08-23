@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,17 @@ interface RegistrarStatus {
   failed: number;
   results: RegisterResult[];
   usedProxies: Record<string, string>;
+}
+
+interface ProxyNode {
+  identifier: string; name: string; type: string; server: string; port: number;
+  country: string; score: number; enabled: boolean; autoDisabled: boolean;
+}
+
+const ALLOWED = ["China", "Hong Kong", "Macao", "Taiwan", "CN", "HK", "MO", "TW"];
+function isAllowed(country: string): boolean {
+  if (!country) return false;
+  return ALLOWED.some((c) => country.includes(c));
 }
 
 async function apiGet<T>(path: string): Promise<T> {
@@ -59,6 +70,16 @@ export function M365RegisterPage() {
     mutationFn: () => apiPost("/api/admin/v1/proxies/register/stop"),
     onSuccess: () => { toast.success("已停止注册"); queryClient.invalidateQueries({ queryKey: ["registrar"] }); },
   });
+
+  // 获取代理节点
+  const { data: allNodes = [] } = useQuery<ProxyNode[]>({
+    queryKey: ["proxies", "nodes"],
+    queryFn: () => apiGet<ProxyNode[]>("/api/admin/v1/proxies/nodes"),
+  });
+
+  const allowedNodes = useMemo(() => allNodes.filter((n) => n.enabled && !n.autoDisabled && isAllowed(n.country)), [allNodes]);
+  const usedProxyIds = useMemo(() => new Set(Object.keys(usedProxies)), [usedProxies]);
+  const availableNodes = useMemo(() => allowedNodes.filter((n) => !usedProxyIds.has(n.identifier)), [allowedNodes, usedProxyIds]);
 
   const running = status?.running ?? false;
   const results = status?.results ?? [];
@@ -170,6 +191,49 @@ export function M365RegisterPage() {
         <div className="flex gap-2">
           <Button size="sm" variant="outline" onClick={exportTokens}>导出 Token ({succeeded.length})</Button>
           <Button size="sm" variant="outline" onClick={exportFull}>导出完整</Button>
+        </div>
+      )}
+
+      {/* 可用代理节点(CN/HK/MO/TW) */}
+      <div className="rounded-lg border bg-card">
+        <div className="p-3 border-b flex items-center justify-between">
+          <div className="text-sm font-medium">可用代理 (CN/HK/MO/TW) · {availableNodes.length} 个</div>
+          {usedProxyIds.size > 0 && <span className="text-[10px] text-muted-foreground">已用 {usedProxyIds.size} 个</span>}
+        </div>
+        {availableNodes.length === 0 ? (
+          <div className="p-4 text-center text-xs text-muted-foreground">
+            {allowedNodes.length === 0 ? "没有 CN/HK/MO/TW 地区的代理节点" : "今天可用代理已用完,明天自动恢复"}
+          </div>
+        ) : (
+          <div className="max-h-40 overflow-y-auto">
+            {availableNodes.slice(0, 50).map((node) => (
+              <div key={node.identifier} className="flex items-center gap-2 border-b px-3 py-1.5 last:border-0">
+                <span className="text-xs">{node.country}</span>
+                <span className="truncate text-xs font-medium">{node.name}</span>
+                <span className="shrink-0 rounded bg-muted px-1 text-[10px]">{node.type}</span>
+                <span className="ml-auto text-xs text-muted-foreground">分数 {node.score}</span>
+              </div>
+            ))}
+            {availableNodes.length > 50 && <div className="p-2 text-center text-[10px] text-muted-foreground">显示前 50 条,共 {availableNodes.length} 个</div>}
+          </div>
+        )}
+      </div>
+
+      {/* 已用代理(当天) */}
+      {usedProxyIds.size > 0 && (
+        <div className="rounded-lg border bg-card">
+          <div className="p-3 border-b">
+            <div className="text-sm font-medium text-muted-foreground">已用代理 (当天,明天自动恢复) · {usedProxyIds.size} 个</div>
+          </div>
+          <div className="max-h-32 overflow-y-auto">
+            {Array.from(usedProxyIds).map((id) => (
+              <div key={id} className="flex items-center gap-2 border-b px-3 py-1.5 last:border-0">
+                <span className="text-[10px] text-muted-foreground">✅</span>
+                <span className="truncate text-xs text-muted-foreground">{id.substring(0, 40)}</span>
+                <span className="ml-auto text-[10px] text-muted-foreground">{usedProxies[id] ? new Date(usedProxies[id]).toLocaleTimeString() : ""}</span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
