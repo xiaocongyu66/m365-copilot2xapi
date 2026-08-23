@@ -25,17 +25,16 @@ interface FetcherConfig {
 }
 
 // 内置免费代理源(用户可直接启用/禁用,不需手填)
-// 国家代码转国旗 emoji
+// 国家代码转国旗 emoji(支持全球所有 249 个国家/地区)
 function countryFlag(code: string): string {
   if (!code || code.length !== 2) return "🌐";
-  const flags: Record<string, string> = {
-    CN: "🇨🇳", HK: "🇭🇰", MO: "🇲🇴", TW: "🇹🇼", US: "🇺🇸", GB: "🇬🇧", DE: "🇩🇪",
-    FR: "🇫🇷", NL: "🇳🇱", RU: "🇷🇺", JP: "🇯🇵", KR: "🇰🇷", IN: "🇮🇳", ID: "🇮🇩",
-    SG: "🇸🇬", CA: "🇨🇦", AU: "🇦🇺", BR: "🇧🇷", TH: "🇹🇭", VN: "🇻🇳", PH: "🇵🇭",
-    MY: "🇲🇾", TR: "🇹🇷", IT: "🇮🇹", ES: "🇪🇸", CH: "🇨🇭", SE: "🇸🇪", PL: "🇵🇱",
-    UA: "🇺🇦", RO: "🇷🇴", IR: "🇮🇷", EG: "🇪🇬", ZA: "🇿🇦", MX: "🇲🇽", AR: "🇦🇷",
-  };
-  return flags[code.toUpperCase()] || "🌐";
+  const c = code.toUpperCase();
+  // Unicode 区域指示符:A=0x1F1E6, 每个字母偏移
+  const A = 0x1F1E6;
+  const cc1 = c.charCodeAt(0) - 65;
+  const cc2 = c.charCodeAt(1) - 65;
+  if (cc1 < 0 || cc1 > 25 || cc2 < 0 || cc2 > 25) return "🌐";
+  return String.fromCodePoint(A + cc1, A + cc2);
 }
 
 const BUILTIN_SOURCES = [
