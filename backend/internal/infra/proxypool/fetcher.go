@@ -10,7 +10,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"M365Copilot2ApiX/backend/internal/infra/proxypool/geoip"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/getter"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/healthcheck"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/log"
