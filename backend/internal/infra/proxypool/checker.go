@@ -2,7 +2,6 @@ package proxypool
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/geoip"
@@ -61,17 +60,17 @@ func (c *Checker) RunOnce() {
 	// 确保 GeoIP 数据库已初始化(首次使用会自动下载)
 	geoDB := geoip.Get()
 
-	// 为没有国家信息的节点查询 GeoIP
+	// 为所有节点查询 GeoIP 并设置国家代码到 NodeScore
 	for _, p := range proxies {
 		ns := c.score.Register(p.Identifier(), p.BaseInfo().Name)
-		// 如果节点没有国家信息(空或 🌐),用 GeoIP 查询并设置
-		country := p.BaseInfo().Country
-		if (country == "" || country == "🌐" || strings.Contains(country, "ZZ")) && geoDB.IsAvailable() {
+		// 始终用 GeoIP 查询 IsoCode 并设置到 NodeScore(balancer 用 IsoCode 过滤)
+		if geoDB.IsAvailable() {
 			server := p.BaseInfo().Server
 			countryCode := geoDB.LookupCountry(server)
 			if countryCode != "" {
-				p.SetCountry(countryCode)
 				ns.SetCountry(countryCode)
+				// 同时更新 proxy 的 country(用 IsoCode 替换全名)
+				p.SetCountry(countryCode)
 			}
 		}
 	}
