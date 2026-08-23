@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"M365Copilot2ApiX/backend/internal/infra/proxypool/geoip"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/log"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/proxy"
 )
@@ -46,8 +47,10 @@ func CheckIPCleanliness(p proxy.Proxy) *IPCheckResult {
 	// 2. 查询 ip-api.com 获取 IP 信誉
 	info, err := fetchIPInfo(exitIP)
 	if err != nil {
-		log.Debugf("[ipcheck] failed to check IP %s: %v", exitIP, err)
-		return &IPCheckResult{ExitIP: exitIP, IPScore: 50} // 查询失败给中等分
+		// ip-api.com 限流(45次/分钟)或查询失败,用本地 GeoIP 查国家作为 fallback
+		log.Debugf("[ipcheck] ip-api.com failed for %s: %v, fallback to local GeoIP", exitIP, err)
+		country := geoip.Get().LookupCountry(exitIP)
+		return &IPCheckResult{ExitIP: exitIP, IPScore: 50, CountryCode: country}
 	}
 
 	ipType := classifyIPType(info)
