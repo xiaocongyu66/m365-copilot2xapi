@@ -49,7 +49,7 @@ require (
 	github.com/antchfx/xpath v1.3.6 // indirect
 	github.com/bdandy/go-errors v1.2.2 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/bogdanfinn/quic-go-utls v1.0.9-utls // indirect
+	github.com/bogdanfinn/quic-go-utls v1.0.4-utls // indirect
 	github.com/bogdanfinn/utls v1.7.7-barnius // indirect
 	github.com/bytedance/gopkg v0.1.3 // indirect
 	github.com/bytedance/sonic v1.15.0 // indirect
@@ -171,3 +171,8 @@ require (
 	github.com/sagernet/smux v1.5.34-mod.2 // indirect
 	github.com/sagernet/ws v0.0.0-20231204124109-acfe8907c854 // indirect
 )
+
+// sagernet/quic-go 和 quic-go/quic-go 的 qpack API 不兼容:
+// sagernet 需要 qpack v0.5.x(DecodeFull),quic-go v0.59.0 需要 v0.6.0(DecodeFunc)。
+// 把 quic-go/quic-go 重定向到 sagernet fork,统一用 qpack v0.5.1。
+replace github.com/quic-go/quic-go => github.com/sagernet/quic-go v0.52.0-sing-box-mod.3
