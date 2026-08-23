@@ -98,6 +98,18 @@ func (f *Fetcher) UpdateConfig(cfg FetcherConfig) {
 	}
 }
 
+// GetConfig 返回当前抓取配置
+func (f *Fetcher) GetConfig() FetcherConfig {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+	return f.config
+}
+
+// DefaultFetchInterval 返回默认抓取间隔(30 分钟)
+func DefaultFetchInterval() time.Duration {
+	return 30 * time.Minute
+}
+
 // Start 启动定时抓取循环
 func (f *Fetcher) Start() {
 	f.mu.Lock()

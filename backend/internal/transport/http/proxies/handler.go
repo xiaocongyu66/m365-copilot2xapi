@@ -30,6 +30,8 @@ func (h *Handler) Register(router *gin.RouterGroup) {
 	router.GET("/proxies/errors", h.recentErrors)
 	router.POST("/proxies/fetch", h.fetchNow)
 	router.GET("/proxies/fetcher/status", h.fetcherStatus)
+	router.GET("/proxies/fetcher/config", h.getFetcherConfig)
+	router.POST("/proxies/fetcher/config", h.updateFetcherConfig)
 }
 
 func (h *Handler) listNodes(c *gin.Context) {
@@ -127,4 +129,55 @@ func (h *Handler) fetcherStatus(c *gin.Context) {
 		"lastRun":   lastRun.Format(time.RFC3339),
 		"lastResult": lastResult,
 	})
+}
+
+// getFetcherConfig 返回当前抓取配置
+func (h *Handler) getFetcherConfig(c *gin.Context) {
+	running, _, _ := h.svc.Fetcher().Status()
+	config := h.svc.Fetcher().GetConfig()
+	response.Success(c, http.StatusOK, gin.H{
+		"enabled":  running,
+		"interval": config.Interval.String(),
+		"sources":  sourceURLs(config.Sources),
+	})
+}
+
+// updateFetcherConfig 更新抓取配置(启用/禁用、间隔、源列表)
+func (h *Handler) updateFetcherConfig(c *gin.Context) {
+	var req struct {
+		Enabled  bool     `json:"enabled"`
+		Interval  string   `json:"interval"`
+		Sources  []string `json:"sources"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, "invalidRequest", "请求参数无效")
+		return
+	}
+	// 解析间隔
+	interval := proxypool.DefaultFetchInterval()
+	if req.Interval != "" {
+		if d, err := time.ParseDuration(req.Interval + "m"); err == nil {
+			interval = d
+		}
+	}
+	// 构造 FetchSource 列表
+	sources := make([]proxypool.FetchSource, 0, len(req.Sources))
+	for _, url := range req.Sources {
+		sources = append(sources, proxypool.FetchSource{URL: url, SourceID: url})
+	}
+	h.svc.Fetcher().UpdateConfig(proxypool.FetcherConfig{
+		Enabled:  req.Enabled,
+		Interval: interval,
+		Sources:  sources,
+	})
+	response.Success(c, http.StatusOK, gin.H{"status": "updated"})
+}
+
+// sourceURLs 从 FetchSource 列表提取 URL
+func sourceURLs(sources []proxypool.FetchSource) []string {
+	urls := make([]string, 0, len(sources))
+	for _, s := range sources {
+		urls = append(urls, s.URL)
+	}
+	return urls
 }
