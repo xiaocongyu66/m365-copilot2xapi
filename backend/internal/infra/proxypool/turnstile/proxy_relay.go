@@ -42,12 +42,16 @@ func maybeRelayProxy(proxy string) string {
 		return proxy
 	}
 	scheme := strings.ToLower(u.Scheme)
-	if !strings.HasPrefix(scheme, "socks") {
+	// socks5 无认证:Chrome 原生支持,不需要中继
+	if scheme == "socks5" && u.User == nil {
 		return proxy
 	}
-	if u.User == nil {
+	// http/https 代理:Chrome 原生支持(含认证),不需要中继
+	if scheme == "http" || scheme == "https" {
 		return proxy
 	}
+	// socks5 带认证 / ss / vless / vmess / trojan / hysteria2 / tuic:
+	// Chrome 不支持,用 minirelay 转成本地无认证 socks5
 
 	proxyRelay.mu.Lock()
 	defer proxyRelay.mu.Unlock()
