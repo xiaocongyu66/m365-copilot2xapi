@@ -7,6 +7,7 @@ import (
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/geoip"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/healthcheck"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/log"
+	"M365Copilot2ApiX/backend/internal/infra/proxypool/proxy"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/store"
 )
 
@@ -20,12 +21,18 @@ type Checker struct {
 	store         *store.Store
 	registerStore *store.Store
 	score         *ScoreStore
+	onNodeChecked func(p proxy.Proxy, country string) // 节点测活后回调(Service.routeByCountry)
 	cancel        context.CancelFunc
 	running       bool
 }
 
 func NewChecker(s *store.Store, score *ScoreStore) *Checker {
 	return &Checker{store: s, score: score}
+}
+
+// SetOnNodeChecked 注入节点测活完成回调(用于按国家分流)。
+func (c *Checker) SetOnNodeChecked(fn func(p proxy.Proxy, country string)) {
+	c.onNodeChecked = fn
 }
 
 // SetRegisterStore 注入注册专用池(测活时也测这个池)
@@ -78,35 +85,22 @@ func (c *Checker) RunOnce() {
 
 	// 确保 GeoIP 数据库已初始化(首次使用会自动下载)
 	geoDB := geoip.Get()
+	_ = geoDB
 
-	// 为所有节点查询 GeoIP 并设置国家代码
+	// 注册节点到 ScoreStore(不设置 country,country 只在纯净度测试时填充)
 	for _, p := range proxies {
-		ns := c.score.Register(p.Identifier(), p.BaseInfo().Name)
-		if geoDB.IsAvailable() {
-			server := p.BaseInfo().Server
-			countryCode := geoDB.LookupCountry(server)
-			if countryCode != "" {
-				ns.SetCountry(countryCode)
-				p.SetCountry(countryCode)
-			}
-		}
+		c.score.Register(p.Identifier(), p.BaseInfo().Name)
 	}
 
-	// 已入库节点用简单测试:只测 TCP/UDP 连通性(快速)
-	// 新节点入库前已经过了三层测试(fetcher 里),这里只需快速验证是否还活着
-	log.Infof("proxy check: simple TCP/UDP test on %d nodes...", len(proxies))
-	usable := healthcheck.TCPConnectTestAll(proxies)
-
-	// 更新分数:连通的 +5,不通的 -20(自动禁用)
-	usableSet := make(map[string]bool, len(usable))
-	for _, p := range usable {
-		usableSet[p.Identifier()] = true
-	}
-	for _, p := range proxies {
-		if usableSet[p.Identifier()] {
-			c.score.RecordCheckResult(p.Identifier(), true, 0)
-		} else {
-			c.score.RecordCheckResult(p.Identifier(), false, 0)
+	// 完整测活:走 m365CheckOneOpt(128 并发),会查出口 IP 国家并更新 country
+	// 这样 country 准确(出口 IP 国家,不是服务器地址国家)
+	log.Infof("proxy check: full M365 check on %d nodes...", len(proxies))
+	results := healthcheck.M365CheckAll(proxies)
+	for _, r := range results {
+		c.score.RecordCheckFull(r.Proxy.Identifier(), r.Stable, r.Bytes, int64(r.Latency), r.PurityScore, r.IPType, r.ExitIP, r.ISP, r.CountryCode)
+		// 按国家分流(回调 Service.routeByCountry)
+		if c.onNodeChecked != nil {
+			c.onNodeChecked(r.Proxy, r.CountryCode)
 		}
 	}
 

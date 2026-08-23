@@ -246,17 +246,9 @@ func (f *Fetcher) RunOnce() FetchResult {
 	}
 	result.Total = len(allProxies)
 
-	// 查询 GeoIP 国家
-	geoDB := geoip.Get()
-	for _, p := range allProxies {
-		if geoDB.IsAvailable() {
-			server := p.BaseInfo().Server
-			countryCode := geoDB.LookupCountry(server)
-			if countryCode != "" {
-				p.SetCountry(countryCode)
-			}
-		}
-	}
+	// 不用服务器地址查 country(中转节点服务器在中国但出口在其他国家,会误判)
+	// country 只在 m365CheckOneOpt 纯净度测试时用出口 IP 查询填充
+
 
 	// 设置进度:正在测试
 	f.mu.Lock()
@@ -300,19 +292,9 @@ func (f *Fetcher) RunOnce() FetchResult {
 	f.lastResult = result
 	f.mu.Unlock()
 
-	// 给新导入的节点注册分数 + 查询 GeoIP(流式导入的节点在这里统一注册)
+	// 给新导入的节点注册分数(不查 country,country 只在纯净度测试时填充)
 	for _, p := range allProxies {
-		ns := f.score.Register(p.Identifier(), p.BaseInfo().Name)
-		// 查询国家信息(空或 🌐 或 ZZ 才查)
-		country := p.BaseInfo().Country
-		if (country == "" || country == "🌐" || strings.Contains(country, "ZZ")) && geoDB.IsAvailable() {
-			server := p.BaseInfo().Server
-			countryCode := geoDB.LookupCountry(server)
-			if countryCode != "" {
-				p.SetCountry(countryCode)
-				ns.SetCountry(countryCode)
-			}
-		}
+		f.score.Register(p.Identifier(), p.BaseInfo().Name)
 	}
 
 	log.Infof("proxy fetch done: total=%d imported=%d skipped=%d errors=%d",

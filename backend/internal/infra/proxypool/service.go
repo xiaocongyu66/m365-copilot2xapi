@@ -69,6 +69,7 @@ func NewService() *Service {
 	s.fetcher.SetStatePath("data/fetcher_config.json")
 	s.checker = NewChecker(s.store, s.score)
 	s.checker.SetRegisterStore(s.registerStore)
+	s.checker.SetOnNodeChecked(s.routeByCountry)
 	s.registrar = NewRegistrar(s)
 	return s
 }
