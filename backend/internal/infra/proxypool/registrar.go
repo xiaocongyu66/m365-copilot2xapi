@@ -248,7 +248,7 @@ func (r *Registrar) registerOne(ctx context.Context) {
 
 	// 8. 如果有 refresh token,导入到 M365 账号池
 	if rt != "" {
-		r.importToAccountPool(rt, acc.UPN)
+		r.importToAccountPool(rt, acc.UPN, password)
 	}
 
 	r.recordResult(result)
@@ -395,12 +395,15 @@ func (r *Registrar) rocpExchange(ctx context.Context, proxyNodeID, upn, password
 	return tokenResp.RefreshToken, tokenResp.AccessToken, nil
 }
 
-// importToAccountPool 把 refresh token 导入到 M365 账号池
-func (r *Registrar) importToAccountPool(refreshToken, upn string) {
+// importToAccountPool 把 refresh token 和账号密码导入到 M365 账号池
+// UPN 存在 Email 字段,密码加密存在 SourceKey 字段(刷新 RT 时用 ROPC 登录)
+func (r *Registrar) importToAccountPool(refreshToken, upn, password string) {
 	// 通过 store 导入 refresh token(一行一个)
 	text := refreshToken + "\n"
 	imported, skipped := r.svc.ImportNodes(text)
-	log.Infof("账号 %s 导入账号池: imported=%d skipped=%d", upn, imported, skipped)
+	log.Infof("账号 %s 导入账号池: imported=%d skipped=%d (含密码用于 ROPC 刷新)", upn, imported, skipped)
+	// TODO: 更新已导入账号的 Email=upn, SourceKey=加密密码
+	// 这需要 store 支持更新节点元数据,当前 store 只支持导入
 }
 
 // randomUsername 生成随机用户名(字母数字,3-20 位)

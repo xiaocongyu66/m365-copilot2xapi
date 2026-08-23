@@ -103,7 +103,8 @@ func (a *Adapter) resolveAccount(cred account.Credential) (Account, error) {
 }
 
 // RefreshCredential exchanges the stored refresh token for a new TokenSet and
-// returns the encrypted rotated credentials.
+// returns the encrypted rotated credentials. If refresh fails, falls back to
+// ROPC (username + password) to get a fresh token.
 func (a *Adapter) RefreshCredential(ctx context.Context, cred account.Credential) (provider.RefreshedCredential, error) {
 	if a.cipher == nil {
 		return provider.RefreshedCredential{}, fmt.Errorf("credential cipher is not configured")
@@ -112,18 +113,48 @@ func (a *Adapter) RefreshCredential(ctx context.Context, cred account.Credential
 	if err != nil {
 		return provider.RefreshedCredential{}, err
 	}
-	if strings.TrimSpace(refreshToken) == "" {
-		return provider.RefreshedCredential{}, fmt.Errorf("credential has no refresh token")
-	}
 	select {
 	case <-ctx.Done():
 		return provider.RefreshedCredential{}, ctx.Err()
 	default:
 	}
-	tok, err := Refresh(refreshToken)
-	if err != nil {
-		return provider.RefreshedCredential{}, mapOAuthError(err)
+
+	// 尝试 1:用 refresh token 刷新
+	var tok TokenSet
+	refreshErr := error(nil)
+	if strings.TrimSpace(refreshToken) != "" {
+		tok, refreshErr = Refresh(refreshToken)
 	}
+	if refreshErr != nil || strings.TrimSpace(refreshToken) == "" {
+		// 尝试 2:用账号密码(ROPC)登录获取新 token
+		// 从 credential 的 email 和 userID 提取 UPN
+		upn := cred.Email
+		if upn == "" {
+			upn = cred.UserID
+		}
+		if upn == "" {
+			if refreshErr != nil {
+				return provider.RefreshedCredential{}, mapOAuthError(refreshErr)
+			}
+			return provider.RefreshedCredential{}, fmt.Errorf("credential has no refresh token and no UPN for ROPC")
+		}
+		// 从 EncryptedAccessToken 里解密出密码(注册时把密码存在 SourceKey 字段)
+		password := ""
+		if cred.SourceKey != "" {
+			password, _ = a.cipher.Decrypt(cred.SourceKey)
+		}
+		if password == "" {
+			if refreshErr != nil {
+				return provider.RefreshedCredential{}, mapOAuthError(refreshErr)
+			}
+			return provider.RefreshedCredential{}, fmt.Errorf("refresh token failed and no password for ROPC")
+		}
+		tok, err = ROPC(upn, password)
+		if err != nil {
+			return provider.RefreshedCredential{}, mapOAuthError(err)
+		}
+	}
+
 	encAccess, err := a.cipher.Encrypt(tok.AccessToken)
 	if err != nil {
 		return provider.RefreshedCredential{}, fmt.Errorf("encrypt access token: %w", err)
