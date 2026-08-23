@@ -80,7 +80,7 @@ export function ProxiesPage() {
   const checkNowMutation = useMutation({ mutationFn: () => apiPost("/api/admin/v1/proxies/check"), onSuccess: () => toast.success("测活已触发") });
   const fetchNowMutation = useMutation({ mutationFn: (url: string) => apiPost<{ imported: number; skipped: number; total: number }>("/api/admin/v1/proxies/fetch", { url }), onSuccess: (d) => { toast.success(`抓取 ${d.imported} 个`); setFetchOpen(false); setFetchURL(""); queryClient.invalidateQueries({ queryKey: ["proxies"] }); }, onError: () => toast.error("抓取失败") });
   const updateConfigMutation = useMutation({ mutationFn: (config: FetcherConfig) => apiPost("/api/admin/v1/proxies/fetcher/config", config), onSuccess: () => { toast.success("配置已保存"); queryClient.invalidateQueries({ queryKey: ["proxies"] }); }, onError: () => toast.error("保存失败") });
-  const restartMutation = useMutation({ mutationFn: () => apiPost("/api/admin/v1/proxies/restart"), onSuccess: () => { toast.success("正在重启,约 3 秒后刷新"); setTimeout(() => window.location.reload(), 3000); }, onError: () => toast.error("重启失败") });
+  const restartMutation = useMutation({ mutationFn: () => apiPost("/api/admin/v1/proxies/restart"), onSuccess: () => { toast.success("已重新加载配置和节点"); queryClient.invalidateQueries({ queryKey: ["proxies"] }); }, onError: () => toast.error("重载失败") });
 
   // 单个节点测试
   const testOneMutation = useMutation({

@@ -186,6 +186,61 @@ func (s *Service) Stop() {
 	s.score.StopAutoSave()
 }
 
+// Reload 软重启:停止后台任务,重新加载持久化文件,再启动。
+// 不退出进程(避免没有进程管理器时进程无法重启)。
+func (s *Service) Reload() {
+	// 停止后台任务
+	s.checker.Stop()
+	s.fetcher.Stop()
+	if s.scoreCancel != nil {
+		s.scoreCancel()
+		s.scoreCancel = nil
+	}
+	// 重新加载持久化状态
+	s.score.Load()
+	// 重新启动
+	s.Start()
+	// 应用持久化的抓取配置(会自动启动抓取循环)
+	cfg := s.fetcher.GetConfig()
+	if cfg.Enabled && cfg.Interval > 0 {
+		s.fetcher.UpdateConfig(cfg)
+	}
+}
+
+// MigrateCNToRegister 把主池里 Country 为 CN 的节点移到注册专用池。
+// 用于一次性迁移旧数据(测活后国家已持久化但没分流的节点)。
+// 返回迁移的节点数。
+func (s *Service) MigrateCNToRegister() int {
+	proxies := s.store.List()
+	migrated := 0
+	for _, p := range proxies {
+		country := strings.ToUpper(strings.TrimSpace(p.BaseInfo().Country))
+		// 也查 ScoreStore 里持久化的国家(测活后更新过)
+		if ns := s.score.Get(p.Identifier()); ns != nil {
+			if c := strings.ToUpper(strings.TrimSpace(ns.Country)); c != "" {
+				country = c
+			}
+		}
+		isCN := country == "CN" || country == "CHINA"
+		isRegisterEligible := isCN || country == "HK" || country == "MO" || country == "TW" ||
+			country == "HONG KONG" || country == "HONGKONG" || country == "MACAO" || country == "MACAU" || country == "TAIWAN"
+		if isCN {
+			// CN 只放注册池
+			s.store.Delete(p.Identifier())
+			if _, exists := s.registerStore.Get(p.Identifier()); !exists {
+				s.registerStore.Add(p)
+			}
+			migrated++
+		} else if isRegisterEligible {
+			// HK/MO/TW 两边都放
+			if _, exists := s.registerStore.Get(p.Identifier()); !exists {
+				s.registerStore.Add(p)
+			}
+		}
+	}
+	return migrated
+}
+
 // ImportNodes 从文本导入节点(一行一个)
 func (s *Service) ImportNodes(text string) (imported, skipped int) {
 	return s.store.ImportFromText(text)

@@ -2,8 +2,6 @@ package proxies
 
 import (
 	"net/http"
-	"os"
-	"time"
 
 	"M365Copilot2ApiX/backend/internal/infra/proxypool"
 	"M365Copilot2ApiX/backend/internal/shared/response"
@@ -39,6 +37,7 @@ func (h *Handler) Register(router *gin.RouterGroup) {
 	router.GET("/proxies/register/status", h.registrarStatus)
 	router.POST("/proxies/fetcher/config", h.updateFetcherConfig)
 	router.POST("/proxies/restart", h.restartService)
+	router.POST("/proxies/migrate-cn", h.migrateCN)
 }
 
 func (h *Handler) listNodes(c *gin.Context) {
@@ -111,20 +110,20 @@ func (h *Handler) checkNow(c *gin.Context) {
 	response.Success(c, http.StatusOK, gin.H{"status": "check_started"})
 }
 
-// restartService 保存状态后重启服务进程(需要外部进程管理器如 systemd 自动重启)。
-// 先持久化所有状态,再触发进程退出。
+// restartService 软重启 proxypool 子系统:重新加载持久化文件,不退出进程。
 func (h *Handler) restartService(c *gin.Context) {
-	// 保存抓取配置和节点状态
+	// 先保存当前状态
 	h.svc.Fetcher().Save()
 	h.svc.Score().Save()
-	response.Success(c, http.StatusOK, gin.H{"status": "restarting"})
-	// 异步退出,让响应先返回
-	go func() {
-		time.Sleep(500 * time.Millisecond)
-		// 先停止后台任务(再做一次保存,避免数据丢失)
-		h.svc.Stop()
-		os.Exit(0)
-	}()
+	// 软重启(重新加载持久化文件 + 重启后台任务)
+	h.svc.Reload()
+	response.Success(c, http.StatusOK, gin.H{"status": "reloaded"})
+}
+
+// migrateCN 把主池里的中国节点移到注册专用池。
+func (h *Handler) migrateCN(c *gin.Context) {
+	migrated := h.svc.MigrateCNToRegister()
+	response.Success(c, http.StatusOK, gin.H{"migrated": migrated})
 }
 func (h *Handler) checkSync(c *gin.Context) {
 	identifier := c.Query("identifier")
