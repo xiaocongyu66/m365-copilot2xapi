@@ -105,12 +105,12 @@ func buildSeeds(accounts []importedAccount) []provider.CredentialSeed {
 }
 
 // MarshalCredentials serializes a slice of CredentialSeed values into a JSON
-// array using the M365-Copilot2API AccountToken cache format. Encrypted tokens
-// are not included; only non-sensitive metadata and the refresh token are
-// persisted so the export can be re-imported.
+// array. Includes email, password (注册器场景), refresh token, OID/TID.
+// 导出包含完整密码(管理员导出用)。
 func (a *Adapter) MarshalCredentials(values []provider.CredentialSeed) ([]byte, error) {
 	type exportAccount struct {
 		Email        string `json:"email,omitempty"`
+		Password     string `json:"password,omitempty"`
 		DisplayName  string `json:"displayName,omitempty"`
 		RefreshToken string `json:"refreshToken,omitempty"`
 		OID          string `json:"oid,omitempty"`
@@ -120,6 +120,7 @@ func (a *Adapter) MarshalCredentials(values []provider.CredentialSeed) ([]byte, 
 	for _, v := range values {
 		out = append(out, exportAccount{
 			Email:        v.Email,
+			Password:     v.Password,
 			DisplayName:  v.Name,
 			RefreshToken: v.RefreshToken,
 			OID:          v.UserID,

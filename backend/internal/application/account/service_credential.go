@@ -463,20 +463,42 @@ func (s *Service) marshalProviderCredentials(providerValue accountdomain.Provide
 		}
 		refreshToken := ""
 		if value.EncryptedRefreshToken != "" {
-			refreshToken, err = s.cipher.Decrypt(value.EncryptedRefreshToken)
+			encRefresh := value.EncryptedRefreshToken
+			// EncryptedRefreshToken 可能含 "\x00" 分隔的加密密码(注册器场景)
+			encPassword := ""
+			if idx := strings.IndexByte(encRefresh, '\x00'); idx >= 0 {
+				encPassword = encRefresh[idx+1:]
+				encRefresh = encRefresh[:idx]
+			}
+			refreshToken, err = s.cipher.Decrypt(encRefresh)
 			if err != nil {
 				return ExportResult{}, fmt.Errorf("解密账号 %d refresh token: %w", value.ID, err)
+			}
+			if encPassword != "" {
+				if pwd, perr := s.cipher.Decrypt(encPassword); perr == nil {
+					_ = pwd // 密码通过 seed.Password 传递
+				}
 			}
 		}
 		if accessToken == "" && refreshToken == "" {
 			return ExportResult{}, fmt.Errorf("账号 %d 没有可导出的凭据", value.ID)
 		}
-		seeds = append(seeds, provider.CredentialSeed{
+		seed := provider.CredentialSeed{
 			Provider: value.Provider, AuthType: value.AuthType,
 			Name: value.Name, Email: value.Email, UserID: value.UserID, TeamID: value.TeamID,
 			OIDCClientID: value.OIDCClientID, AccessToken: accessToken, RefreshToken: refreshToken,
 			ExpiresAt: value.ExpiresAt,
-		})
+		}
+		// 解密密码(注册器场景,EncryptedRefreshToken 含 \x00 分隔的加密密码)
+		if value.EncryptedRefreshToken != "" {
+			if idx := strings.IndexByte(value.EncryptedRefreshToken, '\x00'); idx >= 0 {
+				encPassword := value.EncryptedRefreshToken[idx+1:]
+				if pwd, perr := s.cipher.Decrypt(encPassword); perr == nil {
+					seed.Password = pwd
+				}
+			}
+		}
+		seeds = append(seeds, seed)
 	}
 	data, err := adapter.MarshalCredentials(seeds)
 	if err != nil {
