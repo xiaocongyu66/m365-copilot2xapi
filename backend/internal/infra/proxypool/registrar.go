@@ -107,17 +107,22 @@ func (r *Registrar) Start(cfg RegistrarConfig) {
 	log.Infof("M365 registrar started: target=%d concurrency=%d", cfg.TargetCount, cfg.Concurrency)
 }
 
-// Stop 停止注册
+// Stop 停止注册并清理浏览器进程
 func (r *Registrar) Stop() {
 	r.mu.Lock()
-	defer r.mu.Unlock()
 	if !r.running {
+		r.mu.Unlock()
 		return
 	}
 	if r.cancel != nil {
 		r.cancel()
 	}
 	r.running = false
+	r.mu.Unlock()
+	// 关闭所有 Chrome 浏览器进程(停止注册后不再需要)
+	turnstile.CloseAllBrowsers()
+	// 停止所有代理中继(Chrome 用过的)
+	turnstile.StopAllRelays()
 	log.Infof("M365 registrar stopped: total=%d success=%d failed=%d", r.total, r.succeeded, r.failed)
 }
 
