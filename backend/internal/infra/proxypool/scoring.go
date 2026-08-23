@@ -1,6 +1,10 @@
 package proxypool
 
 import (
+	"context"
+	"encoding/json"
+	"os"
+	"path/filepath"
 	"sync"
 	"time"
 )
@@ -60,12 +64,175 @@ type NodeScore struct {
 
 // ScoreStore 管理所有节点的分数
 type ScoreStore struct {
-	mu     sync.RWMutex
-	scores map[string]*NodeScore // key: Identifier
+	mu        sync.RWMutex
+	scores    map[string]*NodeScore // key: Identifier
+	statePath string                // 持久化文件路径(空则不持久化)
+	dirty     bool                  // 有未保存的变更
+	stopCh    chan struct{}         // 停止定时保存
 }
 
 func NewScoreStore() *ScoreStore {
-	return &ScoreStore{scores: make(map[string]*NodeScore)}
+	return &ScoreStore{scores: make(map[string]*NodeScore), stopCh: make(chan struct{})}
+}
+
+// SetStatePath 设置持久化文件路径,并立即加载已持久化的状态。
+func (s *ScoreStore) SetStatePath(path string) {
+	s.mu.Lock()
+	s.statePath = path
+	s.mu.Unlock()
+	s.Load()
+}
+
+// markDirty 标记有未保存的变更(调用方需持有 s.mu)。
+func (s *ScoreStore) markDirty() {
+	s.dirty = true
+}
+
+// RunAutoSave 启动定时保存 goroutine(每 30 秒保存一次),阻塞调用方。
+// 应在后台 goroutine 中调用。ctx 取消时做最后一次保存。
+func (s *ScoreStore) RunAutoSave(ctx context.Context) {
+	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			s.Save()
+			return
+		case <-ticker.C:
+			s.Save()
+		case <-s.stopCh:
+			s.Save()
+			return
+		}
+	}
+}
+
+// StopAutoSave 停止定时保存并做最后一次保存。
+func (s *ScoreStore) StopAutoSave() {
+	select {
+	case <-s.stopCh:
+	default:
+		close(s.stopCh)
+	}
+	s.Save()
+}
+
+// stateRecord 是持久化到 JSON 的记录(只保留需要持久化的字段)
+type stateRecord struct {
+	Identifier      string    `json:"identifier"`
+	Name            string    `json:"name"`
+	Country         string    `json:"country"`
+	Score           int       `json:"score"`
+	Enabled         bool      `json:"enabled"`
+	AutoDisabled    bool      `json:"autoDisabled"`
+	ErrorCount      int       `json:"errorCount"`
+	LastError       string    `json:"lastError"`
+	LastErrorAt     time.Time `json:"lastErrorAt"`
+	SuccessCount    int       `json:"successCount"`
+	LastSuccessAt   time.Time `json:"lastSuccessAt"`
+	UpSince         time.Time `json:"upSince"`
+	LastCheckAt     time.Time `json:"lastCheckAt"`
+	LastCheckStable bool      `json:"lastCheckStable"`
+	LastCheckBytes  int64     `json:"lastCheckBytes"`
+	LastLatency     int64     `json:"lastLatency"`
+	LastPurityScore int       `json:"lastPurityScore"`
+	LastIPType      string    `json:"lastIPType"`
+	LastExitIP      string    `json:"lastExitIP"`
+	LastISP         string    `json:"lastISP"`
+}
+
+// Save 把所有节点状态持久化到文件。
+func (s *ScoreStore) Save() {
+	s.mu.Lock()
+	path := s.statePath
+	if path == "" {
+		s.mu.Unlock()
+		return
+	}
+	s.dirty = false
+	records := make([]stateRecord, 0, len(s.scores))
+	for _, ns := range s.scores {
+		ns.mu.RLock()
+		records = append(records, stateRecord{
+			Identifier:      ns.Identifier,
+			Name:            ns.Name,
+			Country:         ns.Country,
+			Score:           ns.Score,
+			Enabled:         ns.Enabled,
+			AutoDisabled:    ns.AutoDisabled,
+			ErrorCount:      ns.ErrorCount,
+			LastError:       ns.LastError,
+			LastErrorAt:     ns.LastErrorAt,
+			SuccessCount:    ns.SuccessCount,
+			LastSuccessAt:   ns.LastSuccessAt,
+			UpSince:         ns.UpSince,
+			LastCheckAt:     ns.LastCheckAt,
+			LastCheckStable: ns.LastCheckStable,
+			LastCheckBytes:  ns.LastCheckBytes,
+			LastLatency:     ns.LastLatency,
+			LastPurityScore: ns.LastPurityScore,
+			LastIPType:      ns.LastIPType,
+			LastExitIP:      ns.LastExitIP,
+			LastISP:         ns.LastISP,
+		})
+		ns.mu.RUnlock()
+	}
+	s.mu.Unlock()
+
+	data, err := json.MarshalIndent(records, "", "  ")
+	if err != nil {
+		return
+	}
+	_ = os.MkdirAll(filepath.Dir(path), 0755)
+	_ = os.WriteFile(path, data, 0644)
+}
+
+// Load 从文件加载节点状态。只在启动时调用一次。
+func (s *ScoreStore) Load() {
+	s.mu.Lock()
+	path := s.statePath
+	s.mu.Unlock()
+	if path == "" {
+		return
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return
+	}
+	var records []stateRecord
+	if err := json.Unmarshal(data, &records); err != nil {
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, r := range records {
+		ns := &NodeScore{
+			Identifier:      r.Identifier,
+			Name:            r.Name,
+			Country:         r.Country,
+			Score:           r.Score,
+			Enabled:         r.Enabled,
+			AutoDisabled:    r.AutoDisabled,
+			ErrorCount:      r.ErrorCount,
+			LastError:       r.LastError,
+			LastErrorAt:     r.LastErrorAt,
+			SuccessCount:    r.SuccessCount,
+			LastSuccessAt:   r.LastSuccessAt,
+			UpSince:         r.UpSince,
+			LastCheckAt:     r.LastCheckAt,
+			LastCheckStable: r.LastCheckStable,
+			LastCheckBytes:  r.LastCheckBytes,
+			LastLatency:     r.LastLatency,
+			LastPurityScore: r.LastPurityScore,
+			LastIPType:      r.LastIPType,
+			LastExitIP:      r.LastExitIP,
+			LastISP:         r.LastISP,
+		}
+		if ns.UpSince.IsZero() {
+			ns.UpSince = time.Now()
+		}
+		s.scores[r.Identifier] = ns
+	}
 }
 
 // Register 注册一个节点(如果已存在则返回已存在的)
@@ -172,6 +339,9 @@ func (s *ScoreStore) RecordError(identifier, errMsg string) {
 	if ns.Score < scoreDisableThreshold {
 		ns.AutoDisabled = true
 	}
+	s.mu.Lock()
+	s.markDirty()
+	s.mu.Unlock()
 }
 
 // RecordSuccess 记录一次请求成功(如果持续可用,加分)
@@ -248,6 +418,9 @@ func (s *ScoreStore) RecordCheckFull(identifier string, stable bool, bytes int64
 			ns.AutoDisabled = true
 		}
 	}
+	s.mu.Lock()
+	s.markDirty()
+	s.mu.Unlock()
 }
 
 // SetEnabled 手动启用/禁用节点
@@ -262,6 +435,9 @@ func (s *ScoreStore) SetEnabled(identifier string, enabled bool) {
 	if enabled {
 		ns.UpSince = time.Now()
 	}
+	s.mu.Lock()
+	s.markDirty()
+	s.mu.Unlock()
 }
 
 // ClearErrors 清除节点的报错记录(用户手动清除,或节点恢复可用时自动清除)
@@ -281,6 +457,9 @@ func (s *ScoreStore) ClearErrors(identifier string) {
 	}
 	ns.AutoDisabled = false
 	ns.UpSince = time.Now()
+	s.mu.Lock()
+	s.markDirty()
+	s.mu.Unlock()
 }
 
 // UsableNodes 返回当前可用的节点(已启用 + 未被自动禁用),按分数降序排列

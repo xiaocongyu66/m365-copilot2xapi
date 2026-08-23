@@ -34,6 +34,8 @@ type Service struct {
 	checker  *Checker
 	registrar *Registrar
 	accountImporter AccountImporter
+	scoreCtx    context.Context
+	scoreCancel context.CancelFunc
 
 	// 报错缓冲(供前端轮询读取)
 	errorMu     sync.Mutex
@@ -54,8 +56,10 @@ func NewService() *Service {
 		store: store.NewWithFile("data/proxies.txt"),
 	}
 	s.score = NewScoreStore()
+	s.score.SetStatePath("data/proxies_state.json")
 	s.balancer = NewBalancer(s.score)
 	s.fetcher = NewFetcher(s.store, s.score)
+	s.fetcher.SetStatePath("data/fetcher_config.json")
 	s.checker = NewChecker(s.store, s.score)
 	s.registrar = NewRegistrar(s)
 	return s
@@ -111,6 +115,9 @@ func (s *Service) Start() {
 	// 初始化 GeoIP 数据库(自动下载,加载本地数据库)
 	geoip.Get()
 	s.checker.Start()
+	// 启动节点状态定时保存
+	s.scoreCtx, s.scoreCancel = context.WithCancel(context.Background())
+	go s.score.RunAutoSave(s.scoreCtx)
 	// fetcher 由配置驱动启动
 }
 
@@ -118,6 +125,10 @@ func (s *Service) Start() {
 func (s *Service) Stop() {
 	s.checker.Stop()
 	s.fetcher.Stop()
+	if s.scoreCancel != nil {
+		s.scoreCancel()
+	}
+	s.score.StopAutoSave()
 }
 
 // ImportNodes 从文本导入节点(一行一个)

@@ -194,7 +194,12 @@ func New(ctx context.Context, cfg config.Config, logger *slog.Logger) (*Applicat
 	// 根据配置启动 proxypool 后台任务(测活 + 抓取)
 	if cfg.ProxyPool.Enabled {
 		proxyPoolService.Start()
-		if cfg.ProxyPool.FetchEnabled {
+		// 优先用持久化的抓取配置(前端改过的);持久化文件不存在时用 cfg 初始化
+		savedCfg := proxyPoolService.Fetcher().GetConfig()
+		if len(savedCfg.Sources) > 0 || savedCfg.Enabled {
+			// 已有持久化配置,应用它(会自动启动抓取)
+			proxyPoolService.Fetcher().UpdateConfig(savedCfg)
+		} else if cfg.ProxyPool.FetchEnabled {
 			sources := make([]proxypool.FetchSource, 0, len(cfg.ProxyPool.FetchSources))
 			for _, src := range cfg.ProxyPool.FetchSources {
 				sources = append(sources, proxypool.FetchSource{URL: src, SourceID: src})

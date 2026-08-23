@@ -2,6 +2,9 @@ package proxypool
 
 import (
 	"context"
+	"encoding/json"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -72,6 +75,7 @@ type Fetcher struct {
 	running  bool
 	lastRun  time.Time
 	lastResult FetchResult
+	statePath string // 持久化文件路径
 	// 抓取进度
 	progressTotal    int64 // 本次抓取总数
 	progressDone     int64 // 已完成测试数
@@ -92,11 +96,12 @@ func NewFetcher(s *store.Store, score *ScoreStore) *Fetcher {
 	return &Fetcher{store: s, score: score}
 }
 
-// UpdateConfig 更新抓取配置(会重启抓取循环)
+// UpdateConfig 更新抓取配置(会重启抓取循环)并持久化
 func (f *Fetcher) UpdateConfig(cfg FetcherConfig) {
 	f.mu.Lock()
 	f.config = cfg
 	f.mu.Unlock()
+	f.Save()
 
 	// 如果启用且间隔有效,重启抓取循环
 	if cfg.Enabled && cfg.Interval > 0 {
@@ -104,6 +109,70 @@ func (f *Fetcher) UpdateConfig(cfg FetcherConfig) {
 	} else {
 		f.Stop()
 	}
+}
+
+// SetStatePath 设置持久化文件路径并加载已保存的配置。
+func (f *Fetcher) SetStatePath(path string) {
+	f.mu.Lock()
+	f.statePath = path
+	f.mu.Unlock()
+	f.Load()
+}
+
+// fetcherConfigRecord 是持久化到 JSON 的格式(Interval 用字符串,JSON 友好)
+type fetcherConfigRecord struct {
+	Enabled  bool          `json:"enabled"`
+	Interval time.Duration `json:"interval"`
+	Sources  []FetchSource `json:"sources"`
+}
+
+// Save 把抓取配置持久化到文件。
+func (f *Fetcher) Save() {
+	f.mu.RLock()
+	path := f.statePath
+	cfg := f.config
+	f.mu.RUnlock()
+	if path == "" {
+		return
+	}
+	rec := fetcherConfigRecord{
+		Enabled:  cfg.Enabled,
+		Interval: cfg.Interval,
+		Sources:  cfg.Sources,
+	}
+	data, err := json.MarshalIndent(rec, "", "  ")
+	if err != nil {
+		return
+	}
+	_ = os.MkdirAll(filepath.Dir(path), 0755)
+	_ = os.WriteFile(path, data, 0644)
+}
+
+// Load 从文件加载抓取配置。
+func (f *Fetcher) Load() {
+	f.mu.RLock()
+	path := f.statePath
+	f.mu.RUnlock()
+	if path == "" {
+		return
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return
+	}
+	var rec fetcherConfigRecord
+	if err := json.Unmarshal(data, &rec); err != nil {
+		return
+	}
+	f.mu.Lock()
+	f.config.Enabled = rec.Enabled
+	if rec.Interval > 0 {
+		f.config.Interval = rec.Interval
+	}
+	if len(rec.Sources) > 0 {
+		f.config.Sources = rec.Sources
+	}
+	f.mu.Unlock()
 }
 
 // GetConfig 返回当前抓取配置

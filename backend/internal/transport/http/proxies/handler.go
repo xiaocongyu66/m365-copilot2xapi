@@ -2,6 +2,7 @@ package proxies
 
 import (
 	"net/http"
+	"os"
 	"time"
 
 	"M365Copilot2ApiX/backend/internal/infra/proxypool"
@@ -37,6 +38,7 @@ func (h *Handler) Register(router *gin.RouterGroup) {
 	router.POST("/proxies/register/stop", h.registrarStop)
 	router.GET("/proxies/register/status", h.registrarStatus)
 	router.POST("/proxies/fetcher/config", h.updateFetcherConfig)
+	router.POST("/proxies/restart", h.restartService)
 }
 
 func (h *Handler) listNodes(c *gin.Context) {
@@ -109,7 +111,21 @@ func (h *Handler) checkNow(c *gin.Context) {
 	response.Success(c, http.StatusOK, gin.H{"status": "check_started"})
 }
 
-// checkSync 同步测试单个节点,返回完整结果(含延迟、纯净度、IP 类型)
+// restartService 保存状态后重启服务进程(需要外部进程管理器如 systemd 自动重启)。
+// 先持久化所有状态,再触发进程退出。
+func (h *Handler) restartService(c *gin.Context) {
+	// 保存抓取配置和节点状态
+	h.svc.Fetcher().Save()
+	h.svc.Score().Save()
+	response.Success(c, http.StatusOK, gin.H{"status": "restarting"})
+	// 异步退出,让响应先返回
+	go func() {
+		time.Sleep(500 * time.Millisecond)
+		// 先停止后台任务(再做一次保存,避免数据丢失)
+		h.svc.Stop()
+		os.Exit(0)
+	}()
+}
 func (h *Handler) checkSync(c *gin.Context) {
 	identifier := c.Query("identifier")
 	if identifier == "" {
