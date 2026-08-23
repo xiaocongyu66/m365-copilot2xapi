@@ -140,6 +140,11 @@ export function ProxiesPage() {
   };
   const selectedIds = Array.from(selected);
 
+  // 翻页
+  const [page, setPage] = useState(1);
+  const pageSize = 50;
+  const totalPages = Math.ceil(nodes.length / pageSize) || 1;
+  const pagedNodes = nodes.slice((page - 1) * pageSize, page * pageSize);
   // 统计
   const enabledCount = nodes.filter((n) => n.enabled && !n.autoDisabled).length;
   const disabledCount = nodes.length - enabledCount;
@@ -195,7 +200,7 @@ export function ProxiesPage() {
           <div className="p-8 text-center text-sm text-muted-foreground">暂无节点,点击"抓取节点"或"导入节点"添加</div>
         ) : (
           <div className="max-h-[60vh] overflow-y-auto">
-            {nodes.slice(0, 100).map((node) => (
+            {pagedNodes.map((node) => (
               <div key={node.identifier} className="flex items-center gap-2 border-b px-3 py-2 last:border-0">
                 <Checkbox checked={selected.has(node.identifier)} onCheckedChange={() => toggleSelect(node.identifier)} />
                 <div className="min-w-0 flex-1">
@@ -217,10 +222,18 @@ export function ProxiesPage() {
                 </div>
               </div>
             ))}
-            {nodes.length > 100 && <div className="p-2 text-center text-[10px] text-muted-foreground">显示前 100 条,共 {nodes.length} 个</div>}
           </div>
         )}
-        {nodes.length > 200 && <div className="p-2 text-center text-xs text-muted-foreground">显示前 200 条,共 {nodes.length} 个节点</div>}
+        {/* 翻页 */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between border-t px-3 py-2">
+            <span className="text-[10px] text-muted-foreground">第 {page}/{totalPages} 页 · 共 {nodes.length} 个</span>
+            <div className="flex gap-1">
+              <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage(page - 1)}>上一页</Button>
+              <Button size="sm" variant="outline" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>下一页</Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 请求报错 */}
