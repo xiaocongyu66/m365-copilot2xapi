@@ -91,7 +91,7 @@ func (c *Checker) RunOnce() {
 		}
 	}
 
-	log.Infof("proxy check done: total=%d usable=%d", len(results), countUsable(results))
+	log.Infof("proxy check done: total=%d usable=%d", len(proxies), len(usable))
 }
 
 // runLoop 定时测活循环(每分钟)
