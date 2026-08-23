@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/geoip"
+	"M365Copilot2ApiX/backend/internal/infra/proxypool/healthcheck"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/log"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/store"
 )
@@ -69,6 +70,28 @@ func (s *Service) Fetcher() *Fetcher { return s.fetcher }
 
 // Checker 返回测活器
 func (s *Service) Checker() *Checker { return s.checker }
+
+// CheckOne 对单个节点做两层测试(TCP/UDP + 微软可达)
+func (s *Service) CheckOne(identifier string) {
+	p, ok := s.store.Get(identifier)
+	if !ok {
+		return
+	}
+	// 用 healthcheck 的 m365CheckOne 测试
+	result := healthcheck.M365CheckOnePublic(p)
+	s.score.RecordCheckResult(identifier, result.Stable, result.Bytes)
+}
+
+// CheckOneSync 同步测试单个节点,返回结果(给 API 用)
+func (s *Service) CheckOneSync(identifier string) (accessible, stable bool, err string) {
+	p, ok := s.store.Get(identifier)
+	if !ok {
+		return false, false, "node not found"
+	}
+	result := healthcheck.M365CheckOnePublic(p)
+	s.score.RecordCheckResult(identifier, result.Stable, result.Bytes)
+	return result.Accessible, result.Stable, result.Error
+}
 
 // Start 启动抓取器和测活器
 func (s *Service) Start() {

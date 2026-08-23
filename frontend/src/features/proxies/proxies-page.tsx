@@ -25,6 +25,19 @@ interface FetcherConfig {
 }
 
 // 内置免费代理源(用户可直接启用/禁用,不需手填)
+// 国家代码转国旗 emoji
+function countryFlag(code: string): string {
+  if (!code || code.length !== 2) return "🌐";
+  const flags: Record<string, string> = {
+    CN: "🇨🇳", HK: "🇭🇰", MO: "🇲🇴", TW: "🇹🇼", US: "🇺🇸", GB: "🇬🇧", DE: "🇩🇪",
+    FR: "🇫🇷", NL: "🇳🇱", RU: "🇷🇺", JP: "🇯🇵", KR: "🇰🇷", IN: "🇮🇳", ID: "🇮🇩",
+    SG: "🇸🇬", CA: "🇨🇦", AU: "🇦🇺", BR: "🇧🇷", TH: "🇹🇭", VN: "🇻🇳", PH: "🇵🇭",
+    MY: "🇲🇾", TR: "🇹🇷", IT: "🇮🇹", ES: "🇪🇸", CH: "🇨🇭", SE: "🇸🇪", PL: "🇵🇱",
+    UA: "🇺🇦", RO: "🇷🇴", IR: "🇮🇷", EG: "🇪🇬", ZA: "🇿🇦", MX: "🇲🇽", AR: "🇦🇷",
+  };
+  return flags[code.toUpperCase()] || "🌐";
+}
+
 const BUILTIN_SOURCES = [
   "https://cdn.jsdelivr.net/gh/proxifly/free-proxy-list@main/proxies/all/data.txt",
   "https://raw.githubusercontent.com/proxifly/free-proxy-list/main/proxies/all/data.txt",
@@ -229,6 +242,7 @@ export function ProxiesPage() {
             {pagedNodes.map((node) => (
               <div key={node.identifier} className="flex items-center gap-2 border-b px-3 py-2 last:border-0">
                 <Checkbox checked={selected.has(node.identifier)} onCheckedChange={() => toggleSelect(node.identifier)} />
+                <span className="text-base shrink-0">{countryFlag(node.country)}</span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="truncate text-xs font-medium">{node.name}</span>
@@ -236,7 +250,6 @@ export function ProxiesPage() {
                   </div>
                   <div className="mt-0.5 flex items-center gap-2 text-[10px] text-muted-foreground">
                     <span className="truncate">{node.server}:{node.port}</span>
-                    {node.country && <span className="shrink-0">{node.country}</span>}
                     <span className={node.autoDisabled ? "text-red-500" : node.enabled ? "text-green-500" : "text-muted-foreground"}>
                       {node.autoDisabled ? "禁用" : node.enabled ? "启用" : "禁用"}
                     </span>
@@ -246,6 +259,7 @@ export function ProxiesPage() {
                   <div className={`text-sm font-medium ${node.score >= 50 ? "text-green-600" : node.score >= 0 ? "text-yellow-600" : "text-red-600"}`}>{node.score}</div>
                   <div className="text-[10px] text-muted-foreground">{node.lastCheckStable ? "✅" : "❌"}</div>
                 </div>
+                <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px] shrink-0" onClick={() => apiPost(`/api/admin/v1/proxies/check?identifier=${encodeURIComponent(node.identifier)}`).then(() => toast.success("已触发测试")).catch(() => toast.error("测试失败"))}>测试</Button>
               </div>
             ))}
           </div>

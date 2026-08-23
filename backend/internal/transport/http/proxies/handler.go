@@ -97,6 +97,13 @@ func (h *Handler) clearErrors(c *gin.Context) {
 }
 
 func (h *Handler) checkNow(c *gin.Context) {
+	// 支持对单个节点测试:POST /proxies/check?identifier=xxx
+	identifier := c.Query("identifier")
+	if identifier != "" {
+		go h.svc.CheckOne(identifier)
+		response.Success(c, http.StatusOK, gin.H{"status": "check_started", "identifier": identifier})
+		return
+	}
 	go h.svc.Checker().RunOnce()
 	response.Success(c, http.StatusOK, gin.H{"status": "check_started"})
 }

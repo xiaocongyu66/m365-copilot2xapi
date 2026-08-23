@@ -330,3 +330,8 @@ func m365ContinuousDownload(p proxy.Proxy) (bytes int64, duration time.Duration,
 	}
 	return bytes, duration, stable, nil
 }
+
+// M365CheckOnePublic 公开接口:对单个代理执行两层测试
+func M365CheckOnePublic(p proxy.Proxy) M365CheckResult {
+	return m365CheckOne(p)
+}
