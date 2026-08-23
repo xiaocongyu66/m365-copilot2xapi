@@ -49,7 +49,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: frontend-dist
-          path: backend/frontend_dist
+          path: frontend/dist
           retention-days: 1
 
   build-binaries:
