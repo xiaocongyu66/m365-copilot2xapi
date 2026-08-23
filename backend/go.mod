@@ -49,7 +49,7 @@ require (
 	github.com/antchfx/xpath v1.3.6 // indirect
 	github.com/bdandy/go-errors v1.2.2 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/bogdanfinn/quic-go-utls v1.0.4-utls // indirect
+	github.com/bogdanfinn/quic-go-utls v1.0.9-utls // indirect
 	github.com/bogdanfinn/utls v1.7.7-barnius // indirect
 	github.com/bytedance/gopkg v0.1.3 // indirect
 	github.com/bytedance/sonic v1.15.0 // indirect
@@ -148,31 +148,12 @@ require (
 	modernc.org/memory v1.5.0 // indirect
 	modernc.org/sqlite v1.23.1 // indirect
 
-	// minirelay (Turnstile solver 代理中继) 依赖 sagernet 协议栈
-	github.com/bogdanfinn/quic-go-utls v1.0.4-utls // indirect
-	github.com/mdlayher/netlink v1.7.3-0.20250113171957-fbb4dce95f42 // indirect
+	// minirelay (Turnstile solver 代理中继) 依赖 sagernet 协议栈(非 quic 部分)
 	github.com/metacubex/tfo-go v0.0.0-20250921095601-b102db4216c0 // indirect
 	github.com/metacubex/utls v1.8.3 // indirect
-	github.com/quic-go/qpack v0.5.1 // indirect
-	github.com/sagernet/bbolt v0.0.0-20231014093535-ea5cb2fe9f0a // indirect
-	github.com/sagernet/fswatch v0.1.1 // indirect
-	github.com/sagernet/gvisor v0.0.0-20250325023245-7a9c0f5725fb // indirect
-	github.com/sagernet/netlink v0.0.0-20240612041022-b9a21c07ac6a // indirect
-	github.com/sagernet/nftables v0.3.0-beta.4 // indirect
-	github.com/sagernet/quic-go v0.52.0-sing-box-mod.3 // indirect
 	github.com/sagernet/sing v0.7.13 // indirect
-	github.com/sagernet/sing-box v1.12.12 // indirect
-	github.com/sagernet/sing-mux v0.3.3 // indirect
-	github.com/sagernet/sing-quic v0.5.2-0.20250909083218-00a55617c0fb // indirect
 	github.com/sagernet/sing-shadowsocks v0.2.8 // indirect
-	github.com/sagernet/sing-shadowtls v0.2.1-0.20250503051639-fcd445d33c11 // indirect
-	github.com/sagernet/sing-tun v0.7.3 // indirect
 	github.com/sagernet/sing-vmess v0.2.7 // indirect
 	github.com/sagernet/smux v1.5.34-mod.2 // indirect
 	github.com/sagernet/ws v0.0.0-20231204124109-acfe8907c854 // indirect
 )
-
-// sagernet/quic-go 和 quic-go/quic-go 的 qpack API 不兼容:
-// sagernet 需要 qpack v0.5.x(DecodeFull),quic-go v0.59.0 需要 v0.6.0(DecodeFunc)。
-// 把 quic-go/quic-go 重定向到 sagernet fork,统一用 qpack v0.5.1。
-replace github.com/quic-go/quic-go => github.com/sagernet/quic-go v0.52.0-sing-box-mod.3

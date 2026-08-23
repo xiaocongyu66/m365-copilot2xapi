@@ -49,12 +49,10 @@ func (d *outboundDialer) Dial(ctx context.Context, target string) (net.Conn, err
 		return d.dialTrojan(ctx, target)
 	case "ss":
 		return d.dialShadowsocks(ctx, target)
-	case "hy2", "hysteria2":
-		return d.dialHysteria2(ctx, target)
-	case "tuic":
-		return d.dialTUIC(ctx, target)
-	case "shadowtls":
-		return d.dialShadowTLS(ctx, target)
+	case "hy2", "hysteria2", "tuic", "shadowtls":
+		// quic 类协议需要 sagernet/quic-go,与 grok2api 的 quic-go v0.59.0
+		// qpack API 不兼容,暂不支持。注册器选代理时会跳过这些类型。
+		return nil, fmt.Errorf("scheme %s not supported (quic disabled): %s", d.scheme, d.upstream)
 	default:
 		return nil, fmt.Errorf("unsupported scheme: %s", d.scheme)
 	}
