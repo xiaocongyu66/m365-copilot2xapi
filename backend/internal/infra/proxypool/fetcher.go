@@ -15,6 +15,7 @@ import (
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/log"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/proxy"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/store"
+	"M365Copilot2ApiX/backend/internal/infra/proxypool/tool"
 )
 
 // FetcherConfig 是代理抓取器的配置
@@ -55,8 +56,8 @@ func DefaultFetchSources() []FetchSource {
 		// ProxyScrape API
 		{URL: "https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=10000&country=all&ssl=all&anonymity=all#scheme=http", SourceID: "proxyscrape-http"},
 		{URL: "https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=10000&country=all&ssl=all&anonymity=all#scheme=socks5", SourceID: "proxyscrape-socks5"},
-		// GeoNode 代理列表 API
-		{URL: "https://proxylist.geonode.com/api/proxy-list?limit=500&page=1&sort_by=lastChecked&sort_type=desc", SourceID: "geonode"},
+		// GeoNode 代理列表 API(通用 JSON 格式:#json=/data&ip=ip&port=port&proto=protocols)
+		{URL: "https://proxylist.geonode.com/api/proxy-list?limit=500&page=1&sort_by=lastChecked&sort_type=desc#json=/data&ip=ip&port=port&proto=protocols", SourceID: "geonode"},
 		// HankNovic/ProxyClean — 纯中国境内 SOCKS5(已测试,直接用于 M365 注册)
 		{URL: "https://raw.githubusercontent.com/HankNovic/ProxyClean/main/SOCKS5.txt#scheme=socks5", SourceID: "hanknovic-cn-socks5"},
 		// proxy.scdn.io 纯文本接口(抓取后测活,CN 出口自动分流到注册池)
@@ -373,6 +374,17 @@ func (f *Fetcher) RunOnceWithSource(url string) FetchResult {
 
 // fetchFromSource 从单个源抓取代理,自动检测格式
 func fetchFromSource(url string) ([]proxy.Proxy, error) {
+	// 如果 URL fragment 含 json= 参数,用 WebJSON getter(通用 JSON 代理列表)
+	if idx := strings.Index(url, "#"); idx >= 0 {
+		frag := url[idx+1:]
+		if strings.Contains(frag, "json=") {
+			g, err := getter.NewGetter("webjson", tool.Options{"url": url})
+			if err != nil {
+				return nil, err
+			}
+			return g.Get(), nil
+		}
+	}
 	// proxypool 的 subscribe getter 能处理订阅 URL 和网页 URL
 	// 自动检测:txt(直接解析)、html(模糊抓取)、含 js 的网页
 	return getter.FetchSubscribeURL(url)
