@@ -72,6 +72,7 @@ export function M365RegisterPage() {
   });
 
   // 获取代理节点
+  const usedProxies = status?.usedProxies ?? {};
   const { data: allNodes = [] } = useQuery<ProxyNode[]>({
     queryKey: ["proxies", "nodes"],
     queryFn: () => apiGet<ProxyNode[]>("/api/admin/v1/proxies/nodes"),
@@ -84,7 +85,6 @@ export function M365RegisterPage() {
   const running = status?.running ?? false;
   const results = status?.results ?? [];
   const succeeded = results.filter((r) => r.success);
-  const usedProxies = status?.usedProxies ?? {};
 
   // 导出成功账号的 refresh token
   const exportTokens = () => {
