@@ -100,6 +100,10 @@ jobs:
           name: frontend-dist
           path: frontend/dist
 
+      - name: Tidy go modules
+        working-directory: backend
+        run: go mod tidy
+
       - name: Build binary
         working-directory: backend
         env:
