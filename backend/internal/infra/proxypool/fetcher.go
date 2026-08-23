@@ -57,6 +57,11 @@ func DefaultFetchSources() []FetchSource {
 		{URL: "https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=10000&country=all&ssl=all&anonymity=all#scheme=socks5", SourceID: "proxyscrape-socks5"},
 		// GeoNode 代理列表 API
 		{URL: "https://proxylist.geonode.com/api/proxy-list?limit=500&page=1&sort_by=lastChecked&sort_type=desc", SourceID: "geonode"},
+		// HankNovic/ProxyClean — 纯中国境内 SOCKS5(已测试,直接用于 M365 注册)
+		{URL: "https://raw.githubusercontent.com/HankNovic/ProxyClean/main/SOCKS5.txt#scheme=socks5", SourceID: "hanknovic-cn-socks5"},
+		// proxy.scdn.io 纯文本接口(抓取后测活,CN 出口自动分流到注册池)
+		{URL: "https://proxy.scdn.io/text.php?protocol=socks5#scheme=socks5", SourceID: "scdn-socks5"},
+		{URL: "https://proxy.scdn.io/text.php?protocol=http#scheme=http", SourceID: "scdn-http"},
 	}
 }
 
