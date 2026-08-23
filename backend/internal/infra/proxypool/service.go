@@ -207,34 +207,58 @@ func (s *Service) Reload() {
 	}
 }
 
-// MigrateCNToRegister 把主池里 Country 为 CN 的节点移到注册专用池。
-// 用于一次性迁移旧数据(测活后国家已持久化但没分流的节点)。
-// 返回迁移的节点数。
+// MigrateCNToRegister 按出口 IP 国家(测活后持久化的 ns.Country)分流:
+//   - 出口 IP 是 CN 的节点:从主池移到注册池
+//   - 出口 IP 是 HK/MO/TW 的节点:加到注册池(两边都放)
+//   - 出口 IP 是其他国家的节点:如果误在注册池,移回主池
+//   - 没测活记录(ns.Country 为空)的节点:不迁移,等测活后 routeByCountry 自动分流
+//
+// 注意:不能用服务器地址国家判断,因为中转节点的服务器可能在中国但出口在其他国家。
 func (s *Service) MigrateCNToRegister() int {
-	proxies := s.store.List()
 	migrated := 0
-	for _, p := range proxies {
-		country := strings.ToUpper(strings.TrimSpace(p.BaseInfo().Country))
-		// 也查 ScoreStore 里持久化的国家(测活后更新过)
-		if ns := s.score.Get(p.Identifier()); ns != nil {
-			if c := strings.ToUpper(strings.TrimSpace(ns.Country)); c != "" {
-				country = c
-			}
+	// 1. 主池 → 注册池(只迁移有出口 IP 国家记录的)
+	for _, p := range s.store.List() {
+		ns := s.score.Get(p.Identifier())
+		if ns == nil {
+			continue
+		}
+		country := strings.ToUpper(strings.TrimSpace(ns.Country))
+		if country == "" {
+			continue // 没测活,跳过
 		}
 		isCN := country == "CN" || country == "CHINA"
 		isRegisterEligible := isCN || country == "HK" || country == "MO" || country == "TW" ||
 			country == "HONG KONG" || country == "HONGKONG" || country == "MACAO" || country == "MACAU" || country == "TAIWAN"
 		if isCN {
-			// CN 只放注册池
 			s.store.Delete(p.Identifier())
 			if _, exists := s.registerStore.Get(p.Identifier()); !exists {
 				s.registerStore.Add(p)
 			}
 			migrated++
 		} else if isRegisterEligible {
-			// HK/MO/TW 两边都放
 			if _, exists := s.registerStore.Get(p.Identifier()); !exists {
 				s.registerStore.Add(p)
+			}
+		}
+	}
+	// 2. 注册池 → 主池(把误迁移的非 CN 出口节点移回)
+	for _, p := range s.registerStore.List() {
+		ns := s.score.Get(p.Identifier())
+		if ns == nil {
+			continue
+		}
+		country := strings.ToUpper(strings.TrimSpace(ns.Country))
+		if country == "" {
+			continue // 没测活,保留在注册池
+		}
+		isCN := country == "CN" || country == "CHINA"
+		isRegisterEligible := isCN || country == "HK" || country == "MO" || country == "TW" ||
+			country == "HONG KONG" || country == "HONGKONG" || country == "MACAO" || country == "MACAU" || country == "TAIWAN"
+		if !isRegisterEligible {
+			// 非注册地区,移回主池
+			s.registerStore.Delete(p.Identifier())
+			if _, exists := s.store.Get(p.Identifier()); !exists {
+				s.store.Add(p)
 			}
 		}
 	}
