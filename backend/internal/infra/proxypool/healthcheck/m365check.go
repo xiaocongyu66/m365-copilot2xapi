@@ -197,13 +197,26 @@ func m365CheckOneOpt(p proxy.Proxy, enableDownload bool) M365CheckResult {
 	}
 	conn.Close()
 
-	// 第 2 层:微软可达性测试(轻量 HEAD 请求)
+	// 第 2 层:微软可达性测试(轻量 HEAD 请求) + 纯净度测试(同时进行)
 	accessible, accessErr := m365AccessibleTest(p)
 	result.Accessible = accessible
 	if !accessible {
 		result.Error = fmt.Sprintf("layer2: %v", accessErr)
 		return result
 	}
+
+	// 纯净度测试:通过代理获取出口 IP,查 ip-api.com 信誉
+	// 低于 40 分的节点标记为不稳定(入库时会被丢弃)
+	ipResult := CheckIPCleanliness(p)
+	if ipResult != nil {
+		if ipResult.IPScore < 40 {
+			result.Stable = false
+			result.Error = fmt.Sprintf("IP purity score %d (< 40): type=%s isp=%s", ipResult.IPScore, ipResult.IPType, ipResult.ISP)
+			return result
+		}
+	}
+	// 默认不做 5MB 测试,可达+纯净度通过即算稳定
+	result.Stable = true
 
 	// 第 3 层(可选):持续 5MB 下载稳定性测试
 	if enableDownload {
@@ -218,9 +231,6 @@ func m365CheckOneOpt(p proxy.Proxy, enableDownload bool) M365CheckResult {
 			}
 			result.Error = errMsg
 		}
-	} else {
-		// 默认不做 5MB 测试,可达即算稳定
-		result.Stable = true
 	}
 	return result
 }
