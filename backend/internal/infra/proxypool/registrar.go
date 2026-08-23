@@ -168,16 +168,12 @@ func (r *Registrar) runLoop(ctx context.Context) {
 
 		// 检查是否有可用的 CN/HK/MO/TW 代理
 		// 没有代理时停止,不疯狂重试
-		_, _, _, usableNodes := r.svc.Registrar().Stats()
-		_ = usableNodes
-		nodeID, release := r.pickUnusedProxy()
+		nodeID, _ := r.pickUnusedProxy()
 		if nodeID == "" {
 			log.Infof("M365 registrar: no available CN/HK/MO/TW proxy, stopping")
 			r.recordResult(RegisterResult{Error: "没有可用的 CN/HK/MO/TW 代理"})
 			break
 		}
-		// 把节点放回去(pickUnusedProxy 只是检查,不消耗)
-		// 实际消耗在 registerOne 里
 
 		// 并发注册
 		var wg sync.WaitGroup
