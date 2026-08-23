@@ -3,6 +3,7 @@ package store
 import (
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -95,6 +96,12 @@ func (s *Store) ImportFromText(text string) (imported, skipped int) {
 		if err != nil || p == nil {
 			skipped++
 			continue
+		}
+		// 节点没名字时自动补一个(类型+服务器:端口)
+		if p.BaseInfo().Name == "" {
+			base := p.BaseInfo()
+			autoName := p.TypeName() + "-" + base.Server + ":" + strconv.Itoa(base.Port)
+			p.SetName(autoName)
 		}
 		id := p.Identifier()
 		if _, exists := s.proxies[id]; exists {

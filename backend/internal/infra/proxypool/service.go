@@ -92,7 +92,7 @@ func (s *Service) CheckOne(identifier string) {
 	}
 	// 用 healthcheck 的 m365CheckOne 测试
 	result := healthcheck.M365CheckOnePublic(p)
-	s.score.RecordCheckFull(identifier, result.Stable, result.Bytes, int64(result.Latency), result.PurityScore, result.IPType, result.ExitIP, result.ISP)
+	s.score.RecordCheckFull(identifier, result.Stable, result.Bytes, int64(result.Latency), result.PurityScore, result.IPType, result.ExitIP, result.ISP, result.CountryCode)
 }
 
 // CheckOneSync 同步测试单个节点,返回完整结果(给 API 用)
@@ -102,7 +102,7 @@ func (s *Service) CheckOneSync(identifier string) (healthcheck.M365CheckResult, 
 		return healthcheck.M365CheckResult{}, false
 	}
 	result := healthcheck.M365CheckOnePublic(p)
-	s.score.RecordCheckFull(identifier, result.Stable, result.Bytes, int64(result.Latency), result.PurityScore, result.IPType, result.ExitIP, result.ISP)
+	s.score.RecordCheckFull(identifier, result.Stable, result.Bytes, int64(result.Latency), result.PurityScore, result.IPType, result.ExitIP, result.ISP, result.CountryCode)
 	return result, true
 }
 

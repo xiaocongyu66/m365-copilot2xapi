@@ -205,11 +205,11 @@ func (s *ScoreStore) RecordSuccess(identifier string) {
 
 // RecordCheckResult 记录测活结果
 func (s *ScoreStore) RecordCheckResult(identifier string, stable bool, bytes int64) {
-	s.RecordCheckFull(identifier, stable, bytes, 0, 0, "", "", "")
+	s.RecordCheckFull(identifier, stable, bytes, 0, 0, "", "", "", "")
 }
 
-// RecordCheckFull 记录完整测活结果(含延迟、纯净度、IP 类型)
-func (s *ScoreStore) RecordCheckFull(identifier string, stable bool, bytes int64, latencyNs int64, purityScore int, ipType, exitIP, isp string) {
+// RecordCheckFull 记录完整测活结果(含延迟、纯净度、IP 类型、国家)
+func (s *ScoreStore) RecordCheckFull(identifier string, stable bool, bytes int64, latencyNs int64, purityScore int, ipType, exitIP, isp, country string) {
 	ns := s.Get(identifier)
 	if ns == nil {
 		return
@@ -224,6 +224,10 @@ func (s *ScoreStore) RecordCheckFull(identifier string, stable bool, bytes int64
 	ns.LastIPType = ipType
 	ns.LastExitIP = exitIP
 	ns.LastISP = isp
+	// 用出口 IP 的国家代码更新(比查服务器地址准确)
+	if country != "" {
+		ns.Country = country
+	}
 
 	if stable {
 		ns.Score += scoreTestPassBonus

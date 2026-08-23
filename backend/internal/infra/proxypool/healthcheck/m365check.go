@@ -51,6 +51,7 @@ type M365CheckResult struct {
 	PurityScore int           // IP 纯净度评分 0-100(0 表示未测)
 	IPType      string        // residential / mobile / datacenter
 	ISP         string        // ISP 名称
+	CountryCode string        // 出口 IP 的国家代码(从 ip-api.com 获取)
 }
 
 // M365CheckAll 对所有代理执行三层测活:
@@ -212,12 +213,17 @@ func m365CheckOneOpt(p proxy.Proxy, enableDownload bool) M365CheckResult {
 
 	// 纯净度测试:通过代理获取出口 IP,查 ip-api.com 信誉
 	// 低于 40 分的节点标记为不稳定(入库时会被丢弃)
+	// 同时用出口 IP 的国家代码更新节点国家(比查服务器地址准确)
 	ipResult := CheckIPCleanliness(p)
 	if ipResult != nil {
 		result.ExitIP = ipResult.ExitIP
 		result.PurityScore = ipResult.IPScore
 		result.IPType = ipResult.IPType
 		result.ISP = ipResult.ISP
+		result.CountryCode = ipResult.CountryCode
+		if ipResult.CountryCode != "" {
+			p.SetCountry(ipResult.CountryCode)
+		}
 		if ipResult.IPScore < 40 {
 			result.Stable = false
 			result.Error = fmt.Sprintf("IP purity score %d (< 40): type=%s isp=%s", ipResult.IPScore, ipResult.IPType, ipResult.ISP)

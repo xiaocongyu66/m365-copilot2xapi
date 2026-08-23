@@ -26,10 +26,11 @@ type IPInfo struct {
 
 // IPCheckResult 是纯净度测试结果
 type IPCheckResult struct {
-	ExitIP   string // 出口 IP
-	IPType   string // residential / mobile / datacenter
-	IPScore  int    // 0-100 纯净度评分
-	ISP      string
+	ExitIP      string // 出口 IP
+	IPType      string // residential / mobile / datacenter
+	IPScore     int    // 0-100 纯净度评分
+	ISP         string
+	CountryCode string // 出口 IP 的国家代码(从 ip-api.com 获取,比查服务器地址准确)
 }
 
 // CheckIPCleanliness 通过代理获取出口 IP 并查询纯净度
@@ -53,10 +54,11 @@ func CheckIPCleanliness(p proxy.Proxy) *IPCheckResult {
 	score := computeIPScore(info, ipType)
 
 	return &IPCheckResult{
-		ExitIP:  exitIP,
-		IPType:  ipType,
-		IPScore: score,
-		ISP:     info.ISP,
+		ExitIP:      exitIP,
+		IPType:      ipType,
+		IPScore:     score,
+		ISP:         info.ISP,
+		CountryCode: info.CountryCode,
 	}
 }
 
