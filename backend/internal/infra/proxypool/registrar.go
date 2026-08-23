@@ -60,25 +60,37 @@ func NewRegistrar(svc *Service) *Registrar {
 // Register 注册一个新账号:
 //   - 通过代理池选择一个可用代理(必须是 CN/HK/MO/TW 的 IP)
 //   - 随机生成用户名/密码/显示名
-//   - 求解 Turnstile
+//   - 自动求解 Turnstile(用 Chrome 无头浏览器)
 //   - 提交注册
 //   - ROPC 换 token
 func (r *Registrar) Register(ctx context.Context, turnstileToken string) (*RegisterResult, error) {
-	// 1. 选择代理
-	nodeID, release := r.svc.PickNodeForRequest()
+	// 1. 选择代理(CN/HK/MO/TW 地区)
+	nodeID, release := r.svc.PickNodeForRegister()
 	if release != nil {
 		defer release()
 	}
 	if nodeID == "" {
-		return nil, fmt.Errorf("没有可用代理节点")
+		return nil, fmt.Errorf("没有 CN/HK/MO/TW 地区的可用代理节点")
 	}
 
-	// 2. 随机生成账号信息
+	// 2. 如果没有 turnstileToken,自动求解
+	if turnstileToken == "" {
+		log.Infof("自动求解 Turnstile token...")
+		solver := NewTurnstileSolver("https://office.965007.xyz", turnstileSiteKey, nil)
+		token, err := solver.Solve()
+		if err != nil {
+			return nil, fmt.Errorf("Turnstile 求解失败: %w", err)
+		}
+		turnstileToken = token
+		log.Infof("Turnstile 求解成功,token 长度: %d", len(token))
+	}
+
+	// 3. 随机生成账号信息
 	username := randomUsername()
 	password := randomPassword()
 	displayName := randomDisplayName()
 
-	// 3. 提交注册
+	// 4. 提交注册
 	acc, err := r.submitRegister(ctx, nodeID, username, password, displayName, turnstileToken)
 	if err != nil {
 		r.svc.RecordRequestError(nodeID, nodeID, registerURL, err.Error())
@@ -87,7 +99,7 @@ func (r *Registrar) Register(ctx context.Context, turnstileToken string) (*Regis
 
 	r.svc.RecordRequestSuccess(nodeID)
 
-	// 4. ROPC 换 token(refresh token)
+	// 5. ROPC 换 token(refresh token)
 	rt, at, err := r.rocpExchange(ctx, nodeID, acc.UPN, password)
 	if err != nil {
 		// 注册成功但换 token 失败,仍然返回账号信息(用户可以手动换 token)

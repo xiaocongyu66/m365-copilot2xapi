@@ -49,7 +49,7 @@ func (h *Handler) importNodes(c *gin.Context) {
 	var req importRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.Error(c, http.StatusBadRequest, "invalidRequest", "请求参数无效")
-		return
+		
 	}
 	imported, skipped := h.svc.ImportNodes(req.Text)
 	response.Success(c, http.StatusOK, gin.H{"imported": imported, "skipped": skipped})
@@ -64,7 +64,7 @@ func (h *Handler) setEnabled(c *gin.Context) {
 	var req setEnabledRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.Error(c, http.StatusBadRequest, "invalidRequest", "请求参数无效")
-		return
+		
 	}
 	h.svc.SetEnabled(req.IDs, req.Enabled)
 	response.Success(c, http.StatusOK, gin.H{"status": "updated"})
@@ -78,7 +78,7 @@ func (h *Handler) deleteNodes(c *gin.Context) {
 	var req deleteRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.Error(c, http.StatusBadRequest, "invalidRequest", "请求参数无效")
-		return
+		
 	}
 	h.svc.DeleteNodes(req.IDs)
 	response.Success(c, http.StatusOK, gin.H{"status": "deleted"})
@@ -88,7 +88,7 @@ func (h *Handler) clearErrors(c *gin.Context) {
 	var req deleteRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.Error(c, http.StatusBadRequest, "invalidRequest", "请求参数无效")
-		return
+		
 	}
 	h.svc.ClearErrors(req.IDs)
 	response.Success(c, http.StatusOK, gin.H{"status": "cleared"})
@@ -112,7 +112,7 @@ func (h *Handler) fetchNow(c *gin.Context) {
 	var req fetchRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.Error(c, http.StatusBadRequest, "invalidRequest", "请求参数无效")
-		return
+		
 	}
 	// 立即抓取一次
 	result := h.svc.Fetcher().RunOnceWithSource(req.URL)
@@ -153,7 +153,7 @@ func (h *Handler) updateFetcherConfig(c *gin.Context) {
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.Error(c, http.StatusBadRequest, "invalidRequest", "请求参数无效")
-		return
+		
 	}
 	// 解析间隔
 	interval := proxypool.DefaultFetchInterval()
@@ -193,18 +193,18 @@ func (h *Handler) registerAccount(c *gin.Context) {
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.Error(c, http.StatusBadRequest, "invalidRequest", "请求参数无效")
-		return
+		
 	}
 	if req.TurnstileToken == "" {
-		response.Error(c, http.StatusBadRequest, "turnstileRequired", "需要 Turnstile token")
-		return
+		// turnstileToken 为空时自动求解
+		
 	}
 	// 异步注册(注册可能需要几十秒)
 	registrar := proxypool.NewRegistrar(h.svc)
 	result, err := registrar.Register(c.Request.Context(), req.TurnstileToken)
 	if err != nil {
 		response.Error(c, http.StatusBadGateway, "registerFailed", err.Error())
-		return
+		
 	}
 	response.Success(c, http.StatusOK, result)
 }
