@@ -207,7 +207,31 @@ func (s *Service) Reload() {
 	}
 }
 
-// MigrateCNToRegister 按出口 IP 国家(测活后持久化的 ns.Country)分流:
+// ResetCountries 清空所有节点的国家记录(ScoreStore 的 ns.Country + proxy.Base 的 Country)。
+// 用于修复之前用服务器地址查国家导致的不准记录,让测活后重新填充准确的出口 IP 国家。
+func (s *Service) ResetCountries() int {
+	count := 0
+	// 清 ScoreStore 的 Country
+	for _, ns := range s.score.List() {
+		s.score.SetCountry(ns.Identifier, "")
+		count++
+	}
+	// 清 proxy.Base 的 Country(主池 + 注册池)
+	for _, p := range s.store.List() {
+		p.SetCountry("")
+	}
+	for _, p := range s.registerStore.List() {
+		p.SetCountry("")
+	}
+	// 把注册池的节点全部移回主池(等测活后重新分流)
+	for _, p := range s.registerStore.List() {
+		s.registerStore.Delete(p.Identifier())
+		if _, exists := s.store.Get(p.Identifier()); !exists {
+			s.store.Add(p)
+		}
+	}
+	return count
+}
 //   - 出口 IP 是 CN 的节点:从主池移到注册池
 //   - 出口 IP 是 HK/MO/TW 的节点:加到注册池(两边都放)
 //   - 出口 IP 是其他国家的节点:如果误在注册池,移回主池

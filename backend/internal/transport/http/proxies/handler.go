@@ -39,6 +39,7 @@ func (h *Handler) Register(router *gin.RouterGroup) {
 	router.POST("/proxies/fetcher/config", h.updateFetcherConfig)
 	router.POST("/proxies/restart", h.restartService)
 	router.POST("/proxies/migrate-cn", h.migrateCN)
+	router.POST("/proxies/reset-countries", h.resetCountries)
 }
 
 func (h *Handler) listNodes(c *gin.Context) {
@@ -125,6 +126,13 @@ func (h *Handler) restartService(c *gin.Context) {
 func (h *Handler) migrateCN(c *gin.Context) {
 	migrated := h.svc.MigrateCNToRegister()
 	response.Success(c, http.StatusOK, gin.H{"migrated": migrated})
+}
+
+// resetCountries 清空所有节点的国家记录,把注册池节点移回主池。
+// 用于修复之前用服务器地址查国家的不准记录,测活后重新填充。
+func (h *Handler) resetCountries(c *gin.Context) {
+	count := h.svc.ResetCountries()
+	response.Success(c, http.StatusOK, gin.H{"reset": count})
 }
 func (h *Handler) checkSync(c *gin.Context) {
 	identifier := c.Query("identifier")

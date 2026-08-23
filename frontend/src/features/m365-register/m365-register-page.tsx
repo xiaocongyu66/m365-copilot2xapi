@@ -32,10 +32,11 @@ interface ProxyNode {
   country: string; score: number; enabled: boolean; autoDisabled: boolean;
 }
 
-const ALLOWED = ["China", "Hong Kong", "Macao", "Taiwan", "CN", "HK", "MO", "TW"];
+const ALLOWED_CODES = new Set(["CN", "HK", "MO", "TW", "CHINA", "HONG KONG", "HONGKONG", "MACAO", "MACAU", "TAIWAN"]);
 function isAllowed(country: string): boolean {
   if (!country) return false;
-  return ALLOWED.some((c) => country.includes(c));
+  // 精确匹配(大小写不敏感),避免子串误匹配
+  return ALLOWED_CODES.has(country.toUpperCase().trim());
 }
 
 async function apiGet<T>(path: string): Promise<T> {
