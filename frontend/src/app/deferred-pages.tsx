@@ -13,6 +13,7 @@ const GalleryPage = lazyNamed(() => import("@/features/media/gallery-page"), "Ga
 const VideoGalleryPage = lazyNamed(() => import("@/features/media/video-gallery-page"), "VideoGalleryPage");
 const ModelsPage = lazyNamed(() => import("@/features/models/models-page"), "ModelsPage");
 const ProxiesPage = lazyNamed(() => import("@/features/proxies/proxies-page"), "ProxiesPage");
+const M365RegisterPage = lazyNamed(() => import("@/features/m365-register/m365-register-page"), "M365RegisterPage");
 const QualityGuardPage = lazyNamed(() => import("@/features/quality-guard/quality-guard-page"), "QualityGuardPage");
 const SettingsPage = lazyNamed(() => import("@/features/settings/settings-page"), "SettingsPage");
 
@@ -70,6 +71,10 @@ export function DeferredApiDocsPage() {
 
 export function DeferredProxiesPage() {
   return <DeferredPage page={ProxiesPage} />;
+}
+
+export function DeferredM365RegisterPage() {
+  return <DeferredPage page={M365RegisterPage} />;
 }
 
 export function DeferredSettingsPage() {

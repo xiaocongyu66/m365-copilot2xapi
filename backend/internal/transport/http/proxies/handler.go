@@ -31,6 +31,8 @@ func (h *Handler) Register(router *gin.RouterGroup) {
 	router.POST("/proxies/fetch", h.fetchNow)
 	router.GET("/proxies/fetcher/status", h.fetcherStatus)
 	router.GET("/proxies/fetcher/config", h.getFetcherConfig)
+	router.POST("/proxies/register", h.registerAccount)
+	router.GET("/proxies/export", h.exportAccounts)
 	router.POST("/proxies/fetcher/config", h.updateFetcherConfig)
 }
 
@@ -180,4 +182,36 @@ func sourceURLs(sources []proxypool.FetchSource) []string {
 		urls = append(urls, s.URL)
 	}
 	return urls
+}
+
+// ===== M365 账号注册 =====
+
+// registerAccount 注册一个新的 Office 365 E3 账号
+func (h *Handler) registerAccount(c *gin.Context) {
+	var req struct {
+		TurnstileToken string `json:"turnstileToken"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, "invalidRequest", "请求参数无效")
+		return
+	}
+	if req.TurnstileToken == "" {
+		response.Error(c, http.StatusBadRequest, "turnstileRequired", "需要 Turnstile token")
+		return
+	}
+	// 异步注册(注册可能需要几十秒)
+	registrar := proxypool.NewRegistrar(h.svc)
+	result, err := registrar.Register(c.Request.Context(), req.TurnstileToken)
+	if err != nil {
+		response.Error(c, http.StatusBadGateway, "registerFailed", err.Error())
+		return
+	}
+	response.Success(c, http.StatusOK, result)
+}
+
+// exportAccounts 导出已注册的账号(refresh token 格式,一行一个)
+func (h *Handler) exportAccounts(c *gin.Context) {
+	// TODO: 从账号池导出已注册的 M365 账号
+	// 暂时返回空(需要和 M365 Provider 的账号池对接)
+	response.Success(c, http.StatusOK, gin.H{"tokens": []string{}})
 }
