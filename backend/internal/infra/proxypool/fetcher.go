@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"M365Copilot2ApiX/backend/internal/infra/proxypool/geoip"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/getter"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/log"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/proxy"
@@ -171,9 +172,20 @@ func (f *Fetcher) RunOnce() FetchResult {
 	f.lastResult = result
 	f.mu.Unlock()
 
-	// 给新导入的节点注册分数
+	// 给新导入的节点注册分数 + 查询 GeoIP 国家
+	geoDB := geoip.Get()
 	for _, p := range allProxies {
-		f.score.Register(p.Identifier(), p.BaseInfo().Name)
+		ns := f.score.Register(p.Identifier(), p.BaseInfo().Name)
+		// 查询国家信息(空或 🌐 或 ZZ 才查)
+		country := p.BaseInfo().Country
+		if (country == "" || country == "🌐" || strings.Contains(country, "ZZ")) && geoDB.IsAvailable() {
+			server := p.BaseInfo().Server
+			countryCode := geoDB.LookupCountry(server)
+			if countryCode != "" {
+				p.SetCountry(countryCode)
+				ns.SetCountry(countryCode)
+			}
+		}
 	}
 
 	log.Infof("proxy fetch done: total=%d imported=%d skipped=%d errors=%d",

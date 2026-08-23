@@ -2,8 +2,10 @@ package proxypool
 
 import (
 	"context"
+	"strings"
 	"time"
 
+	"M365Copilot2ApiX/backend/internal/infra/proxypool/geoip"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/healthcheck"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/log"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/store"
@@ -56,9 +58,22 @@ func (c *Checker) RunOnce() {
 		return
 	}
 
-	// 确保所有节点都注册了分数
+	// 确保 GeoIP 数据库已初始化(首次使用会自动下载)
+	geoDB := geoip.Get()
+
+	// 为没有国家信息的节点查询 GeoIP
 	for _, p := range proxies {
-		c.score.Register(p.Identifier(), p.BaseInfo().Name)
+		ns := c.score.Register(p.Identifier(), p.BaseInfo().Name)
+		// 如果节点没有国家信息(空或 🌐),用 GeoIP 查询并设置
+		country := p.BaseInfo().Country
+		if (country == "" || country == "🌐" || strings.Contains(country, "ZZ")) && geoDB.IsAvailable() {
+			server := p.BaseInfo().Server
+			countryCode := geoDB.LookupCountry(server)
+			if countryCode != "" {
+				p.SetCountry(countryCode)
+				ns.SetCountry(countryCode)
+			}
+		}
 	}
 
 	// 执行 M365 测活(可达性 + 持续 10MB 下载)

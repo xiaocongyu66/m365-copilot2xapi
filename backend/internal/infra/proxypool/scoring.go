@@ -31,6 +31,7 @@ type NodeScore struct {
 
 	Identifier  string    // 节点唯一标识
 	Name        string    // 节点名称
+	Country     string    // 节点国家代码(CN/HK/US 等)
 	Score       int       // 当前分数
 	Enabled     bool      // 是否启用(用户可手动禁用)
 	AutoDisabled bool     // 因分数过低被自动禁用
@@ -89,21 +90,22 @@ func (s *ScoreStore) Get(identifier string) *NodeScore {
 
 // NodeScoreSnapshot 是 NodeScore 的快照(不含锁,用于返回给调用方)
 type NodeScoreSnapshot struct {
-	Identifier     string
-	Name           string
-	Score          int
-	Enabled        bool
-	AutoDisabled   bool
-	ErrorCount     int
-	LastError      string
-	LastErrorAt    time.Time
-	SuccessCount   int
-	LastSuccessAt  time.Time
-	UpSince        time.Time
-	LastCheckAt    time.Time
-	LastCheckStable bool
-	LastCheckBytes int64
-	ActiveRequests int
+	Identifier       string
+	Name             string
+	Country          string
+	Score            int
+	Enabled          bool
+	AutoDisabled     bool
+	ErrorCount       int
+	LastError         string
+	LastErrorAt      time.Time
+	SuccessCount     int
+	LastSuccessAt    time.Time
+	UpSince          time.Time
+	LastCheckAt      time.Time
+	LastCheckStable  bool
+	LastCheckBytes   int64
+	ActiveRequests   int
 }
 
 // List 返回所有节点分数(快照)
@@ -116,6 +118,7 @@ func (s *ScoreStore) List() []NodeScoreSnapshot {
 		result = append(result, NodeScoreSnapshot{
 			Identifier:      ns.Identifier,
 			Name:            ns.Name,
+			Country:         ns.Country,
 			Score:           ns.Score,
 			Enabled:         ns.Enabled,
 			AutoDisabled:    ns.AutoDisabled,
@@ -272,4 +275,18 @@ func (s *ScoreStore) UsableNodes() []*NodeScore {
 		}
 	}
 	return result
+}
+
+// SetCountry 设置节点国家代码
+func (ns *NodeScore) SetCountry(country string) {
+	ns.mu.Lock()
+	defer ns.mu.Unlock()
+	ns.Country = country
+}
+
+// GetCountry 获取节点国家代码
+func (ns *NodeScore) GetCountry() string {
+	ns.mu.RLock()
+	defer ns.mu.RUnlock()
+	return ns.Country
 }

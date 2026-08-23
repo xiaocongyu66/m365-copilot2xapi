@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"M365Copilot2ApiX/backend/internal/infra/proxypool/geoip"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/log"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/store"
 )
@@ -66,6 +67,8 @@ func (s *Service) Checker() *Checker { return s.checker }
 
 // Start 启动抓取器和测活器
 func (s *Service) Start() {
+	// 初始化 GeoIP 数据库(自动下载,加载本地数据库)
+	geoip.Get()
 	s.checker.Start()
 	// fetcher 由配置驱动启动
 }
@@ -99,7 +102,7 @@ func (s *Service) ListNodes() []NodeView {
 			Type:          p.TypeName(),
 			Server:        p.BaseInfo().Server,
 			Port:          p.BaseInfo().Port,
-			Country:       p.BaseInfo().Country,
+			Country:       firstNonEmpty(sc.Country, p.BaseInfo().Country),
 			Score:         sc.Score,
 			Enabled:       sc.Enabled,
 			AutoDisabled:  sc.AutoDisabled,
@@ -229,4 +232,13 @@ func (s *Service) HTTPClientWithNode(identifier string) *http.Client {
 
 func init() {
 	log.Infof("proxypool service initialized")
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, v := range values {
+		if v != "" && v != "🌐" {
+			return v
+		}
+	}
+	return ""
 }

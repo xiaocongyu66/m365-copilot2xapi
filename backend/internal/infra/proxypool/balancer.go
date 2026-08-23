@@ -1,6 +1,7 @@
 package proxypool
 
 import (
+	"strings"
 	"sync/atomic"
 )
 
@@ -21,11 +22,50 @@ func NewBalancer(store *ScoreStore) *Balancer {
 	return &Balancer{store: store}
 }
 
-// PickNode 为一个新请求选择一个节点。
-// 返回选中的节点标识,以及一个 release 函数(请求完成后调用,减少活跃计数)。
-// 如果没有可用节点,返回空字符串和 nil(调用方应回退到原始 IP)。
+// 中国地区代码(注册 M365 时只允许这些地区的代理)
+var allowedRegisterCountries = map[string]bool{"CN": true, "HK": true, "MO": true, "TW": true}
+
+// PickNode 为一个新请求选择一个节点(排除中国代理)。
+// M365 请求不走中国代理(直连即可),但注册时可以走中国代理。
 func (b *Balancer) PickNode() (identifier string, release func()) {
-	nodes := b.store.UsableNodes()
+	return b.pickNodeWithFilter(func(country string) bool {
+		// 排除中国代理(M365 请求不走中国代理)
+		return !isChineseProxy(country)
+	})
+}
+
+// PickNodeForRegister 为 M365 注册选择一个节点(只选 CN/HK/MO/TW 地区)。
+// 注册网站 GeoIP 限制只允许这些地区。
+func (b *Balancer) PickNodeForRegister() (identifier string, release func()) {
+	return b.pickNodeWithFilter(func(country string) bool {
+		// 只选 CN/HK/MO/TW
+		return isAllowedRegisterCountry(country)
+	})
+}
+
+func isChineseProxy(country string) bool {
+	c := strings.ToUpper(strings.TrimSpace(country))
+	return c == "CN" || c == "CHINA" || strings.Contains(c, "CN")
+}
+
+func isAllowedRegisterCountry(country string) bool {
+	c := strings.ToUpper(strings.TrimSpace(country))
+	return allowedRegisterCountries[c] || c == "CHINA" || c == "HONG KONG" || c == "HONGKONG" || c == "MACAO" || c == "MACAU" || c == "TAIWAN"
+}
+
+// pickNodeWithFilter 按过滤条件选择节点
+func (b *Balancer) pickNodeWithFilter(countryFilter func(country string) bool) (identifier string, release func()) {
+	allNodes := b.store.UsableNodes()
+	if len(allNodes) == 0 {
+		return "", nil
+	}
+	// 按国家过滤
+	nodes := make([]*NodeScore, 0, len(allNodes))
+	for _, ns := range allNodes {
+		if countryFilter(ns.Country) {
+			nodes = append(nodes, ns)
+		}
+	}
 	if len(nodes) == 0 {
 		return "", nil
 	}
