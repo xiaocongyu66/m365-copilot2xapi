@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -58,10 +59,13 @@ func (t *TurnstileSolver) Solve() (string, error) {
 		return "", fmt.Errorf("未找到 Chrome/Chromium,请安装: apt install chromium-browser")
 	}
 
+	// 确保 Xvfb 虚拟显示器在运行(Turnstile JS 需要渲染环境)
 	display := os.Getenv("DISPLAY")
 	if display == "" {
 		display = ":99"
+		os.Setenv("DISPLAY", display)
 	}
+	ensureXvfb(display)
 
 	fp := t.fingerprint
 	if fp == nil {
@@ -183,7 +187,7 @@ func (t *TurnstileSolver) Solve() (string, error) {
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, t.chromePath,
-		"--headless=old",
+		"--headless=new",
 		"--no-sandbox",
 		"--disable-gpu",
 		"--disable-dev-shm-usage",
@@ -234,4 +238,30 @@ func (t *TurnstileSolver) Solve() (string, error) {
 func pathExists(p string) bool {
 	_, err := os.Stat(p)
 	return err == nil
+}
+
+// ensureXvfb 确保指定 display 上有 Xvfb 虚拟显示器在运行
+func ensureXvfb(display string) {
+	// 检查 Xvfb 是否已在运行
+	displayNum := strings.TrimPrefix(display, ":")
+	tmpFile := "/tmp/.X" + displayNum + "-lock"
+	if _, err := os.Stat(tmpFile); err == nil {
+		return // Xvfb 已在运行
+	}
+	// 查找 Xvfb 路径
+	xvfbPath := ""
+	for _, p := range []string{"/usr/bin/Xvfb", "/usr/local/bin/Xvfb", "/usr/bin/xvfb-run"} {
+		if pathExists(p) {
+			xvfbPath = p
+			break
+		}
+	}
+	if xvfbPath == "" {
+		return // 没安装 Xvfb,Chrome --headless=new 可以不需要
+	}
+	// 启动 Xvfb
+	cmd := exec.Command(xvfbPath, display, "-screen", "0", "1920x1080x24", "-ac")
+	cmd.Start()
+	time.Sleep(2 * time.Second)
+	fmt.Printf("[Turnstile] Xvfb started on display %s\n", display)
 }
