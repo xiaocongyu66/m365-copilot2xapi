@@ -152,6 +152,8 @@ func (a *Adapter) RefreshCredential(ctx context.Context, cred account.Credential
 	if strings.TrimSpace(refreshToken) != "" {
 		tok, refreshErr = Refresh(refreshToken)
 	}
+	// 提前解密密码(无论是否走 ROPC,刷新成功后也要把密码保留到新的 EncryptedRefreshToken)
+	password := a.decryptPassword(cred)
 	if refreshErr != nil || strings.TrimSpace(refreshToken) == "" {
 		// 尝试 2:用账号密码(ROPC)登录获取新 token
 		// 从 credential 的 email 和 userID 提取 UPN
@@ -165,8 +167,6 @@ func (a *Adapter) RefreshCredential(ctx context.Context, cred account.Credential
 			}
 			return provider.RefreshedCredential{}, fmt.Errorf("credential has no refresh token and no UPN for ROPC")
 		}
-		// 从 EncryptedRefreshToken 的 \x00 分隔符后解密出密码(注册器存入)
-		password := a.decryptPassword(cred)
 		if password == "" {
 			if refreshErr != nil {
 				return provider.RefreshedCredential{}, mapOAuthError(refreshErr)
