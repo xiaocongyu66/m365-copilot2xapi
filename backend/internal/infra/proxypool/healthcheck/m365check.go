@@ -53,6 +53,53 @@ type M365CheckResult struct {
 //   - 第 2 层:微软可达性测试(能访问 login.microsoftonline.com)
 //   - 第 3 层:持续 10MB 下载稳定性测试(持续发包,不断流)
 // 只有通过三层测试的代理才算可用。多个代理同时测试。
+// M365CheckAndImport 测活通过一个就立刻入库(流式)
+// onProgress 回调用于进度更新
+// onImport 回调用于把通过的代理立即入库
+func M365CheckAndImport(proxies []proxy.Proxy, onProgress func(done, total, usable int64), onImport func(p proxy.Proxy)) {
+	if len(proxies) == 0 {
+		return
+	}
+	numWorker := SpeedConn
+	if numWorker <= 0 {
+		numWorker = 200
+	}
+	if numWorker > 500 {
+		numWorker = 500
+	}
+
+	pool := newSimplePool(numWorker)
+	var wg sync.WaitGroup
+
+	completed := int64(0)
+	passed := int64(0)
+	total := int64(len(proxies))
+	for _, p := range proxies {
+		wg.Add(1)
+		pp := p
+		pool.submit(func() {
+			defer pool.jobDone()
+			defer wg.Done()
+			r := m365CheckOne(pp)
+			done := atomic.AddInt64(&completed, 1)
+			if r.Accessible && r.Stable {
+				atomic.AddInt64(&passed, 1)
+				// 通过测试,立刻入库!
+				if onImport != nil {
+					onImport(r.Proxy)
+				}
+			}
+			if onProgress != nil {
+				onProgress(done, total, atomic.LoadInt64(&passed))
+			}
+			if done%100 == 0 || done == total {
+				log.Infof("M365 check+import progress: %d/%d (%.0f%%) imported=%d", done, total, float64(done)/float64(total)*100, atomic.LoadInt64(&passed))
+			}
+		})
+	}
+	wg.Wait()
+}
+
 func M365CheckAllWithProgress(proxies []proxy.Proxy, onProgress func(done, total, usable int64)) []M365CheckResult {
 	if len(proxies) == 0 {
 		return nil
@@ -85,9 +132,6 @@ func M365CheckAllWithProgress(proxies []proxy.Proxy, onProgress func(done, total
 			}
 			if onProgress != nil {
 				onProgress(done, total, atomic.LoadInt64(&passed))
-			}
-			if done%100 == 0 || done == total {
-				log.Infof("M365 check progress: %d/%d (%.0f%%)", done, total, float64(done)/float64(total)*100)
 			}
 		})
 	}

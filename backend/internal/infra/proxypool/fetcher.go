@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/geoip"
@@ -196,37 +197,34 @@ func (f *Fetcher) RunOnce() FetchResult {
 	f.progressUsable = 0
 	f.mu.Unlock()
 
-	// 入库前两层测试:TCP/UDP 连通 → 微软可达(默认不做 5MB 下载)
-	// 流式入库:测试通过一个就立即入库,不等全部测完
-	log.Infof("fetcher: 2-layer test on %d new proxies (TCP/UDP → Microsoft)...", len(allProxies))
-	results := healthcheck.M365CheckAllWithProgress(allProxies, func(done, total, usable int64) {
-		f.mu.Lock()
-		f.progressDone = done
-		f.progressUsable = usable
-		f.mu.Unlock()
-	})
-
-	// 流式入库:收集通过的节点
-	usable := make([]proxy.Proxy, 0, len(results))
-	for _, r := range results {
-		if r.Accessible && r.Stable {
-			usable = append(usable, r.Proxy)
-		}
-	}
-	result.Skipped = result.Total - len(usable)
-	log.Infof("fetcher: 2-layer done: total=%d usable=%d dropped=%d", len(allProxies), len(usable), result.Skipped)
+	// 入库前两层测试:TCP/UDP 连通 → 微软可达
+	// 流式入库:测试通过一个就立刻入库,不等全部测完!
+	log.Infof("fetcher: 2-layer test on %d new proxies (TCP/UDP → Microsoft, streaming import)...", len(allProxies))
+	importedCount := int64(0)
+	healthcheck.M365CheckAndImport(allProxies,
+		// 进度回调
+		func(done, total, usable int64) {
+			f.mu.Lock()
+			f.progressDone = done
+			f.progressUsable = usable
+			f.mu.Unlock()
+		},
+		// 立刻入库回调:每通过一个就导入
+		func(p proxy.Proxy) {
+			f.importProxies([]proxy.Proxy{p})
+			atomic.AddInt64(&importedCount, 1)
+		},
+	)
+	result.Imported = int(atomic.LoadInt64(&importedCount))
+	result.Skipped = result.Total - result.Imported
+	log.Infof("fetcher: done: total=%d imported=%d dropped=%d", len(allProxies), result.Imported, result.Skipped)
 
 	// 设置进度:完成
 	f.mu.Lock()
 	f.progressDone = int64(len(allProxies))
-	f.progressUsable = int64(len(usable))
+	f.progressUsable = importedCount
 	f.progressStage = "done"
 	f.mu.Unlock()
-
-	// 导入通过测试的节点
-	imported, skipped := f.importProxies(usable)
-	result.Imported = imported
-	result.Skipped += skipped
 
 	f.mu.Lock()
 	f.lastRun = time.Now()
