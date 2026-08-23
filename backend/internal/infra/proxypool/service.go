@@ -18,6 +18,12 @@ import (
 //   - Fetcher:定时抓取
 //   - Checker:定时测活
 //   - ErrorReporter:请求报错推送
+// AccountImporter 把 M365 账号(refresh token + email + password)导入到账号池。
+// 由 application 层注入,proxypool 不依赖 account application 包。
+type AccountImporter interface {
+	ImportM365Account(ctx context.Context, refreshToken, email, password string) error
+}
+
 type Service struct {
 	mu       sync.RWMutex
 	store    *store.Store
@@ -26,6 +32,7 @@ type Service struct {
 	fetcher  *Fetcher
 	checker  *Checker
 	registrar *Registrar
+	accountImporter AccountImporter
 
 	// 报错缓冲(供前端轮询读取)
 	errorMu     sync.Mutex
@@ -51,6 +58,11 @@ func NewService() *Service {
 	s.checker = NewChecker(s.store, s.score)
 	s.registrar = NewRegistrar(s)
 	return s
+}
+
+// SetAccountImporter 注入账号导入器(application 层调用)
+func (s *Service) SetAccountImporter(importer AccountImporter) {
+	s.accountImporter = importer
 }
 
 // Store 返回节点存储
@@ -79,18 +91,18 @@ func (s *Service) CheckOne(identifier string) {
 	}
 	// 用 healthcheck 的 m365CheckOne 测试
 	result := healthcheck.M365CheckOnePublic(p)
-	s.score.RecordCheckResult(identifier, result.Stable, result.Bytes)
+	s.score.RecordCheckFull(identifier, result.Stable, result.Bytes, int64(result.Latency), result.PurityScore, result.IPType, result.ExitIP, result.ISP)
 }
 
-// CheckOneSync 同步测试单个节点,返回结果(给 API 用)
-func (s *Service) CheckOneSync(identifier string) (accessible, stable bool, err string) {
+// CheckOneSync 同步测试单个节点,返回完整结果(给 API 用)
+func (s *Service) CheckOneSync(identifier string) (healthcheck.M365CheckResult, bool) {
 	p, ok := s.store.Get(identifier)
 	if !ok {
-		return false, false, "node not found"
+		return healthcheck.M365CheckResult{}, false
 	}
 	result := healthcheck.M365CheckOnePublic(p)
-	s.score.RecordCheckResult(identifier, result.Stable, result.Bytes)
-	return result.Accessible, result.Stable, result.Error
+	s.score.RecordCheckFull(identifier, result.Stable, result.Bytes, int64(result.Latency), result.PurityScore, result.IPType, result.ExitIP, result.ISP)
+	return result, true
 }
 
 // Start 启动抓取器和测活器
@@ -125,23 +137,28 @@ func (s *Service) ListNodes() []NodeView {
 	for _, p := range proxies {
 		sc := scoreMap[p.Identifier()]
 		views = append(views, NodeView{
-			Identifier:    p.Identifier(),
-			Name:          p.BaseInfo().Name,
-			Type:          p.TypeName(),
-			Server:        p.BaseInfo().Server,
-			Port:          p.BaseInfo().Port,
-			Country:       firstNonEmpty(sc.Country, p.BaseInfo().Country),
-			Score:         sc.Score,
-			Enabled:       sc.Enabled,
-			AutoDisabled:  sc.AutoDisabled,
-			ErrorCount:     sc.ErrorCount,
-			LastError:      sc.LastError,
-			LastErrorAt:    sc.LastErrorAt,
-			SuccessCount:   sc.SuccessCount,
-			LastSuccessAt:  sc.LastSuccessAt,
-			LastCheckAt:    sc.LastCheckAt,
+			Identifier:      p.Identifier(),
+			Name:            p.BaseInfo().Name,
+			Type:            p.TypeName(),
+			Server:          p.BaseInfo().Server,
+			Port:            p.BaseInfo().Port,
+			Country:         firstNonEmpty(sc.Country, p.BaseInfo().Country),
+			Score:           sc.Score,
+			Enabled:         sc.Enabled,
+			AutoDisabled:    sc.AutoDisabled,
+			ErrorCount:      sc.ErrorCount,
+			LastError:       sc.LastError,
+			LastErrorAt:     sc.LastErrorAt,
+			SuccessCount:    sc.SuccessCount,
+			LastSuccessAt:   sc.LastSuccessAt,
+			LastCheckAt:     sc.LastCheckAt,
 			LastCheckStable: sc.LastCheckStable,
-			ActiveRequests: sc.ActiveRequests,
+			LastLatency:     sc.LastLatency / int64(time.Millisecond),
+			LastPurityScore: sc.LastPurityScore,
+			LastIPType:      sc.LastIPType,
+			LastExitIP:      sc.LastExitIP,
+			LastISP:         sc.LastISP,
+			ActiveRequests:  sc.ActiveRequests,
 		})
 	}
 	return views
@@ -149,23 +166,28 @@ func (s *Service) ListNodes() []NodeView {
 
 // NodeView 是节点的完整视图(基本信息 + 分数 + 状态)
 type NodeView struct {
-	Identifier     string    `json:"identifier"`
-	Name           string    `json:"name"`
-	Type           string    `json:"type"`
-	Server         string    `json:"server"`
-	Port           int       `json:"port"`
-	Country        string    `json:"country"`
-	Score          int       `json:"score"`
-	Enabled        bool      `json:"enabled"`
-	AutoDisabled   bool      `json:"autoDisabled"`
-	ErrorCount     int       `json:"errorCount"`
-	LastError      string    `json:"lastError"`
-	LastErrorAt    time.Time `json:"lastErrorAt"`
-	SuccessCount   int       `json:"successCount"`
-	LastSuccessAt  time.Time `json:"lastSuccessAt"`
-	LastCheckAt    time.Time `json:"lastCheckAt"`
-	LastCheckStable bool    `json:"lastCheckStable"`
-	ActiveRequests int       `json:"activeRequests"`
+	Identifier      string    `json:"identifier"`
+	Name            string    `json:"name"`
+	Type            string    `json:"type"`
+	Server          string    `json:"server"`
+	Port            int       `json:"port"`
+	Country         string    `json:"country"`
+	Score           int       `json:"score"`
+	Enabled         bool      `json:"enabled"`
+	AutoDisabled    bool      `json:"autoDisabled"`
+	ErrorCount      int       `json:"errorCount"`
+	LastError       string    `json:"lastError"`
+	LastErrorAt     time.Time `json:"lastErrorAt"`
+	SuccessCount    int       `json:"successCount"`
+	LastSuccessAt   time.Time `json:"lastSuccessAt"`
+	LastCheckAt     time.Time `json:"lastCheckAt"`
+	LastCheckStable bool      `json:"lastCheckStable"`
+	LastLatency     int64     `json:"lastLatencyMs"`
+	LastPurityScore int       `json:"lastPurityScore"`
+	LastIPType      string    `json:"lastIPType"`
+	LastExitIP      string    `json:"lastExitIP"`
+	LastISP         string    `json:"lastISP"`
+	ActiveRequests  int       `json:"activeRequests"`
 }
 
 // SetEnabled 批量启用/禁用节点

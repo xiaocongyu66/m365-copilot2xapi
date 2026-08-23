@@ -453,6 +453,7 @@ type CredentialSeed struct {
 	OIDCClientID            string
 	AccessToken             string
 	RefreshToken            string
+	Password                string // 明文密码(注册器场景),持久化前会被加密到 SourceKey
 	ExpiresAt               time.Time
 }
 

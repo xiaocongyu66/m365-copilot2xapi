@@ -59,11 +59,38 @@ func (a *Adapter) decryptAccessToken(cred account.Credential) (string, string, e
 	if err != nil {
 		return "", "", fmt.Errorf("decrypt access token: %w", err)
 	}
-	refreshToken, err := a.cipher.Decrypt(cred.EncryptedRefreshToken)
+	// EncryptedRefreshToken 可能含 "\x00" 分隔的加密密码(注册器场景)
+	// 只取 refresh token 部分,密码由 ROPC fallback 时单独提取
+	encRefresh := cred.EncryptedRefreshToken
+	if idx := strings.IndexByte(encRefresh, '\x00'); idx >= 0 {
+		encRefresh = encRefresh[:idx]
+	}
+	refreshToken, err := a.cipher.Decrypt(encRefresh)
 	if err != nil {
 		return "", "", fmt.Errorf("decrypt refresh token: %w", err)
 	}
 	return accessToken, refreshToken, nil
+}
+
+// decryptPassword 从 EncryptedRefreshToken 的 "\x00" 分隔符后提取加密密码并解密。
+// 注册器场景:credentialFromSeed 把加密密码追加到 EncryptedRefreshToken。
+func (a *Adapter) decryptPassword(cred account.Credential) string {
+	if a.cipher == nil {
+		return ""
+	}
+	idx := strings.IndexByte(cred.EncryptedRefreshToken, '\x00')
+	if idx < 0 {
+		return ""
+	}
+	encPassword := cred.EncryptedRefreshToken[idx+1:]
+	if encPassword == "" {
+		return ""
+	}
+	password, err := a.cipher.Decrypt(encPassword)
+	if err != nil {
+		return ""
+	}
+	return password
 }
 
 // resolveAccount extracts the access token, OID, and TID from a Credential.
@@ -138,11 +165,8 @@ func (a *Adapter) RefreshCredential(ctx context.Context, cred account.Credential
 			}
 			return provider.RefreshedCredential{}, fmt.Errorf("credential has no refresh token and no UPN for ROPC")
 		}
-		// 从 EncryptedAccessToken 里解密出密码(注册时把密码存在 SourceKey 字段)
-		password := ""
-		if cred.SourceKey != "" {
-			password, _ = a.cipher.Decrypt(cred.SourceKey)
-		}
+		// 从 EncryptedRefreshToken 的 \x00 分隔符后解密出密码(注册器存入)
+		password := a.decryptPassword(cred)
 		if password == "" {
 			if refreshErr != nil {
 				return provider.RefreshedCredential{}, mapOAuthError(refreshErr)
@@ -171,6 +195,13 @@ func (a *Adapter) RefreshCredential(ctx context.Context, cred account.Credential
 		encRefresh, err = a.cipher.Encrypt(refreshToken)
 		if err != nil {
 			return provider.RefreshedCredential{}, fmt.Errorf("encrypt refresh token: %w", err)
+		}
+	}
+	// 保留加密密码(注册器场景):追加到 encRefresh 后,\x00 分隔
+	if password != "" {
+		encPassword, err := a.cipher.Encrypt(password)
+		if err == nil {
+			encRefresh = encRefresh + "\x00" + encPassword
 		}
 	}
 	return provider.RefreshedCredential{

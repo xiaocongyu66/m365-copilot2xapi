@@ -34,6 +34,7 @@ import (
 	"M365Copilot2ApiX/backend/internal/infra/provider"
 	m365provider "M365Copilot2ApiX/backend/internal/infra/provider/m365"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool"
+	"M365Copilot2ApiX/backend/internal/infra/proxypool/geoip"
 	infraqualityguard "M365Copilot2ApiX/backend/internal/infra/qualityguard"
 	"M365Copilot2ApiX/backend/internal/infra/runtime/memory"
 	redisruntime "M365Copilot2ApiX/backend/internal/infra/runtime/redis"
@@ -239,6 +240,8 @@ func New(ctx context.Context, cfg config.Config, logger *slog.Logger) (*Applicat
 	accountService.SetConcurrencyLimiter(concurrency)
 	accountService.SetBulkPool(syncPool)
 	accountService.SetDetectPool(refreshPool)
+	// 注入账号导入器,让注册器能把注册成功的账号(refresh token + 密码)导入账号池
+	proxyPoolService.SetAccountImporter(accountService)
 	modelService := modelapp.NewService(modelRepo, accountRepo, accountService, providers)
 	modelService.SetBulkPool(syncPool)
 	modelService.SetLogger(logger)
@@ -468,6 +471,10 @@ func (a *Application) Run(ctx context.Context) error {
 	})
 	startBackground("account_auto_clean", func(taskCtx context.Context) error {
 		a.accounts.RunAccountAutoClean(taskCtx)
+		return nil
+	})
+	startBackground("geoip_auto_update", func(taskCtx context.Context) error {
+		geoip.Get().RunAutoUpdate(taskCtx, 7*24*time.Hour)
 		return nil
 	})
 	startBackground("media_cleanup", func(taskCtx context.Context) error {

@@ -48,6 +48,11 @@ type NodeScore struct {
 	LastCheckAt     time.Time // 最近测活时间
 	LastCheckStable bool      // 最近测活是否稳定
 	LastCheckBytes  int64     // 最近测活下载字节数
+	LastLatency     int64     // 最近测活微软可达往返延迟(纳秒)
+	LastPurityScore int       // 最近测活 IP 纯净度评分 0-100(0 表示未测)
+	LastIPType      string    // 最近测活 IP 类型 residential/mobile/datacenter
+	LastExitIP      string    // 最近测活出口 IP
+	LastISP         string    // 最近测活 ISP
 
 	// 负载均衡
 	ActiveRequests int // 当前正在处理的请求数
@@ -105,6 +110,11 @@ type NodeScoreSnapshot struct {
 	LastCheckAt      time.Time
 	LastCheckStable  bool
 	LastCheckBytes   int64
+	LastLatency      int64
+	LastPurityScore  int
+	LastIPType       string
+	LastExitIP       string
+	LastISP          string
 	ActiveRequests   int
 }
 
@@ -131,6 +141,11 @@ func (s *ScoreStore) List() []NodeScoreSnapshot {
 			LastCheckAt:     ns.LastCheckAt,
 			LastCheckStable: ns.LastCheckStable,
 			LastCheckBytes:  ns.LastCheckBytes,
+			LastLatency:     ns.LastLatency,
+			LastPurityScore: ns.LastPurityScore,
+			LastIPType:      ns.LastIPType,
+			LastExitIP:      ns.LastExitIP,
+			LastISP:         ns.LastISP,
 			ActiveRequests:  ns.ActiveRequests,
 		})
 		ns.mu.RUnlock()
@@ -190,6 +205,11 @@ func (s *ScoreStore) RecordSuccess(identifier string) {
 
 // RecordCheckResult 记录测活结果
 func (s *ScoreStore) RecordCheckResult(identifier string, stable bool, bytes int64) {
+	s.RecordCheckFull(identifier, stable, bytes, 0, 0, "", "", "")
+}
+
+// RecordCheckFull 记录完整测活结果(含延迟、纯净度、IP 类型)
+func (s *ScoreStore) RecordCheckFull(identifier string, stable bool, bytes int64, latencyNs int64, purityScore int, ipType, exitIP, isp string) {
 	ns := s.Get(identifier)
 	if ns == nil {
 		return
@@ -199,6 +219,11 @@ func (s *ScoreStore) RecordCheckResult(identifier string, stable bool, bytes int
 	ns.LastCheckAt = time.Now()
 	ns.LastCheckStable = stable
 	ns.LastCheckBytes = bytes
+	ns.LastLatency = latencyNs
+	ns.LastPurityScore = purityScore
+	ns.LastIPType = ipType
+	ns.LastExitIP = exitIP
+	ns.LastISP = isp
 
 	if stable {
 		ns.Score += scoreTestPassBonus

@@ -20,6 +20,7 @@ type importedAccount struct {
 	DisplayName       string `json:"displayName,omitempty"`
 	OID               string `json:"oid,omitempty"`
 	TID               string `json:"tid,omitempty"`
+	Password          string `json:"password,omitempty"`
 }
 
 // ParseImportedCredentials accepts a JSON byte slice and returns a slice of
@@ -83,7 +84,7 @@ func buildSeeds(accounts []importedAccount) []provider.CredentialSeed {
 		if rt == "" {
 			continue
 		}
-		seeds = append(seeds, provider.CredentialSeed{
+		seed := provider.CredentialSeed{
 			Provider:     account.ProviderM365,
 			AuthType:     account.AuthTypeOAuth,
 			Name:         acc.DisplayName,
@@ -91,7 +92,14 @@ func buildSeeds(accounts []importedAccount) []provider.CredentialSeed {
 			UserID:       acc.OID,
 			TeamID:       acc.TID,
 			RefreshToken: rt,
-		})
+		}
+		// 有密码时:Password 字段存明文(credentialFromSeed 会加密到 SourceKey),
+		// SourceKey 用 "ropc:" + email 作去重 key
+		if strings.TrimSpace(acc.Password) != "" && acc.Email != "" {
+			seed.Password = acc.Password
+			seed.SourceKey = "ropc:" + acc.Email
+		}
+		seeds = append(seeds, seed)
 	}
 	return seeds
 }
@@ -156,5 +164,6 @@ func (a *Adapter) PrepareImportedCredential(ctx context.Context, seed provider.C
 		result.TeamID = tok.TenantID
 	}
 	result.ExpiresAt = tok.ExpiresAt
+	// Password 字段原样透传(注册器场景),credentialFromSeed 会加密存到 EncryptedRefreshToken
 	return result, nil
 }

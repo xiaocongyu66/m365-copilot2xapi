@@ -40,12 +40,17 @@ const (
 
 // M365CheckResult 是单个代理的 M365 测活结果
 type M365CheckResult struct {
-	Proxy      proxy.Proxy
-	Accessible bool   // 能否访问微软登录端点
-	Stable     bool   // 持续 10MB 下载是否稳定(不断流)
-	Bytes      int64  // 实际下载字节数
-	Duration   time.Duration
-	Error      string // 失败原因
+	Proxy       proxy.Proxy
+	Accessible  bool          // 能否访问微软登录端点
+	Stable      bool          // 持续 10MB 下载是否稳定(不断流)
+	Bytes       int64         // 实际下载字节数
+	Duration    time.Duration // 第 3 层下载耗时(未启用则为 0)
+	Latency     time.Duration // 第 2 层微软可达性测试往返耗时
+	Error       string        // 失败原因
+	ExitIP      string        // 出口 IP(纯净度测试时获取)
+	PurityScore int           // IP 纯净度评分 0-100(0 表示未测)
+	IPType      string        // residential / mobile / datacenter
+	ISP         string        // ISP 名称
 }
 
 // M365CheckAll 对所有代理执行三层测活:
@@ -197,8 +202,9 @@ func m365CheckOneOpt(p proxy.Proxy, enableDownload bool) M365CheckResult {
 	conn.Close()
 
 	// 第 2 层:微软可达性测试(轻量 HEAD 请求) + 纯净度测试(同时进行)
-	accessible, accessErr := m365AccessibleTest(p)
+	accessible, latency, accessErr := m365AccessibleTest(p)
 	result.Accessible = accessible
+	result.Latency = latency
 	if !accessible {
 		result.Error = fmt.Sprintf("layer2: %v", accessErr)
 		return result
@@ -208,6 +214,10 @@ func m365CheckOneOpt(p proxy.Proxy, enableDownload bool) M365CheckResult {
 	// 低于 40 分的节点标记为不稳定(入库时会被丢弃)
 	ipResult := CheckIPCleanliness(p)
 	if ipResult != nil {
+		result.ExitIP = ipResult.ExitIP
+		result.PurityScore = ipResult.IPScore
+		result.IPType = ipResult.IPType
+		result.ISP = ipResult.ISP
 		if ipResult.IPScore < 40 {
 			result.Stable = false
 			result.Error = fmt.Sprintf("IP purity score %d (< 40): type=%s isp=%s", ipResult.IPScore, ipResult.IPType, ipResult.ISP)
@@ -235,32 +245,34 @@ func m365CheckOneOpt(p proxy.Proxy, enableDownload bool) M365CheckResult {
 }
 
 // m365AccessibleTest 测试代理能否访问微软登录端点
-func m365AccessibleTest(p proxy.Proxy) (bool, error) {
+func m365AccessibleTest(p proxy.Proxy) (bool, time.Duration, error) {
 	pmap, err := parseProxyMap(p)
 	if err != nil {
-		return false, fmt.Errorf("parse proxy map: %w", err)
+		return false, 0, fmt.Errorf("parse proxy map: %w", err)
 	}
 	clashProxy, err := parseClashProxy(pmap, p)
 	if err != nil {
-		return false, fmt.Errorf("parse clash proxy: %w", err)
+		return false, 0, fmt.Errorf("parse clash proxy: %w", err)
 	}
 	addr, err := urlToMetadata(m365AccessibleURL)
 	if err != nil {
-		return false, fmt.Errorf("url metadata: %w", err)
+		return false, 0, fmt.Errorf("url metadata: %w", err)
 	}
 	transport := newProxyTransport(clashProxy, addr, m365AccessibleTimeout)
 	client := &http.Client{Transport: transport, Timeout: m365AccessibleTimeout}
 	req, err := http.NewRequest(http.MethodHead, m365AccessibleURL, nil)
 	if err != nil {
-		return false, err
+		return false, 0, err
 	}
+	start := time.Now()
 	resp, err := client.Do(req)
+	latency := time.Since(start)
 	if err != nil {
-		return false, err
+		return false, latency, err
 	}
 	defer resp.Body.Close()
 	// 微软登录端点返回 200/302/400 都算可达(说明能连上微软)
-	return resp.StatusCode < 500, nil
+	return resp.StatusCode < 500, latency, nil
 }
 
 // m365ContinuousDownload 持续下载 10MB 测稳定性:

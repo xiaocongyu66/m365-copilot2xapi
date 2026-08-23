@@ -217,3 +217,31 @@ func (g *GeoIPDB) Refresh() error {
 	}
 	return fmt.Errorf("load failed")
 }
+
+// RunAutoUpdate 定期检查并更新 GeoIP 数据库。
+// 默认每 7 天更新一次(MaxMind 免费版每周二发布新版)。
+// 该方法阻塞当前 goroutine,应在后台 goroutine 中调用。
+func (g *GeoIPDB) RunAutoUpdate(ctx context.Context, interval time.Duration) {
+	if interval <= 0 {
+		interval = 7 * 24 * time.Hour
+	}
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			// 先下载到临时文件,成功后再原子替换
+			if err := g.download(); err != nil {
+				fmt.Printf("[GeoIP] auto-update failed: %v\n", err)
+				continue
+			}
+			if err := g.loadLocal(); err == nil {
+				fmt.Printf("[GeoIP] auto-update succeeded, database reloaded\n")
+			} else {
+				fmt.Printf("[GeoIP] auto-update reload failed: %v\n", err)
+			}
+		}
+	}
+}

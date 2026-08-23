@@ -1786,6 +1786,16 @@ func (s *Service) credentialFromSeed(seed provider.CredentialSeed) (accountdomai
 		sourceKey = "device:" + security.HashToken(seed.AccessToken)
 	}
 	providerValue := seed.Provider
+	// M365 注册器场景:Password 字段存的是明文密码
+	// 加密后追加到 EncryptedRefreshToken,用 \x00 分隔(ROPC fallback 时拆出)
+	// SourceKey 保持 "ropc:" + email 用作去重 key
+	if providerValue == accountdomain.ProviderM365 && seed.Password != "" {
+		encryptedPassword, encErr := s.cipher.Encrypt(seed.Password)
+		if encErr != nil {
+			return accountdomain.Credential{}, encErr
+		}
+		refreshEncrypted = refreshEncrypted + "\x00" + encryptedPassword
+	}
 	if providerValue == "" {
 		providerValue = accountdomain.ProviderM365
 	}

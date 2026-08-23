@@ -412,14 +412,20 @@ func (r *Registrar) rocpExchange(ctx context.Context, proxyNodeID, upn, password
 }
 
 // importToAccountPool 把 refresh token 和账号密码导入到 M365 账号池
-// UPN 存在 Email 字段,密码加密存在 SourceKey 字段(刷新 RT 时用 ROPC 登录)
+// 通过 AccountImporter 接口调用 account application 层,
+// UPN 存到 Email,密码加密后追加到 EncryptedRefreshToken(\x00 分隔,ROPC fallback 时用)
 func (r *Registrar) importToAccountPool(refreshToken, upn, password string) {
-	// 通过 store 导入 refresh token(一行一个)
-	text := refreshToken + "\n"
-	imported, skipped := r.svc.ImportNodes(text)
-	log.Infof("账号 %s 导入账号池: imported=%d skipped=%d (含密码用于 ROPC 刷新)", upn, imported, skipped)
-	// TODO: 更新已导入账号的 Email=upn, SourceKey=加密密码
-	// 这需要 store 支持更新节点元数据,当前 store 只支持导入
+	if r.svc.accountImporter == nil {
+		log.Warnf("账号 %s 导入失败: accountImporter 未注入", upn)
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	if err := r.svc.accountImporter.ImportM365Account(ctx, refreshToken, upn, password); err != nil {
+		log.Errorf("账号 %s 导入失败: %v", upn, err)
+		return
+	}
+	log.Infof("账号 %s 导入账号池成功(含密码用于 ROPC 刷新)", upn)
 }
 
 // randomUsername 生成随机用户名(字母数字,3-20 位)

@@ -17,6 +17,8 @@ interface ProxyNode {
   country: string; score: number; enabled: boolean; autoDisabled: boolean;
   errorCount: number; lastError: string; successCount: number;
   lastCheckAt: string; lastCheckStable: boolean; activeRequests: number;
+  lastLatencyMs: number; lastPurityScore: number; lastIPType: string;
+  lastExitIP: string; lastISP: string;
 }
 interface NodeError { nodeId: string; nodeName: string; error: string; endpoint: string; timestamp: string }
 interface FetcherStatus { running: boolean; lastRun: string; lastResult: { total: number; imported: number; skipped: number; errors: string[] } }
@@ -170,6 +172,9 @@ export function ProxiesPage() {
                 <TableHead>服务器</TableHead>
                 <TableHead>分数</TableHead>
                 <TableHead>状态</TableHead>
+                <TableHead>延迟</TableHead>
+                <TableHead>纯净度</TableHead>
+                <TableHead>IP 类型</TableHead>
                 <TableHead>测活</TableHead>
                 <TableHead className="w-16">操作</TableHead>
               </TableRow>
@@ -184,6 +189,17 @@ export function ProxiesPage() {
                   <TableCell className="text-xs text-muted-foreground">{node.server}:{node.port}</TableCell>
                   <TableCell><span className={node.score >= 50 ? "text-green-600" : node.score >= 0 ? "text-yellow-600" : "text-red-600"}>{node.score}</span></TableCell>
                   <TableCell>{node.autoDisabled ? <span className="text-red-500 text-xs">禁用</span> : node.enabled ? <span className="text-green-500 text-xs">启用</span> : <span className="text-muted-foreground text-xs">禁用</span>}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{node.lastLatencyMs ? `${node.lastLatencyMs}ms` : "-"}</TableCell>
+                  <TableCell className="text-xs">
+                    {node.lastPurityScore ? (
+                      <span className={node.lastPurityScore >= 80 ? "text-green-600" : node.lastPurityScore >= 40 ? "text-yellow-600" : "text-red-600"}>{node.lastPurityScore}</span>
+                    ) : "-"}
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {node.lastIPType ? (
+                      <span className={node.lastIPType === "residential" ? "text-green-600" : node.lastIPType === "mobile" ? "text-blue-600" : "text-yellow-600"}>{node.lastIPType}</span>
+                    ) : "-"}
+                  </TableCell>
                   <TableCell className="text-xs text-muted-foreground">{node.lastCheckStable ? "✅" : "❌"}</TableCell>
                   <TableCell>
                     <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px]" disabled={testOneMutation.isPending} onClick={() => testOneMutation.mutate(node.identifier)}>测试</Button>

@@ -27,6 +27,7 @@ func (h *Handler) Register(router *gin.RouterGroup) {
 	router.POST("/proxies/delete", h.deleteNodes)
 	router.POST("/proxies/clear-errors", h.clearErrors)
 	router.POST("/proxies/check", h.checkNow)
+	router.GET("/proxies/check/sync", h.checkSync)
 	router.GET("/proxies/errors", h.recentErrors)
 	router.POST("/proxies/fetch", h.fetchNow)
 	router.GET("/proxies/fetcher/status", h.fetcherStatus)
@@ -106,6 +107,30 @@ func (h *Handler) checkNow(c *gin.Context) {
 	}
 	go h.svc.Checker().RunOnce()
 	response.Success(c, http.StatusOK, gin.H{"status": "check_started"})
+}
+
+// checkSync 同步测试单个节点,返回完整结果(含延迟、纯净度、IP 类型)
+func (h *Handler) checkSync(c *gin.Context) {
+	identifier := c.Query("identifier")
+	if identifier == "" {
+		response.Error(c, http.StatusBadRequest, "invalidRequest", "缺少 identifier 参数")
+		return
+	}
+	result, found := h.svc.CheckOneSync(identifier)
+	if !found {
+		response.Error(c, http.StatusNotFound, "nodeNotFound", "节点不存在")
+		return
+	}
+	response.Success(c, http.StatusOK, gin.H{
+		"accessible":  result.Accessible,
+		"stable":      result.Stable,
+		"latencyMs":   result.Latency.Milliseconds(),
+		"purityScore": result.PurityScore,
+		"ipType":      result.IPType,
+		"exitIP":      result.ExitIP,
+		"isp":         result.ISP,
+		"error":       result.Error,
+	})
 }
 
 func (h *Handler) recentErrors(c *gin.Context) {

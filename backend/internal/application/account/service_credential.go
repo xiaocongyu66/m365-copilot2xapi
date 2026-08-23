@@ -2,6 +2,7 @@ package account
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -89,6 +90,24 @@ func (s *Service) ImportCredentialsWithObserver(ctx context.Context, data []byte
 // ImportCredentialsWithProgress 导入 Build 凭据并报告已写入流水线的账号数。
 func (s *Service) ImportCredentialsWithProgress(ctx context.Context, data []byte, observer ImportedAccountObserver, progress BatchProgressObserver) (ImportResult, error) {
 	return s.ImportCredentialDocumentsWithProgress(ctx, [][]byte{data}, observer, progress)
+}
+
+// ImportM365Account 把单个 M365 账号(refresh token + email + password)导入账号池。
+// 实现 proxypool.AccountImporter 接口,供注册器调用。
+// 密码加密后追加到 EncryptedRefreshToken(\x00 分隔),ROPC fallback 时解出。
+func (s *Service) ImportM365Account(ctx context.Context, refreshToken, email, password string) error {
+	type importAccount struct {
+		RefreshToken string `json:"refresh_token"`
+		Email        string `json:"email"`
+		Password     string `json:"password,omitempty"`
+	}
+	payload := []importAccount{{RefreshToken: refreshToken, Email: email, Password: password}}
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("marshal import payload: %w", err)
+	}
+	_, err = s.ImportCredentials(ctx, data)
+	return err
 }
 
 // ImportCredentialDocumentsWithProgress 合并解析多个 Build 凭据文件，并作为一个批次写入和同步。
