@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"M365Copilot2ApiX/backend/internal/infra/proxypool/geoip"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/healthcheck"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/log"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/proxy"
@@ -96,9 +97,9 @@ func (c *Checker) RunOnce() {
 		usableSet[p.Identifier()] = true
 	}
 
-	// 对连通的节点查出口 IP + 负载均衡查国家(3 源:ip-api/ipinfo/ipwhois)
-	// 按 IP 哈希分配源,每个 IP 只查一个源,节省带宽
+	// 对连通的节点查出口 IP + 本地 GeoIP 查国家(快,不限流,不耗带宽)
 	log.Infof("proxy check: probing exit IP + country on %d reachable nodes...", len(usable))
+	geoDB := geoip.Get()
 	sem := make(chan struct{}, 128)
 	var wg sync.WaitGroup
 	for _, p := range usable {
@@ -109,8 +110,8 @@ func (c *Checker) RunOnce() {
 			defer func() { <-sem }()
 			ip, _ := healthcheck.ProbeExitIP(pp)
 			country := ""
-			if ip != "" {
-				country = healthcheck.FetchCountryBalanced(ip)
+			if ip != "" && geoDB.IsAvailable() {
+				country = geoDB.LookupCountry(ip)
 			}
 			if country != "" {
 				if ns := c.score.Get(pp.Identifier()); ns != nil {
