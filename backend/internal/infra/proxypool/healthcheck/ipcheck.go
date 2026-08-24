@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"time"
 
-	"M365Copilot2ApiX/backend/internal/infra/proxypool/geoip"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/log"
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/proxy"
 )
@@ -47,9 +46,13 @@ func CheckIPCleanliness(p proxy.Proxy) *IPCheckResult {
 	// 2. 查询 ip-api.com 获取 IP 信誉
 	info, err := fetchIPInfo(exitIP)
 	if err != nil {
-		// ip-api.com 限流(45次/分钟)或查询失败,用本地 GeoIP 查国家作为 fallback
-		log.Debugf("[ipcheck] ip-api.com failed for %s: %v, fallback to local GeoIP", exitIP, err)
-		country := geoip.Get().LookupCountry(exitIP)
+		// ip-api.com 失败,依次用 ipinfo.io → ipwhois.app 查国家(不再用本地 GeoIP,不准)
+		log.Debugf("[ipcheck] ip-api.com failed for %s: %v, fallback to ipinfo.io", exitIP, err)
+		country := fetchCountryFromIPInfo(exitIP)
+		if country == "" {
+			log.Debugf("[ipcheck] ipinfo.io failed for %s, fallback to ipwhois.app", exitIP)
+			country = fetchCountryFromIPWhois(exitIP)
+		}
 		return &IPCheckResult{ExitIP: exitIP, IPScore: 50, CountryCode: country}
 	}
 
@@ -127,6 +130,44 @@ func fetchIPInfo(ip string) (*IPInfo, error) {
 		return nil, fmt.Errorf("ip-api returned: %s", info.Status)
 	}
 	return &info, nil
+}
+
+// fetchCountryFromIPInfo 用 ipinfo.io 查询国家代码(fallback,免费 50000/月)
+func fetchCountryFromIPInfo(ip string) string {
+	client := &http.Client{Timeout: 8 * time.Second}
+	resp, err := client.Get("https://ipinfo.io/" + ip + "/json")
+	if err != nil {
+		return ""
+	}
+	defer resp.Body.Close()
+	var result struct {
+		Country string `json:"country"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return ""
+	}
+	return result.Country
+}
+
+// fetchCountryFromIPWhois 用 ipwhois.app 查询国家代码(第三 fallback)
+func fetchCountryFromIPWhois(ip string) string {
+	client := &http.Client{Timeout: 8 * time.Second}
+	resp, err := client.Get("https://ipwhois.app/json/" + ip)
+	if err != nil {
+		return ""
+	}
+	defer resp.Body.Close()
+	var result struct {
+		Success     bool   `json:"success"`
+		CountryCode string `json:"country_code"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return ""
+	}
+	if !result.Success {
+		return ""
+	}
+	return result.CountryCode
 }
 
 // classifyIPType 判断 IP 类型
