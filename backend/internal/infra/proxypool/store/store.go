@@ -92,10 +92,25 @@ func (s *Store) ImportFromText(text string) (imported, skipped int) {
 			skipped++
 			continue
 		}
+		// 提取 #xx 国旗标记(如 "socks5://1.2.3.4:1080 #cn")
+		// Go url.Parse 把 # 后面当 fragment,代理链接解析时 fragment 被丢弃
+		// 所以先提取国旗,再从链接里去掉空格+#部分
+		countryFromFlag := ""
+		if idx := indexOf(line, " #"); idx >= 0 {
+			flagPart := trimSpace(line[idx+1:]) // #cn
+			if hasPrefix(flagPart, "#") {
+				countryFromFlag = upper(flagPart[1:]) // "cn" → "CN"
+			}
+			line = trimSpace(line[:idx]) // 去掉 #cn 部分
+		}
 		p, err := proxy.ParseProxyFromLink(line)
 		if err != nil || p == nil {
 			skipped++
 			continue
+		}
+		// 用国旗标记设置国家
+		if countryFromFlag != "" {
+			p.SetCountry(countryFromFlag)
 		}
 		// 节点没名字时自动补一个(类型+服务器:端口)
 		if p.BaseInfo().Name == "" {
@@ -185,4 +200,12 @@ func trimSpace(s string) string {
 
 func hasPrefix(s, prefix string) bool {
 	return strings.HasPrefix(s, prefix)
+}
+
+func indexOf(s, substr string) int {
+	return strings.Index(s, substr)
+}
+
+func upper(s string) string {
+	return strings.ToUpper(s)
 }
