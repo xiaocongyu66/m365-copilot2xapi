@@ -72,6 +72,14 @@ func (w *WebJSON) Get() proxy.ProxyList {
 
 	links := make([]string, 0, len(arr))
 	for _, item := range arr {
+		// 元素可能是对象 {"ip":"1.2.3.4","port":"8080"} 或字符串 "1.2.3.4:8080"
+		if str, ok := item.(string); ok {
+			// 字符串格式:直接当 ip:port,加 scheme 前缀
+			if str != "" {
+				links = append(links, fmt.Sprintf("%s://%s", scheme, str))
+			}
+			continue
+		}
 		m, ok := item.(map[string]interface{})
 		if !ok {
 			continue
