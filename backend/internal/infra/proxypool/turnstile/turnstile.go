@@ -9,6 +9,7 @@ package turnstile
 
 import (
 	"fmt"
+	"math/rand"
 	"strings"
 	"time"
 
@@ -57,8 +58,15 @@ func solveTurnstileBrowser(siteKey, proxy, targetURL string) (string, error) {
 		return "", fmt.Errorf("context: %w", err)
 	}
 	defer context.Close()
+	// 反检测脚本:隐藏 webdriver 标记,伪造浏览器指纹
 	context.AddInitScript(playwright.Script{
-		Content: playwright.String("Object.defineProperty(navigator,'webdriver',{get:()=>undefined});"),
+		Content: playwright.String(`
+			Object.defineProperty(navigator,'webdriver',{get:()=>undefined});
+			Object.defineProperty(navigator,'plugins',{get:()=>[1,2,3,4,5]});
+			Object.defineProperty(navigator,'languages',{get:()=>['zh-CN','zh','en']});
+			window.chrome = { runtime: {} };
+			Object.defineProperty(navigator,'permissions',{get:()=>({query:()=>Promise.resolve({state:'granted'})})});
+		`),
 	})
 
 	page, err := context.NewPage()
@@ -79,7 +87,15 @@ func solveTurnstileBrowser(siteKey, proxy, targetURL string) (string, error) {
 		return "", fmt.Errorf("navigate: %w", err)
 	}
 
-	time.Sleep(3 * time.Second)
+	// 随机延迟模拟人类行为
+	time.Sleep(time.Duration(3+rand.Intn(3)) * time.Second)
+
+	// 模拟鼠标移动(人类行为)
+	mouse := page.Mouse()
+	for i := 0; i < 3; i++ {
+		mouse.Move(float64(100+rand.Intn(600)), float64(100+rand.Intn(400)))
+		time.Sleep(time.Duration(500+rand.Intn(500)) * time.Millisecond)
+	}
 
 	// 注入 turnstile api.js(如果页面没有)
 	page.Evaluate(`() => {
