@@ -1299,15 +1299,11 @@ export function AccountsPage() {
             <TabsList>
               <TabsTrigger value="m365_copilot" className="gap-1.5">
                 <SquareTerminal className="size-3.5 text-quota-product-1" />
-                <span>M365</span>
+                <span>M365 账号</span>
               </TabsTrigger>
-              <TabsTrigger value="m365_copilot" className="gap-1.5">
+              <TabsTrigger value="m365_rt" className="gap-1.5">
                 <Compass className="size-3.5 text-quota-product-2" />
-                <span>M365</span>
-              </TabsTrigger>
-              <TabsTrigger value="m365_copilot" className="gap-1.5">
-                <Webhook className="size-3.5 text-quota-product-4" />
-                <span>M365</span>
+                <span>RT 账号</span>
               </TabsTrigger>
             </TabsList>
           </Tabs>
