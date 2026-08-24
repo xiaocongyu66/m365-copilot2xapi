@@ -46,9 +46,9 @@ func CheckIPCleanliness(p proxy.Proxy) *IPCheckResult {
 	// 2. 查询 ip-api.com 获取 IP 信誉(含纯净度评分)
 	info, err := fetchIPInfo(exitIP)
 	if err != nil {
-		// ip-api.com 失败,三源并发查国家(负载均衡,哪个快用哪个)
-		log.Debugf("[ipcheck] ip-api.com failed for %s: %v, concurrent country lookup", exitIP, err)
-		country := fetchCountryConcurrent(exitIP)
+		// ip-api.com 失败,负载均衡查国家(按 IP 哈希分配源)
+		log.Debugf("[ipcheck] ip-api.com failed for %s: %v, balanced country lookup", exitIP, err)
+		country := FetchCountryBalanced(exitIP)
 		return &IPCheckResult{ExitIP: exitIP, IPScore: 50, CountryCode: country}
 	}
 
