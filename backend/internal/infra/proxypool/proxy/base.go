@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"strings"
-
-	"M365Copilot2ApiX/backend/internal/infra/proxypool/geoip"
 )
 
 /* Base implements interface Proxy. It's the basic proxy struct. Vmess etc extends Base*/
@@ -103,11 +101,8 @@ func ParseProxyFromLink(link string) (p Proxy, err error) {
 	if err != nil || p == nil {
 		return nil, errors.New("link parse failed")
 	}
-	country := geoip.Get().LookupCountry(p.BaseInfo().Server)
-	if country == "" {
-		country = "🌐"
-	}
-	p.SetCountry(country)
+	// 不用服务器地址查 country(中转节点服务器在中国但出口在其他国家,会误判)
+	// country 只在纯净度测试时用出口 IP 查询填充(见 m365check.go)
 	// trojan依赖域名？<-这是啥?不管什么情况感觉都不应该替换域名为IP（主要是IP库的质量和节点质量不该挂钩）
 	//if p.TypeName() != "trojan" {
 	//	p.SetIP(ip)
