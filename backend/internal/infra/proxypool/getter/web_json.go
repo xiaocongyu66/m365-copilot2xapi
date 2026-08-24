@@ -48,13 +48,16 @@ func (w *WebJSON) Get() proxy.ProxyList {
 
 	resp, err := tool.GetHttpClient().Get(rawURL)
 	if err != nil {
+		log.Errorf("[webjson] HTTP GET failed: %v (url=%s)", err, rawURL)
 		return nil
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
+		log.Errorf("[webjson] read body failed: %v (url=%s)", err, rawURL)
 		return nil
 	}
+	log.Infof("[webjson] got %d bytes, jsonPath=%s (url=%s)", len(body), jsonPath, rawURL)
 
 	// 解析整个 JSON
 	var root interface{}
