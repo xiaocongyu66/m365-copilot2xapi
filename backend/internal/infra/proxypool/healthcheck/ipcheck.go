@@ -43,16 +43,12 @@ func CheckIPCleanliness(p proxy.Proxy) *IPCheckResult {
 		return nil
 	}
 
-	// 2. 查询 ip-api.com 获取 IP 信誉
+	// 2. 查询 ip-api.com 获取 IP 信誉(含纯净度评分)
 	info, err := fetchIPInfo(exitIP)
 	if err != nil {
-		// ip-api.com 失败,依次用 ipinfo.io → ipwhois.app 查国家(不再用本地 GeoIP,不准)
-		log.Debugf("[ipcheck] ip-api.com failed for %s: %v, fallback to ipinfo.io", exitIP, err)
-		country := fetchCountryFromIPInfo(exitIP)
-		if country == "" {
-			log.Debugf("[ipcheck] ipinfo.io failed for %s, fallback to ipwhois.app", exitIP)
-			country = fetchCountryFromIPWhois(exitIP)
-		}
+		// ip-api.com 失败,三源并发查国家(负载均衡,哪个快用哪个)
+		log.Debugf("[ipcheck] ip-api.com failed for %s: %v, concurrent country lookup", exitIP, err)
+		country := fetchCountryConcurrent(exitIP)
 		return &IPCheckResult{ExitIP: exitIP, IPScore: 50, CountryCode: country}
 	}
 
@@ -165,6 +161,53 @@ func fetchCountryFromIPWhois(ip string) string {
 		return ""
 	}
 	if !result.Success {
+		return ""
+	}
+	return result.CountryCode
+}
+
+// FetchCountryBalanced 负载均衡查询国家代码(导出给 checker 用)。
+// 按 IP 哈希分配到三个源(ip-api.com / ipinfo.io / ipwhois.app),
+// 每个 IP 只查一个源,避免三源同时查询浪费带宽。
+// 如果分配的源失败,fallback 到下一个源。
+func FetchCountryBalanced(ip string) string {
+	// 按 IP 哈希分配源(0/1/2)
+	h := uint32(0)
+	for _, c := range ip {
+		h = h*31 + uint32(c)
+	}
+	sourceIdx := int(h % 3)
+	// 按顺序尝试:分配的源 → 下一个 → 下一个
+	for i := 0; i < 3; i++ {
+		idx := (sourceIdx + i) % 3
+		var country string
+		switch idx {
+		case 0:
+			country = fetchCountryFromIPAPI(ip)
+		case 1:
+			country = fetchCountryFromIPInfo(ip)
+		case 2:
+			country = fetchCountryFromIPWhois(ip)
+		}
+		if country != "" {
+			return country
+		}
+	}
+	return ""
+}
+
+// fetchCountryFromIPAPI 用 ip-api.com 只查国家代码(轻量版,不含纯净度)
+func fetchCountryFromIPAPI(ip string) string {
+	client := &http.Client{Timeout: 8 * time.Second}
+	resp, err := client.Get("http://ip-api.com/json/" + ip + "?fields=countryCode")
+	if err != nil {
+		return ""
+	}
+	defer resp.Body.Close()
+	var result struct {
+		CountryCode string `json:"countryCode"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return ""
 	}
 	return result.CountryCode
