@@ -101,19 +101,8 @@ func (c *Checker) RunOnce() {
 	}
 
 	// 对连通的节点查出口 IP + 本地 GeoIP 查国家(并发 128,不走 ip-api.com 不限流)
+	// 查完一个立即分流(不等全部完成,加快注册池填充)
 	log.Infof("proxy check: probing exit IP + country on %d reachable nodes...", len(usable))
-	type checkResult struct {
-		proxy   proxy.Proxy
-		country string
-		exitIP  string
-	}
-	results := make([]checkResult, 0, len(usable))
-	type exitResult struct {
-		p       proxy.Proxy
-		exitIP  string
-		err     error
-	}
-	exitCh := make(chan exitResult, len(usable))
 	sem := make(chan struct{}, 128)
 	var wg sync.WaitGroup
 	for _, p := range usable {
@@ -122,37 +111,30 @@ func (c *Checker) RunOnce() {
 			defer wg.Done()
 			sem <- struct{}{}
 			defer func() { <-sem }()
-			ip, err := healthcheck.ProbeExitIP(pp)
-			exitCh <- exitResult{p: pp, exitIP: ip, err: err}
+			ip, _ := healthcheck.ProbeExitIP(pp)
+			country := ""
+			if ip != "" && geoDB.IsAvailable() {
+				country = geoDB.LookupCountry(ip)
+			}
+			if country != "" {
+				if ns := c.score.Get(pp.Identifier()); ns != nil {
+					ns.SetCountry(country)
+				}
+				pp.SetCountry(country)
+				if c.onNodeChecked != nil {
+					c.onNodeChecked(pp, country)
+				}
+			}
 		}(p)
 	}
 	wg.Wait()
-	close(exitCh)
-	for er := range exitCh {
-		country := ""
-		if er.exitIP != "" && geoDB.IsAvailable() {
-			country = geoDB.LookupCountry(er.exitIP)
-		}
-		results = append(results, checkResult{proxy: er.p, country: country, exitIP: er.exitIP})
-	}
 
-	// 更新分数 + 国家 + 分流
+	// 更新分数
 	for _, p := range proxies {
 		if usableSet[p.Identifier()] {
 			c.score.RecordCheckResult(p.Identifier(), true, 0)
 		} else {
 			c.score.RecordCheckResult(p.Identifier(), false, 0)
-		}
-	}
-	for _, r := range results {
-		if r.country != "" {
-			if ns := c.score.Get(r.proxy.Identifier()); ns != nil {
-				ns.SetCountry(r.country)
-			}
-			r.proxy.SetCountry(r.country)
-			if c.onNodeChecked != nil {
-				c.onNodeChecked(r.proxy, r.country)
-			}
 		}
 	}
 

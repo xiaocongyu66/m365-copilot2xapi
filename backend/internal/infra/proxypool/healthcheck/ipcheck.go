@@ -85,7 +85,7 @@ func probeExitIP(p proxy.Proxy) (string, error) {
 		return "", err
 	}
 	transport := newProxyTransport(clashProxy, addr, 8*time.Second)
-	client := &http.Client{Transport: transport, Timeout: 8 * time.Second}
+	client := &http.Client{Transport: transport, Timeout: 5 * time.Second}
 
 	req, _ := http.NewRequest(http.MethodGet, "https://api.ipify.org?format=json", nil)
 	resp, err := client.Do(req)
