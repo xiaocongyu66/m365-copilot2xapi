@@ -1296,7 +1296,7 @@ export function AccountsPage() {
       </section>
       <div className="space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <Tabs value={accountTab} onValueChange={setAccountTab}>
+          <Tabs value={accountTab} onValueChange={(v) => { setAccountTab(v); changeProvider(provider); }}>
             <TabsList>
               <TabsTrigger value="m365" className="gap-1.5">
                 <SquareTerminal className="size-3.5 text-quota-product-1" />
