@@ -2,6 +2,7 @@ package proxypool
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/geoip"
@@ -85,31 +86,77 @@ func (c *Checker) RunOnce() {
 
 	// 确保 GeoIP 数据库已初始化(首次使用会自动下载)
 	geoDB := geoip.Get()
-	_ = geoDB
 
-	// 注册节点到 ScoreStore(不设置 country,country 只在纯净度测试时填充)
+	// 注册节点到 ScoreStore
 	for _, p := range proxies {
 		c.score.Register(p.Identifier(), p.BaseInfo().Name)
 	}
 
-	// 完整测活:走 m365CheckOneOpt(128 并发),会查出口 IP 国家并更新 country
-	// 这样 country 准确(出口 IP 国家,不是服务器地址国家)
-	log.Infof("proxy check: full M365 check on %d nodes...", len(proxies))
-	results := healthcheck.M365CheckAll(proxies)
+	// 快速测活:TCP/UDP 连通性(500 并发,3 秒超时)
+	log.Infof("proxy check: TCP/UDP connect test on %d nodes...", len(proxies))
+	usable := healthcheck.TCPConnectTestAll(proxies)
+	usableSet := make(map[string]bool, len(usable))
+	for _, p := range usable {
+		usableSet[p.Identifier()] = true
+	}
+
+	// 对连通的节点查出口 IP + 本地 GeoIP 查国家(并发 128,不走 ip-api.com 不限流)
+	log.Infof("proxy check: probing exit IP + country on %d reachable nodes...", len(usable))
+	type checkResult struct {
+		proxy   proxy.Proxy
+		country string
+		exitIP  string
+	}
+	results := make([]checkResult, 0, len(usable))
+	type exitResult struct {
+		p       proxy.Proxy
+		exitIP  string
+		err     error
+	}
+	exitCh := make(chan exitResult, len(usable))
+	sem := make(chan struct{}, 128)
+	var wg sync.WaitGroup
+	for _, p := range usable {
+		wg.Add(1)
+		go func(pp proxy.Proxy) {
+			defer wg.Done()
+			sem <- struct{}{}
+			defer func() { <-sem }()
+			ip, err := healthcheck.ProbeExitIP(pp)
+			exitCh <- exitResult{p: pp, exitIP: ip, err: err}
+		}(p)
+	}
+	wg.Wait()
+	close(exitCh)
+	for er := range exitCh {
+		country := ""
+		if er.exitIP != "" && geoDB.IsAvailable() {
+			country = geoDB.LookupCountry(er.exitIP)
+		}
+		results = append(results, checkResult{proxy: er.p, country: country, exitIP: er.exitIP})
+	}
+
+	// 更新分数 + 国家 + 分流
+	for _, p := range proxies {
+		if usableSet[p.Identifier()] {
+			c.score.RecordCheckResult(p.Identifier(), true, 0)
+		} else {
+			c.score.RecordCheckResult(p.Identifier(), false, 0)
+		}
+	}
 	for _, r := range results {
-		c.score.RecordCheckFull(r.Proxy.Identifier(), r.Stable, r.Bytes, int64(r.Latency), r.PurityScore, r.IPType, r.ExitIP, r.ISP, r.CountryCode)
-		// 按国家分流(回调 Service.routeByCountry)
-		if c.onNodeChecked != nil {
-			c.onNodeChecked(r.Proxy, r.CountryCode)
+		if r.country != "" {
+			if ns := c.score.Get(r.proxy.Identifier()); ns != nil {
+				ns.SetCountry(r.country)
+			}
+			r.proxy.SetCountry(r.country)
+			if c.onNodeChecked != nil {
+				c.onNodeChecked(r.proxy, r.country)
+			}
 		}
 	}
 
-	usableCount := 0
-	for _, r := range results {
-		if r.Accessible && r.Stable {
-			usableCount++
-		}
-	}
+	usableCount := len(usable)
 	log.Infof("proxy check done: total=%d usable=%d", len(proxies), usableCount)
 }
 

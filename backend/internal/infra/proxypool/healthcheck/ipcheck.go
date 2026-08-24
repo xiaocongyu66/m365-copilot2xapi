@@ -66,6 +66,11 @@ func CheckIPCleanliness(p proxy.Proxy) *IPCheckResult {
 }
 
 // probeExitIP 通过代理访问 ipify 获取出口 IP
+// ProbeExitIP 通过代理访问 ipify 获取出口 IP(导出给 checker 用)
+func ProbeExitIP(p proxy.Proxy) (string, error) {
+	return probeExitIP(p)
+}
+
 func probeExitIP(p proxy.Proxy) (string, error) {
 	pmap, err := parseProxyMap(p)
 	if err != nil {
