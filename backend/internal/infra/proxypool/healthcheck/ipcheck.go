@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"M365Copilot2ApiX/backend/internal/infra/proxypool/log"
@@ -143,6 +144,47 @@ func fetchCountryFromIPInfo(ip string) string {
 		return ""
 	}
 	return result.Country
+}
+
+// FetchCountryFromOffice 通过代理访问 office.965007.xyz 注册 API,
+// 从 403 响应里获取 office.965007.xyz 自己的 GeoIP 判断。
+// 这是最准确的方式——用目标网站自己的 GeoIP 数据库判断。
+func FetchCountryFromOffice(p proxy.Proxy) string {
+	pmap, err := parseProxyMap(p)
+	if err != nil {
+		return ""
+	}
+	clashProxy, err := parseClashProxy(pmap, p)
+	if err != nil {
+		return ""
+	}
+	addr, err := urlToMetadata("https://office.965007.xyz/api/register")
+	if err != nil {
+		return ""
+	}
+	transport := newProxyTransport(clashProxy, addr, 10*time.Second)
+	client := &http.Client{Transport: transport, Timeout: 10 * time.Second}
+
+	body := `{"planId":"1","username":"test","password":"test","displayName":"test","turnstileToken":"invalid"}`
+	req, _ := http.NewRequest(http.MethodPost, "https://office.965007.xyz/api/register", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := client.Do(req)
+	if err != nil {
+		return ""
+	}
+	defer resp.Body.Close()
+	respBody, _ := io.ReadAll(resp.Body)
+
+	var result struct {
+		Geoip struct {
+			CountryCode string `json:"countryCode"`
+			IP          string `json:"ip"`
+		} `json:"geoip"`
+	}
+	if json.Unmarshal(respBody, &result) == nil {
+		return result.Geoip.CountryCode
+	}
+	return ""
 }
 
 // fetchCountryFromIPWhois 用 ipwhois.app 查询国家代码(第三 fallback)
