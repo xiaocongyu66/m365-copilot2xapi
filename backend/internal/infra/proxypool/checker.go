@@ -134,6 +134,19 @@ func (c *Checker) RunOnce() {
 		}
 	}
 
+	// 精细化淘汰:分数低于 scoreMin(-50) 的节点从 store 删除
+	deadIDs := c.score.DeadNodes()
+	if len(deadIDs) > 0 {
+		for _, id := range deadIDs {
+			c.store.Delete(id)
+			if c.registerStore != nil {
+				c.registerStore.Delete(id)
+			}
+			c.score.Remove(id)
+		}
+		log.Infof("proxy check: removed %d dead nodes (score < %d)", len(deadIDs), -50)
+	}
+
 	usableCount := len(usable)
 	log.Infof("proxy check done: total=%d usable=%d", len(proxies), usableCount)
 }

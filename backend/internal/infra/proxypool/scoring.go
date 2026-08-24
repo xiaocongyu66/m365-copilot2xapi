@@ -260,6 +260,29 @@ func (s *ScoreStore) Get(identifier string) *NodeScore {
 	return s.scores[identifier]
 }
 
+// DeadNodes 返回分数低于 scoreMin 的节点 identifier(应该被删除的节点)。
+func (s *ScoreStore) DeadNodes() []string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	dead := make([]string, 0)
+	for id, ns := range s.scores {
+		ns.mu.RLock()
+		score := ns.Score
+		ns.mu.RUnlock()
+		if score <= scoreMin {
+			dead = append(dead, id)
+		}
+	}
+	return dead
+}
+
+// Remove 从 ScoreStore 删除一个节点。
+func (s *ScoreStore) Remove(identifier string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	delete(s.scores, identifier)
+}
+
 // NodeScoreSnapshot 是 NodeScore 的快照(不含锁,用于返回给调用方)
 type NodeScoreSnapshot struct {
 	Identifier       string
