@@ -501,7 +501,7 @@ func (s *Service) HTTPClientWithNode(identifier string) *http.Client {
 	}
 	return &http.Client{
 		Transport: &http.Transport{Proxy: http.ProxyURL(proxyURL)},
-		Timeout:   60 * time.Second,
+		Timeout:   120 * time.Second,
 	}
 }
 
@@ -525,13 +525,16 @@ func getOrCreateHTTPRelay(upstreamURL string) string {
 	listen := fmt.Sprintf("127.0.0.1:%d", port)
 	relay, err := minirelay.New(listen, upstreamURL)
 	if err != nil {
+		log.Errorf("[httpRelay] minirelay.New failed for %s: %v", upstreamURL, err)
 		return ""
 	}
 	if err := relay.Start(); err != nil {
+		log.Errorf("[httpRelay] minirelay.Start failed for %s: %v", upstreamURL, err)
 		return ""
 	}
 	localURL := fmt.Sprintf("socks5://%s", listen)
 	httpRelay.relays[upstreamURL] = &httpRelayEntry{localURL: localURL, relay: relay}
+	log.Infof("[httpRelay] created %s → %s", listen, upstreamURL)
 	return localURL
 }
 
