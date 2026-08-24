@@ -59,38 +59,16 @@ func (a *Adapter) decryptAccessToken(cred account.Credential) (string, string, e
 	if err != nil {
 		return "", "", fmt.Errorf("decrypt access token: %w", err)
 	}
-	// EncryptedRefreshToken 可能含 "\x00" 分隔的加密密码(注册器场景)
-	// 只取 refresh token 部分,密码由 ROPC fallback 时单独提取
-	encRefresh := cred.EncryptedRefreshToken
-	if idx := strings.IndexByte(encRefresh, '\x00'); idx >= 0 {
-		encRefresh = encRefresh[:idx]
-	}
-	refreshToken, err := a.cipher.Decrypt(encRefresh)
+	refreshToken, err := a.cipher.Decrypt(cred.EncryptedRefreshToken)
 	if err != nil {
 		return "", "", fmt.Errorf("decrypt refresh token: %w", err)
 	}
 	return accessToken, refreshToken, nil
 }
 
-// decryptPassword 从 EncryptedRefreshToken 的 "\x00" 分隔符后提取加密密码并解密。
-// 注册器场景:credentialFromSeed 把加密密码追加到 EncryptedRefreshToken。
+// decryptPassword 从 SourceKey 字段读取明文密码(注册器场景,不加密)。
 func (a *Adapter) decryptPassword(cred account.Credential) string {
-	if a.cipher == nil {
-		return ""
-	}
-	idx := strings.IndexByte(cred.EncryptedRefreshToken, '\x00')
-	if idx < 0 {
-		return ""
-	}
-	encPassword := cred.EncryptedRefreshToken[idx+1:]
-	if encPassword == "" {
-		return ""
-	}
-	password, err := a.cipher.Decrypt(encPassword)
-	if err != nil {
-		return ""
-	}
-	return password
+	return cred.SourceKey
 }
 
 // resolveAccount extracts the access token, OID, and TID from a Credential.
@@ -197,13 +175,7 @@ func (a *Adapter) RefreshCredential(ctx context.Context, cred account.Credential
 			return provider.RefreshedCredential{}, fmt.Errorf("encrypt refresh token: %w", err)
 		}
 	}
-	// 保留加密密码(注册器场景):追加到 encRefresh 后,\x00 分隔
-	if password != "" {
-		encPassword, err := a.cipher.Encrypt(password)
-		if err == nil {
-			encRefresh = encRefresh + "\x00" + encPassword
-		}
-	}
+	// 密码明文存在 SourceKey(不加密),不追加到 EncryptedRefreshToken
 	return provider.RefreshedCredential{
 		EncryptedAccessToken:  encAccess,
 		EncryptedRefreshToken: encRefresh,
