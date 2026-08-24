@@ -127,6 +127,7 @@ export function AccountsPage() {
   const importAbortRef = useRef<AbortController | null>(null);
   const importToastRef = useRef<string | number | null>(null);
   const [provider, setProvider] = useState<AccountProvider>("m365_copilot");
+  const [accountTab, setAccountTab] = useState("m365");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [search, setSearch] = useState("");
@@ -1295,13 +1296,13 @@ export function AccountsPage() {
       </section>
       <div className="space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <Tabs value={provider} onValueChange={(value) => changeProvider(value as AccountProvider)}>
+          <Tabs value={accountTab} onValueChange={setAccountTab}>
             <TabsList>
-              <TabsTrigger value="m365_copilot" className="gap-1.5">
+              <TabsTrigger value="m365" className="gap-1.5">
                 <SquareTerminal className="size-3.5 text-quota-product-1" />
                 <span>M365 账号</span>
               </TabsTrigger>
-              <TabsTrigger value="m365_rt" className="gap-1.5">
+              <TabsTrigger value="rt" className="gap-1.5">
                 <Compass className="size-3.5 text-quota-product-2" />
                 <span>RT 账号</span>
               </TabsTrigger>

@@ -6,7 +6,7 @@ import { createAccountTaskProgressController, type AccountTaskProgressDTO, type 
 
 export type { AccountTaskProgressDTO } from "@/features/accounts/account-task-progress";
 
-export type AccountProvider = "m365_copilot" | "m365_rt";
+export type AccountProvider = "m365_copilot";
 export type BuildRouteMode = "auto" | "build" | "xai";
 export type AccountCleanupStatus = "cooldown" | "disabled" | "reauthRequired";
 
