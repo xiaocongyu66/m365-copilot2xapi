@@ -247,6 +247,8 @@ func (r *Registrar) registerOne(ctx context.Context) {
 
 	// 5. 提交注册
 	acc, err := r.submitRegister(ctx, nodeID, username, password, displayName, token)
+	// 无论成功失败都标记代理已用(office.965007.xyz 每 IP 每天 1 次限制)
+	r.markProxyUsed(nodeID)
 	if err != nil {
 		result.Error = fmt.Sprintf("注册失败: %v", err)
 		r.svc.RecordRequestError(nodeID, nodeID, registerURL, err.Error())
@@ -254,8 +256,7 @@ func (r *Registrar) registerOne(ctx context.Context) {
 		return
 	}
 
-	// 6. 注册成功,标记代理已用
-	r.markProxyUsed(nodeID)
+	// 6. 注册成功
 	r.svc.RecordRequestSuccess(nodeID)
 	result.Account = *acc
 
