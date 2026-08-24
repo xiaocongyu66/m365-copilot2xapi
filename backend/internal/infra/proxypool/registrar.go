@@ -368,6 +368,11 @@ func (r *Registrar) submitRegister(ctx context.Context, proxyNodeID, username, p
 	}
 	defer resp.Body.Close()
 	respBody, _ := io.ReadAll(resp.Body)
+	bodyPreview := string(respBody)
+	if len(bodyPreview) > 300 {
+		bodyPreview = bodyPreview[:300]
+	}
+	log.Infof("[register] status=%d body=%s", resp.StatusCode, bodyPreview)
 
 	var result struct {
 		OK      bool              `json:"ok"`
