@@ -153,7 +153,7 @@ func solveTurnstileBrowser(siteKey, proxy, targetURL string) (string, error) {
 	time.Sleep(1 * time.Second)
 
 	// 轮询获取 token(最多 50 秒,期间持续点击 checkbox)
-	for i := 0; i < 50; i++ {
+	for i := 0; i < 90; i++ {
 		tokenVal, _ := page.Evaluate(`() => {
 			try {
 				var byInput = String((document.querySelector('input[name="cf-turnstile-response"]') || {}).value || '').trim();
